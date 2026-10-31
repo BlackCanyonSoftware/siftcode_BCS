@@ -1,46 +1,38 @@
 import { readFile } from 'node:fs/promises';
-import { discoverFiles, type SkippedCounts } from '../discovery/discover.js';
+import { DEFAULT_CONFIG, type Config } from '../config/schema.js';
+import { discoverFiles, type SourceFile } from '../discovery/discover.js';
+import type { CodeFile } from '../languages/model/types.js';
 import { SyntaxParser } from '../languages/parser.js';
+import { ALL_RULES } from '../rules/index.js';
+import { resolveRules, type ConfiguredRule } from '../rules/resolve.js';
+import { compareStrings } from './compare.js';
+import { compareFindings, createFinding, type Finding } from './finding.js';
+import type { FileProblem, ScanResult } from './result.js';
 
-export interface FileProblem {
-  readonly path: string;
-  readonly reason: 'syntax-error' | 'timeout' | 'unreadable';
-}
-
-export interface ScanResult {
-  /** Absolute path that was scanned. */
-  readonly root: string;
-  readonly filesScanned: number;
-  /** Files per language display name, sorted by name. */
-  readonly byLanguage: readonly (readonly [language: string, count: number])[];
-  /** Files that could not be read or parsed cleanly. The scan continues past them. */
-  readonly problems: readonly FileProblem[];
-  readonly skipped: SkippedCounts;
+export interface ScanOptions {
+  readonly config?: Config;
 }
 
 /**
- * Walking skeleton of the scan pipeline: discover files, parse each one, summarize.
- * Source code is only ever read and parsed, never executed.
+ * Discovers files, parses each one, runs the enabled rules, and collects the findings. Source code
+ * is only ever read and parsed, never executed.
  */
-export async function scan(path: string): Promise<ScanResult> {
-  const discovery = await discoverFiles(path);
-  const parser = await SyntaxParser.create();
-  const counts = new Map<string, number>();
-  const problems: FileProblem[] = [];
+export async function scan(path: string, options: ScanOptions = {}): Promise<ScanResult> {
+  const config = options.config ?? DEFAULT_CONFIG;
+  const rules = resolveRules(config, ALL_RULES);
+  const discovery = await discoverFiles(path, { ignore: config.ignore });
 
+  const parser = await SyntaxParser.create();
+  const languageCounts = new Map<string, number>();
+  const findings: Finding[] = [];
+  const problems: FileProblem[] = [];
   try {
     for (const file of discovery.files) {
-      counts.set(file.displayName, (counts.get(file.displayName) ?? 0) + 1);
-      let source: string;
-      try {
-        source = await readFile(file.absolutePath, 'utf8');
-      } catch {
-        problems.push({ path: file.relativePath, reason: 'unreadable' });
-        continue;
-      }
-      const outcome = await parser.parse(file.grammar, source);
-      if (outcome !== 'ok') {
-        problems.push({ path: file.relativePath, reason: outcome });
+      languageCounts.set(file.displayName, (languageCounts.get(file.displayName) ?? 0) + 1);
+      const analysis = await analyzeFile(file, parser, rules);
+      findings.push(...analysis.findings);
+      if (analysis.problem) {
+        problems.push({ path: file.relativePath, reason: analysis.problem });
       }
     }
   } finally {
@@ -50,8 +42,62 @@ export async function scan(path: string): Promise<ScanResult> {
   return {
     root: discovery.root,
     filesScanned: discovery.files.length,
-    byLanguage: [...counts].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    byLanguage: [...languageCounts].sort(([a], [b]) => compareStrings(a, b)),
+    findings: findings.sort(compareFindings),
+    rules: rules.map((rule) => rule.meta).sort((a, b) => compareStrings(a.id, b.id)),
     problems,
     skipped: discovery.skipped,
   };
+}
+
+interface FileAnalysis {
+  readonly findings: readonly Finding[];
+  readonly problem?: FileProblem['reason'];
+}
+
+async function analyzeFile(
+  file: SourceFile,
+  parser: SyntaxParser,
+  rules: readonly ConfiguredRule[],
+): Promise<FileAnalysis> {
+  let source: string;
+  try {
+    source = await readFile(file.absolutePath, 'utf8');
+  } catch {
+    return { findings: [], problem: 'unreadable' };
+  }
+
+  const { outcome, units } = await parser.parse(file.grammar, source);
+  if (outcome !== 'ok') {
+    return { findings: [], problem: outcome };
+  }
+  const codeFile: CodeFile = {
+    path: file.relativePath,
+    language: file.displayName,
+    grammar: file.grammar,
+    lineCount: countLines(source),
+    units,
+  };
+  return { findings: runRules(codeFile, rules) };
+}
+
+function runRules(file: CodeFile, rules: readonly ConfiguredRule[]): Finding[] {
+  const occurrences = new Map<string, number>();
+  return rules.flatMap((rule) =>
+    rule.check(file).map((hit) => {
+      const identity = `${rule.meta.id}\n${hit.key}`;
+      const occurrence = (occurrences.get(identity) ?? 0) + 1;
+      occurrences.set(identity, occurrence);
+      return createFinding(rule, file.path, hit, occurrence);
+    }),
+  );
+}
+
+/** Number of lines, not counting the empty "line" after a trailing newline. */
+function countLines(source: string): number {
+  if (source === '') {
+    return 0;
+  }
+  const lines = source.split(/\r\n|\r|\n/);
+  return lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
 }

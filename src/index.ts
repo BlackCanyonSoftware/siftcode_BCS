@@ -1,3 +1,11 @@
 export { scan } from './core/scan.js';
-export type { FileProblem, ScanResult } from './core/scan.js';
+export type { ScanOptions } from './core/scan.js';
+export type { FileProblem, ScanResult } from './core/result.js';
+export type { Finding } from './core/finding.js';
+export { SEVERITIES, type Severity } from './core/severity.js';
 export { UsageError } from './core/errors.js';
+export { loadConfig, parseConfig } from './config/load.js';
+export type { Config } from './config/schema.js';
+export { REPORT_FORMATS, renderReport, type ReportFormat } from './reporters/index.js';
+export { ALL_RULES } from './rules/index.js';
+export type { RuleMeta } from './rules/types.js';

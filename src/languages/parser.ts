@@ -1,6 +1,8 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Language, Parser } from 'web-tree-sitter';
+import { extractUnits } from './extract.js';
+import type { CodeUnit } from './model/types.js';
 import { grammarFileName, type GrammarId } from './registry.js';
 
 /** `grammars/` sits two levels above this file in both `src/` and `dist/`. */
@@ -16,6 +18,12 @@ export const PARSE_TIMEOUT_MS = 5_000;
  * - `timeout`: parsing was cancelled after {@link PARSE_TIMEOUT_MS}
  */
 export type ParseOutcome = 'ok' | 'syntax-error' | 'timeout';
+
+export interface ParseResult {
+  readonly outcome: ParseOutcome;
+  /** Named functions and methods found; empty when parsing timed out. */
+  readonly units: readonly CodeUnit[];
+}
 
 let initialization: Promise<void> | undefined;
 
@@ -37,7 +45,7 @@ export class SyntaxParser {
     return new SyntaxParser();
   }
 
-  async parse(grammar: GrammarId, source: string): Promise<ParseOutcome> {
+  async parse(grammar: GrammarId, source: string): Promise<ParseResult> {
     this.parser.setLanguage(await this.loadLanguage(grammar));
     const deadline = Date.now() + PARSE_TIMEOUT_MS;
     const tree = this.parser.parse(source, null, {
@@ -45,10 +53,13 @@ export class SyntaxParser {
     });
     if (tree === null) {
       this.parser.reset();
-      return 'timeout';
+      return { outcome: 'timeout', units: [] };
     }
     try {
-      return tree.rootNode.hasError ? 'syntax-error' : 'ok';
+      return {
+        outcome: tree.rootNode.hasError ? 'syntax-error' : 'ok',
+        units: extractUnits(grammar, tree.rootNode),
+      };
     } finally {
       tree.delete();
     }
