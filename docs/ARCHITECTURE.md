@@ -6,16 +6,16 @@ Status: plan, nothing built yet. Decisions: see [ADR 0001](adr/0001-typescript-a
 
 | Concern | Choice | Why |
 |---|---|---|
-| Language / runtime | TypeScript (`strict`) on Node LTS | ADR 0001 |
-| Parsing | `web-tree-sitter` + WASM grammars (JS, TS/TSX, Python, C#) | One framework for many languages, no native compile |
-| Config validation | Zod | Schema is the single source for the config type and its error messages (names to be verified in M0) |
-| CLI parsing | A small, well-maintained library, or `node:util` `parseArgs` | Prefer the standard library; decide in M0 |
+| Language / runtime | TypeScript 6.0 (`strict`) on Node 24 or newer (LTS) | ADR 0001, ADR 0003 |
+| Parsing | `web-tree-sitter` (the only runtime dependency) + compiled WASM grammars (JS, TS/TSX, Python, C#) copied from dev-only grammar packages into `grammars/` at build | One framework for many languages, no native compile, small package (ADR 0003) |
+| Config validation | Zod, added in M1 | Schema is the single source for the config type and its error messages |
+| CLI parsing | `node:util` `parseArgs` | Standard library, no dependency |
 | Tests | Vitest | Fast, TypeScript-native |
 | Lint / format | ESLint + Prettier, `tsc --noEmit` | Kickoff standard |
-| Build | `tsup` or `esbuild` to ESM + type declarations | Small, boring |
+| Build | `tsc` to ESM + type declarations (no bundler) | Small, boring |
 | CI | GitHub Actions | Repo is on GitHub |
 
-All package names and versions are verified against the registry and official docs in Milestone 0 before being added.
+Package names, publishers, licenses, and versions were verified against the registry in Milestone 0 (see ADR 0003). Install scripts are disabled and versions are pinned exactly.
 
 ## 2. Context
 

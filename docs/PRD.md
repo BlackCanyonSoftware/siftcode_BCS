@@ -182,9 +182,9 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 ## 11. Open questions
 
 1. ~~License~~ Resolved 2026-10-31: Apache-2.0, see [ADR 0002](adr/0002-apache-2-license.md).
-2. **Package name.** Is `siftcode` free on npm, and do we want a scope (`@blackcanyonsoftware/siftcode`)? Checked in M0.
+2. **Package name.** `siftcode` and `@blackcanyonsoftware/siftcode` were both unclaimed on npm on 2026-10-31 (unclaimed is not reserved). Owner decides which to publish under before M7.
 3. ~~Brand assets~~ Resolved 2026-10-31: the SiftCode brand exists in `Brand Logos` (`brands/siftcode`); README assets are bundled in `docs/brand/`. Still open: the brand has no tagline or domain set, so the README has no tagline until the owner provides one.
-4. **Minimum Node version.** Proposed: current LTS; confirmed in M0.
+4. ~~Minimum Node version~~ Resolved in M0: Node 24 or newer, see [ADR 0003](adr/0003-toolchain-and-install-policy.md).
 
 ## 12. Glossary
 

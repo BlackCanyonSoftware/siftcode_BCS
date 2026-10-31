@@ -4,13 +4,13 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** plan review (this document set).
-- **Next:** M0 walking skeleton, then M1 engine and reports.
+- **Now:** M0 is built; the owner reviews, pushes, and confirms CI on GitHub.
+- **Next:** M1 engine and reports.
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
 
-### M0: Walking skeleton (S, planned)
+### M0: Walking skeleton (S, done: awaiting owner review and push)
 Goal: a fresh clone builds, tests, and runs `siftcode scan` end to end on one trivial check, with all tooling and CI in place.
 Scope: tooling and one tiny vertical path; no product rules yet.
 - Verify and add dependencies (names, publishers, licenses) per ADR 0001.
@@ -74,4 +74,12 @@ Stories: US-050 to US-052, US-072.
 
 ## Tech debt and TODO list
 
-None yet. Every TODO in the code must have an entry here.
+There are no TODO comments in the code. Every future TODO must have an entry here.
+
+| ID | Item | Severity | Plan |
+|---|---|---|---|
+| TD-1 | `npm audit` reports 11 moderate findings, all dev-only (a `minimatch` denial-of-service advisory reached through `eslint` and `typescript-eslint`). Production dependencies: 0 findings. CI audits production only. | Low | Re-check when eslint or typescript-eslint release; consider an `overrides` entry in M1 |
+| TD-2 | Ignored folders are hard-coded (`node_modules`, `bin`, `obj`, `dist`, `build`, ...) and `.gitignore` is not read. | Low | M1 (US-002, configurable ignores) |
+| TD-3 | TypeScript is pinned to 6.0.3 because `typescript-eslint` does not support 7.x yet. | Low | Revisit with each typescript-eslint release |
+| TD-4 | Files are parsed one at a time on the main thread; no benchmark exists yet. | Low | M1 benchmark; worker threads in M2 if needed |
+| TD-5 | CI workflow is written but has never run (not verified until pushed). | Medium | Owner pushes; confirm green |
