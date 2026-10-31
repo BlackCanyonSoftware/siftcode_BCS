@@ -42,7 +42,7 @@ flowchart TD
     Disc --> Lang[languages: adapters per language]
     Lang -->|Code Model| Rules[rules: metrics, design, security, supply-chain]
     Git[git: churn reader] --> Rules
-    Repo[repo-files: lockfiles, CI, manifests] --> Rules
+    Repo[repo-files: lockfiles, CI, manifests, design docs and diagrams] --> Rules
     Rules -->|Findings| Sugg[suggestions: catalog lookup + enrichment]
     Sugg --> Rank[ranking + baseline filter]
     Rank --> Rep[reporters: terminal, md, json, sarif, html]
@@ -70,6 +70,7 @@ src/
     design/         demeter, service-locator, srp
     security/       CWE pattern rules
     supply-chain/   lockfile, pinning, SBOM, CI signals
+    documentation/  design/architecture artifact detection (diagrams, ADRs), freshness
     readiness/      testing-readiness hints
     catalog/        rule metadata + suggestion text (one file per rule)
   git/              read-only history access (churn)

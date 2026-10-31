@@ -29,8 +29,10 @@ Vision: someone runs `npx siftcode scan .` on any repo and gets a short, ranked 
 - G5. Output formats usable by people and by CI: terminal, Markdown, JSON, SARIF 2.1.0, and a self-contained HTML report.
 - G6. Run fully offline, deterministically, and never execute the scanned code.
 - G7. Pass its own rules (dogfooding) in CI.
+- G8. Check that the project documents its design and architecture (written docs, decision records, diagrams such as UML, C4, Mermaid, PlantUML) and suggest what is missing. Checking the *content* of designs against the code is a stated later goal (see Non-goals).
 
 **Non-goals (v1)**
+- Verifying that design documents and diagrams match the code (design-vs-code drift, architecture conformance): later. v1 detects presence, kind, linkage, and freshness only (US-033, US-034). Doing more depends on which diagram formats can be parsed; text-based formats (Mermaid, PlantUML, Structurizr DSL) are the realistic first targets, binary/editor formats (Visio, draw.io images) are not.
 - Real-time IDE integration (LSP / VS Code extension): later.
 - Taint analysis / data-flow tracking: later (requires a per-language data-flow engine).
 - Whole-program type resolution (Roslyn, TypeScript checker). v1 is syntax-level; see risk R2.
@@ -41,8 +43,8 @@ Vision: someone runs `npx siftcode scan .` on any repo and gets a short, ranked 
 
 ## 4. Scope (MoSCoW)
 
-**Must:** US-001 to US-006, US-010 to US-013, US-020, US-021, US-030, US-040, US-041, US-060 to US-062, US-070
-**Should:** US-022, US-031, US-032, US-050, US-051, US-052, US-071
+**Must:** US-001 to US-006, US-010 to US-013, US-020, US-021, US-030, US-033, US-040, US-041, US-060 to US-062, US-070
+**Should:** US-022, US-031, US-032, US-034, US-050, US-051, US-052, US-071
 **Could:** US-072, GitHub Action wrapper
 **Won't (this release):** LSP, taint analysis, GraphQL/gRPC/AsyncAPI/OpenAPI checks, WCAG/Web Vitals, auto-fix, AI suggestions
 
@@ -77,6 +79,20 @@ Acceptance criteria use Given/When/Then. Full criteria for later milestones are 
 - **US-030** Starter CWE-mapped patterns: hardcoded secrets (CWE-798), SQL built from string concatenation (CWE-89), OS command from non-constant input (CWE-78), dynamic code evaluation (CWE-95), weak hash/crypto algorithms (CWE-327/328), insecure deserialization calls (CWE-502), disabled TLS verification (CWE-295). Each finding shows the CWE ID.
 - **US-031** Repo hygiene (NIST SSDF-aligned): lockfile present, dependencies pinned, SBOM or generation step present, CI config present, secret-scanning/dependency-update config present.
 - **US-032** Dependency declaration smells: unpinned ranges (`*`, `latest`), git/URL dependencies, per ecosystem (npm, pip, NuGet).
+
+### Design and architecture documentation
+- **US-033** As a tech lead, I learn whether the project documents its design, and what kind, so missing design artifacts are flagged with a concrete next step.
+  - Recognized artifacts (by file name, folder, extension, or fenced block; contents are not interpreted in v1):
+    - written design: `ARCHITECTURE`/`DESIGN` documents, arc42-style structure, `docs/adr` / `doc/adr` / `docs/architecture/decisions` decision records;
+    - diagrams as code: Mermaid (`.mmd`, fenced `mermaid` blocks in Markdown), PlantUML (`.puml .plantuml .pu .wsd .iuml`), Structurizr DSL (`.dsl`), D2 (`.d2`), DBML (`.dbml`);
+    - diagram editor and interchange files: draw.io (`.drawio .dio`), Excalidraw (`.excalidraw`), Visio (`.vsdx`), UML/XMI (`.uml .xmi`), ArchiMate exchange (`.archimate`);
+    - diagram images in design/doc folders (`.png .svg`), counted as "diagram images, content not inspected";
+    - interface specifications (OpenAPI, AsyncAPI) as interface design.
+  - Given a repository of meaningful size (configurable, default 20 source files) with no recognized design artifact, then one finding "No design or architecture documentation found" is reported with the suggestion: add a context and a container diagram (C4 model) as Mermaid or PlantUML under `docs/`, record the main decision as an ADR, and link both from the README.
+  - Given written docs but no diagrams, then a lower-severity finding suggests adding at least one structural diagram. Given diagrams but no decision records, then it suggests ADRs. Given diagram files that no Markdown file links to, then it notes they are unreferenced.
+  - Given a small repository below the size threshold, then the finding is `note` severity, not `warning`.
+  - Standards cited: C4 model, UML (ISO/IEC 19505), ISO/IEC/IEEE 42010 (architecture description), arc42, Architecture Decision Records.
+- **US-034** (Should) As a tech lead, I am told when design docs look stale: in a Git repo, when the code under the area a design document covers has changed substantially since the document last changed (configurable window and threshold), then a low-confidence finding says the design docs may be out of date.
 
 ### Suggestions
 - **US-040** Every finding carries: rule ID, severity, confidence, location, message, standard reference(s), rationale, suggestion, and optionally a before/after snippet.
@@ -115,6 +131,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 | 4 CERT secure coding | S | Later | CERT C/C++/Java/Perl; none are v1 languages. Python/C# analogues possible later. |
 | 4 NIST SSDF supply chain | C/R | Yes | M4: lockfile, pinning, SBOM, signed-commit signal (R). |
 | 4 Taint analysis | D | No | Later milestone with its own design. |
+| (added by owner) Design and architecture documentation: UML, C4, ADRs, diagrams | C (presence, kind, linkage); R (freshness); D (content vs. code) | Presence and freshness yes; content-vs-code later | M4 (US-033), M5 (US-034). Drift/conformance checks are a later track and depend on parsing text-based diagram formats. |
 | 5.1 SOLID / GRASP | S | Partial | SRP and ISP heuristics, DIP via IoC; others need type info. |
 | 5.2 Law of Demeter | S | Yes | M3 |
 | 5.3 IoC / Service Locator | S | Yes | M3 |
@@ -147,6 +164,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 - A3. Deterministic rule-based suggestions; no AI in v1.
 - A4. Thresholds (e.g., cyclomatic > 10, Demeter depth > 3) come from the blueprint and common practice and are configurable.
 - A5. Standards are referenced by name, number, and link. Their text is not copied into the repo (CWE is free to reference with attribution; ISO/CISQ material is copyrighted).
+- A7. Design-documentation detection is deliberately format-tolerant and content-blind in v1: a diagram's presence is evidence the team thought about design, not evidence it is correct.
 - A6. Project name in docs is "SiftCode"; CLI binary is `siftcode`.
 
 ## 10. Risks
@@ -163,7 +181,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 
 ## 11. Open questions
 
-1. **License.** The existing GitHub repo already has an MIT `LICENSE` (public). The agreed default was Apache-2.0 (adds an explicit patent grant). Keep MIT, or switch to Apache-2.0? Decide before the first release; nothing in the plan depends on it.
+1. ~~License~~ Resolved 2026-10-31: Apache-2.0, see [ADR 0002](adr/0002-apache-2-license.md).
 2. **Package name.** Is `siftcode` free on npm, and do we want a scope (`@blackcanyonsoftware/siftcode`)? Checked in M0.
 3. **Brand assets.** Logo and theme for SiftCode are being generated; the HTML report and README wait on them (M6). Brand assets will be taken from the `Brand Logos` repo once a SiftCode brand exists there.
 4. **Minimum Node version.** Proposed: current LTS; confirmed in M0.

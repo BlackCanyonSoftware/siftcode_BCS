@@ -38,15 +38,15 @@ Goal: Law of Demeter, Service Locator / IoC, SRP (oversized class/module) rules.
 Exit: positive and negative fixtures per language; false-positive review on at least one real open-source repo per language; heuristics default to `warning` or lower.
 Stories: US-020 to US-022.
 
-### M4: Security and supply chain (M, planned)
-Goal: starter CWE rule set and NIST SSDF-aligned repo hygiene checks.
-Exit: every security finding shows a CWE ID; secrets are redacted in output; manifest checks work for npm, pip, and NuGet; positive and negative fixtures for each rule.
-Stories: US-030 to US-032.
+### M4: Security, supply chain, and design documentation (M, planned)
+Goal: starter CWE rule set, NIST SSDF-aligned repo hygiene checks, and detection of design/architecture documentation (UML, C4, Mermaid, PlantUML, ADRs, ...).
+Exit: every security finding shows a CWE ID; secrets are redacted in output; manifest checks work for npm, pip, and NuGet; design-artifact detection recognizes every format listed in US-033 and reports "no design documentation" with a concrete suggestion; positive and negative fixtures for each rule.
+Stories: US-030 to US-033.
 
-### M5: Git hotspots (S, planned)
-Goal: churn × complexity ranking from read-only Git history.
+### M5: Git hotspots and design-doc freshness (S, planned)
+Goal: churn × complexity ranking from read-only Git history, and a low-confidence "design docs may be stale" check using the same history reader.
 Exit: works on a repo with history; non-Git folders skip with a note; performance on a large history is bounded (configurable window, default last 12 months).
-Stories: US-013.
+Stories: US-013, US-034.
 
 ### M6: HTML report, explain, baseline (M, planned)
 Goal: shareable self-contained HTML report per DESIGN.md; `explain` command polish; baseline and inline suppressions.
@@ -63,6 +63,7 @@ Stories: US-050 to US-052, US-072.
 
 - Taint analysis (sources, sinks, sanitizers) with a data-flow engine.
 - API and contract checks: OpenAPI, AsyncAPI, gRPC/Protobuf evolution, GraphQL depth and N+1, Richardson maturity.
+- Design-vs-code drift and architecture conformance: parse text-based diagram formats (Mermaid, PlantUML, Structurizr DSL, UML/XMI) and compare declared components, layers, and dependencies with the Code Model; first target is "a component in the diagram has no matching module in the code, and vice versa".
 - Architecture styles: layering and dependency-direction rules, Hexagonal, CQRS, Event Sourcing, Saga, Bulkhead, Circuit Breaker detection.
 - Frontend: WCAG in JSX/HTML, Web Vitals signals, props drilling and state discipline.
 - LSP server and VS Code extension.
