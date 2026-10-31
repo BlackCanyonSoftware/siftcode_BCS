@@ -1,0 +1,12 @@
+node_modules
+dist
+grammars
+coverage
+package-lock.json
+LICENSE
+NOTICE
+# hand-written docs keep their own table layout; generated brand files are not ours to format
+*.md
+docs/brand
+# fixtures are sample code in other languages, some deliberately malformed
+test/fixtures

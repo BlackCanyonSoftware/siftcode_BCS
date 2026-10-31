@@ -1,0 +1,7 @@
+#!/bin/sh
+# Installed by `npm run hooks:install`. Runs the fast checks before every commit.
+# The repository is small, so the whole project is checked rather than only staged files.
+set -e
+npm run --silent format:check
+npm run --silent lint
+npm run --silent typecheck

@@ -1,0 +1,54 @@
+{
+  "name": "siftcode",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Offline code and architecture analysis that finds where a project departs from proven standards and suggests how to improve it.",
+  "license": "Apache-2.0",
+  "author": "Black Canyon Software",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BlackCanyonSoftware/siftcode_BCS.git"
+  },
+  "type": "module",
+  "bin": {
+    "siftcode": "dist/cli/main.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "grammars",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "build:grammars": "node scripts/copy-grammars.mjs",
+    "build": "npm run build:grammars && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run build:grammars && vitest run test/unit",
+    "test:e2e": "npm run build && vitest run test/e2e",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "hooks:install": "git config core.hooksPath .githooks"
+  },
+  "dependencies": {
+    "web-tree-sitter": "0.27.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.14.0",
+    "prettier": "3.9.10",
+    "tree-sitter-c-sharp": "0.23.5",
+    "tree-sitter-javascript": "0.25.0",
+    "tree-sitter-python": "0.25.0",
+    "tree-sitter-typescript": "0.23.2",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5"
+  }
+}
