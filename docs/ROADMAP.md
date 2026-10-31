@@ -50,7 +50,7 @@ Stories: US-013, US-034.
 
 ### M6: HTML report, explain, baseline (M, planned)
 Goal: shareable self-contained HTML report per DESIGN.md; `explain` command polish; baseline and inline suppressions.
-Depends on: brand assets (logo, palette) from the owner; neutral placeholders are used until then.
+Depends on: the SiftCode brand (available in `Brand Logos` as of 2026-10-31); bundle the application set into the report inputs at the start of this milestone.
 Exit: WCAG 2.2 AA checks pass (automated plus a keyboard pass); light/dark toggle and info buttons work; checked at 375/768/1280 px with no console errors.
 Stories: US-005, US-070.
 

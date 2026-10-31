@@ -183,7 +183,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 
 1. ~~License~~ Resolved 2026-10-31: Apache-2.0, see [ADR 0002](adr/0002-apache-2-license.md).
 2. **Package name.** Is `siftcode` free on npm, and do we want a scope (`@blackcanyonsoftware/siftcode`)? Checked in M0.
-3. **Brand assets.** Logo and theme for SiftCode are being generated; the HTML report and README wait on them (M6). Brand assets will be taken from the `Brand Logos` repo once a SiftCode brand exists there.
+3. ~~Brand assets~~ Resolved 2026-10-31: the SiftCode brand exists in `Brand Logos` (`brands/siftcode`); README assets are bundled in `docs/brand/`. Still open: the brand has no tagline or domain set, so the README has no tagline until the owner provides one.
 4. **Minimum Node version.** Proposed: current LTS; confirmed in M0.
 
 ## 12. Glossary

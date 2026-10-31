@@ -1,6 +1,11 @@
 # SiftCode: Design
 
-SiftCode has no app UI. Its user-facing surfaces are the **terminal output** and the **HTML report**. This file defines both. Brand assets (logo, palette, fonts) are being generated and are **not yet applied**; the tokens below are neutral placeholders marked `TBD-brand`. When assets land in `Brand Logos` (`brands/siftcode`), replace the placeholders and record it in the changelog.
+SiftCode has no app UI. Its user-facing surfaces are the **terminal output** and the **HTML report**. This file defines both. The brand is defined in the `Brand Logos` project (`brands/siftcode/brand.toml`) and is the single source for logo, color, and type. Never retype a brand color, size, or font name here or in code; load the brand tokens. Current brand facts (from the generated `BRAND.md`): product brand "SiftCode", initials **SC**, typeface **Nunito**, brass mark with a two-tone/display wordmark that arrives at teal across "Code".
+
+Brand files in this repo:
+- `docs/brand/` holds the README set (`brandkit bundle siftcode docs/brand --set readme`): the light and dark README banners and `BUNDLE.json`. Verify with `brandkit check siftcode docs/brand --set readme`. Regenerate; never edit by hand.
+- The HTML report (Milestone 6) additionally needs the application set (tokens, font, UI icons including sun, moon, and info). It is bundled into the report build inputs then, not before.
+- The brand has no tagline or domain set yet; the README must not invent one.
 
 ## 1. Audience and tone
 
@@ -18,7 +23,7 @@ Developers and tech leads reading a report under time pressure. Tone: calm, spec
 ## 3. HTML report (self-contained, one file)
 
 ### Layout
-1. Header: product mark (TBD-brand), project name, scan summary, light/dark toggle.
+1. Header: the brand's header partial (mark on the `logo`-colored tile plus wordmark), project name, scan summary, light/dark toggle.
 2. Summary strip: counts by severity, files scanned, languages, top hotspots.
 3. Filters: severity, category, language, rule, search.
 4. Findings list grouped by file; each row expands to rationale, suggestion, before/after, references.
@@ -32,20 +37,30 @@ Developers and tech leads reading a report under time pressure. Tone: calm, spec
 - **Accessibility (WCAG 2.2 AA):** semantic headings and landmarks, visible focus ring, contrast of at least 4.5:1 for text and 3:1 for UI components, no meaning by color alone, touch targets of at least 24 px (aim for 44), `prefers-reduced-motion` respected, no remote assets.
 - **Security:** all code-derived text is escaped; no inline event handlers from data; no remote scripts.
 
-## 4. Design tokens (placeholders)
+## 4. Design tokens
 
-Defined once as CSS custom properties; every component uses tokens, not literal values.
+Tokens come from the brand's `template/tokens.css` and `theme/theme.css` (light and dark, contrast-measured by `brandkit doctor`). The report uses them by name and adds only the few report-specific tokens below.
 
-| Group | Tokens |
-|---|---|
-| Color roles | `--bg`, `--surface`, `--text`, `--text-muted`, `--border`, `--accent` (`TBD-brand`), `--focus` |
-| Severity | `--sev-error`, `--sev-warning`, `--sev-info`, `--sev-note` (each defined for light and dark, each with an icon/word) |
-| Type scale | 12, 14, 16, 18, 24, 32 px; system UI font stack until a brand font exists; monospace for code |
-| Spacing | 4 / 8 px scale: 4, 8, 12, 16, 24, 32, 48 |
-| Radius | 4, 8 px |
-| Shadow | one subtle elevation for expanded rows |
-| Motion | 150 ms ease for expand/collapse; none under reduced motion |
-| Breakpoints | 480, 768, 1280 px |
+| Group | Source | Tokens |
+|---|---|---|
+| Color roles | brand | `--ink`, `--accent`, `--mute`, `--logo`, `--brand`, `--page`, `--card`, `--line`, `--control`, `--on-brand` |
+| Status colors | brand | `--bad`/`--bad-bg`, `--warn`/`--warn-bg`, `--ok`/`--ok-bg`, `--on-bad` |
+| Type | brand | Nunito via `--font`, `--font-display`, `--mono`; sizes `--fs-xs` (12) to `--fs-3xl` (40) |
+| Spacing | brand | `--s-1` (4) to `--s-8` (64) |
+| Radius | brand | `--r-sm`, `--r-md`, `--r-lg`, `--r-pill` |
+| Motion, breakpoints | brand | breakpoints from the brand's `layout.css`; 150 ms ease for expand/collapse, none under reduced motion |
+
+**Severity mapping (report-specific, built from brand roles):**
+
+| Severity | Color role | Distinguished by |
+|---|---|---|
+| error | `--bad` | word "Error", error icon, heavier edge |
+| warning | `--warn` | word "Warning", alert icon, lighter edge. The brand deliberately gives warning and error the same red, so the icon, the word, and the edge weight carry the difference. |
+| info | `--accent` | word "Info", info icon |
+| note | `--mute` | word "Note", no icon fill |
+| no findings / pass | `--ok` | word "Clean", check icon |
+
+Icons come from the brand's UI set (`icon-error`, `icon-alert`, `icon-info`, `icon-ok`, `icon-sun`, `icon-moon`, `icon-help`, `icon-search`, `icon-filter`, `icon-expand`, `icon-collapse`), inlined into the single-file report.
 
 ## 5. Components (HTML report)
 
