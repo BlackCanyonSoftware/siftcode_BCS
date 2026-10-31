@@ -1,0 +1,7 @@
+{
+  "javascript": { "package": "tree-sitter-javascript", "file": "tree-sitter-javascript.wasm" },
+  "typescript": { "package": "tree-sitter-typescript", "file": "tree-sitter-typescript.wasm" },
+  "tsx": { "package": "tree-sitter-typescript", "file": "tree-sitter-tsx.wasm" },
+  "python": { "package": "tree-sitter-python", "file": "tree-sitter-python.wasm" },
+  "csharp": { "package": "tree-sitter-c-sharp", "file": "tree-sitter-c_sharp.wasm" }
+}
