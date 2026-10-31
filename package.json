@@ -30,17 +30,23 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run build:grammars && vitest run test/unit",
+    "fetch:sarif-schema": "node scripts/fetch-sarif-schema.mjs",
+    "test": "npm run build:grammars && npm run fetch:sarif-schema && vitest run test/unit",
+    "benchmark": "npm run build && node scripts/benchmark.mjs",
     "test:e2e": "npm run build && vitest run test/e2e",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
     "hooks:install": "git config core.hooksPath .githooks"
   },
   "dependencies": {
-    "web-tree-sitter": "0.27.1"
+    "ignore": "7.0.14",
+    "web-tree-sitter": "0.27.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "24.19.2",
+    "ajv": "8.20.0",
+    "ajv-draft-04": "1.0.0",
     "eslint": "10.14.0",
     "prettier": "3.9.10",
     "tree-sitter-c-sharp": "0.23.5",

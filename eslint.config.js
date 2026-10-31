@@ -22,6 +22,13 @@ export default defineConfig(
     // Plain JavaScript (scripts and this config) is outside the TypeScript project.
     files: ['**/*.{js,mjs}'],
     extends: [tseslint.configs.disableTypeChecked],
-    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+        Buffer: 'readonly',
+      },
+    },
   },
 );
