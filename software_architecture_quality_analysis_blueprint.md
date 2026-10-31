@@ -85,3 +85,9 @@ If the tool analyzes full-stack projects, it must understand frontend heuristics
 
 *   **SARIF (Static Analysis Results Interchange Format):** The standard JSON format for outputting analysis results so they can be read by GitHub, GitLab, and SonarQube.
 *   **LSP (Language Server Protocol):** If your tool will have an IDE extension (VS Code, IntelliJ), it must implement LSP to provide real-time squiggly lines and hover tooltips.
+## 10. License Detection & Compliance
+
+*   **Presence and identification:** Detect whether a project has a license. Identify standard licenses by comparing the license file against the SPDX license list; report modified or unrecognized (custom) licenses separately. Read declared licenses from manifests and `SPDX-License-Identifier` headers.
+*   **Adherence:** Check the declared license matches the license file, required notices exist (for example Apache-2.0 `NOTICE`), copyright holder and year are filled in, and the REUSE specification is followed if the project uses it.
+*   **Dependency compatibility:** Read dependency licenses offline from lockfiles and installed packages, evaluate SPDX expressions, and flag conflicts (for example GPL-2.0-only code in an Apache-2.0 project, AGPL network-use obligations, non-commercial or source-available licenses, dependencies with no license). Report "unknown" rather than guessing.
+*   **Caution:** These are deterministic checks against published data and a documented compatibility table. They are a safety net, not legal advice.

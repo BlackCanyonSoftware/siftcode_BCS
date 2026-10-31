@@ -71,8 +71,10 @@ src/
     security/       CWE pattern rules
     supply-chain/   lockfile, pinning, SBOM, CI signals
     documentation/  design/architecture artifact detection (diagrams, ADRs), freshness
+    licenses/       license detection, adherence, dependency license compatibility (M4b; uses
+                    bundled SPDX data and a versioned compatibility table)
     readiness/      testing-readiness hints
-    catalog/        rule metadata + suggestion text (one file per rule)
+    (each rule is one file holding its metadata, suggestion text, and check: ADR 0004)
   git/              read-only history access (churn)
   reporters/        terminal, markdown, json, sarif, html (+ html/ assets)
   index.ts          public library API
@@ -181,6 +183,6 @@ sequenceDiagram
   - HTML report escapes all code-derived text and ships no remote scripts or fonts;
   - rule regexes are reviewed for catastrophic backtracking, and run on bounded input;
   - code snippets in reports are redacted for matched secrets (never print a found secret in full).
-- **Performance:** files processed one at a time or in bounded batches; syntax trees freed after the Code Model is built; worker threads considered when the M1 benchmark requires it.
+- **Performance:** files are processed one at a time; syntax trees are freed as soon as the Code Model is extracted. Measured by `npm run benchmark` on 2026-10-31 (Windows, Node 26): 500 files / 52,375 lines in 0.74 s (about 70,000 lines/s), peak memory about 101 MB, against the NFR-4 target of 30 s. Worker threads are not needed yet; revisit if rules grow much heavier.
 - **Extensibility:** a rule is a plain object (`id`, `category`, `run(model) → findings`) plus a catalog entry (standards, rationale, suggestion). New rules and new languages are added without editing the orchestrator.
 - **Self-checking:** CI runs SiftCode on its own source (PRD US-072).

@@ -46,13 +46,22 @@ packages are dev-only; `npm run build:grammars` copies their compiled `.wasm` fi
 - Comments explain why, not what. Name things with the PRD glossary's terms.
 - Adding a dependency needs a reason (maintenance, size, license) and a verified package name.
 
-## Writing a rule (from Milestone 1)
+## Writing a rule
 
-A rule is a small module plus a catalog entry with: id (`SC-<AREA>-NNN`), category, default
-severity and confidence, standard reference(s) (CWE, SOLID, ...), rationale, suggestion, and an
-optional before/after snippet. Add fixtures under
-`test/fixtures/<language>/<rule>/{positive,negative}` and tests that cover both. Heuristic rules
-must say so and default to `warning` or lower.
+Copy `src/rules/metrics/function-length.ts`. A rule is one file that calls `defineRule` with:
+
+- `meta`: id (`SC-<AREA>-NNN`, never reused), title, category, default severity, confidence,
+  whether it is a heuristic, standard reference(s) (CWE, SOLID, ...), rationale, and a suggestion
+  with an optional before/after example. Heuristic rules say so and default to `warning` or lower.
+- `options`: a Zod schema (strict, with a default for every option).
+- `check(file, options)`: returns hits (`startLine`, `endLine`, `message`, `key`). `key` names what
+  was flagged without line numbers (it feeds the fingerprint).
+
+Then register it in `src/rules/index.ts` and add fixtures under
+`test/fixtures/rules/<rule-id>/{positive,negative}` with a case for every language the rule
+covers, plus tests for both. Rules see the language-neutral `CodeFile`, never tree-sitter types; if
+a rule needs more than the Code Model offers, extend the model and its extraction for all
+languages, with tests. `siftcode explain <rule-id>` and every report read the same `meta`.
 
 ## Testing
 

@@ -17,7 +17,8 @@ finding. Rigor tier: **MVP**. Product owner: the repository owner; you are the t
 npm ci                  # install (scripts disabled, exact versions)
 npm run hooks:install   # once per clone: pre-commit runs format:check, lint, typecheck
 npm run build           # copy grammars + compile to dist
-npm test                # unit tests (test/unit)
+npm test                # unit tests (test/unit); downloads the SARIF schema on first run
+npm run benchmark       # build, then time a scan of a generated 50k-line project
 npm run test:e2e        # build, then run the built CLI (test/e2e)
 npm run lint            # ESLint strict type-checked
 npm run typecheck       # tsc --noEmit
@@ -29,14 +30,20 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 
 ## Project map
 
-- `src/cli/` argument parsing, exit codes (0 ok, 1 findings at/above `--fail-on`, 2 usage error)
-- `src/core/` scan orchestration, shared types, errors
-- `src/discovery/` file walking, ignores, size limits
-- `src/languages/` language registry, `grammars.json` (single source for grammar file names),
-  tree-sitter parser wrapper
-- `src/rules/`, `src/reporters/`, `src/git/`, `src/config/` planned: see `docs/ARCHITECTURE.md`
-- `scripts/` build helpers; `grammars/` and `dist/` are generated and git-ignored
-- `test/unit`, `test/e2e`, `test/fixtures/<language>/<rule>/{positive,negative}`
+- `src/cli/` commands (`scan`, `explain`), exit codes (0 ok, 1 findings at/above `--fail-on`,
+  2 usage or config error)
+- `src/config/` config schema (Zod) and loading; `src/core/` scan pipeline, findings, severity
+- `src/discovery/` file walking, `.gitignore` and config ignores, size limits
+- `src/languages/` registry, `grammars.json` (single source for grammar file names), parser,
+  `model/` (the Code Model rules see), `extract.ts` (syntax tree to named functions)
+- `src/rules/` one file per rule (metadata, suggestion, check) + `index.ts` registry
+- `src/reporters/` text, JSON, Markdown, SARIF, `explain`
+- `src/git/` planned (M5): see `docs/ARCHITECTURE.md`
+- `scripts/` build helpers; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored
+- `test/unit`, `test/e2e`, `test/helpers`, `test/fixtures/rules/<rule-id>/{positive,negative}`
+
+Adding a rule: new file under `src/rules/<area>/`, register it in `src/rules/index.ts`, add
+positive and negative fixtures for every language it covers, and tests. See CONTRIBUTING.md.
 
 Dependency direction: `cli → core → {discovery, languages, rules, git, reporters}`; `languages`
 and `reporters` never import `rules`. A folder exposes a small public surface; do not import
@@ -64,7 +71,8 @@ another module's internals.
 - Never print a detected secret in full; redact it.
 - No secrets in code, logs, or git history.
 - New dependencies: justify, verify exact package name and publisher, check the license is
-  Apache-2.0-compatible (no GPL/AGPL in the shipped package), pin exactly. Ask before adding one.
+  Apache-2.0-compatible (no GPL/AGPL in the shipped package), pin exactly, and record the reason
+  in the commit message or an ADR. Ask first only if it has a cost or changes the stack.
   Install scripts stay disabled.
 - **Commit locally; never push.** The owner reviews and pushes. No history rewriting, no force
   push, no `--no-verify`, no weakening or skipping tests or lint rules to get green.

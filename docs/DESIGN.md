@@ -14,10 +14,10 @@ Developers and tech leads reading a report under time pressure. Tone: calm, spec
 ## 2. Terminal output
 
 - Summary first (counts by severity, top hotspots), then findings grouped by file, most severe first.
-- Each finding: `severity  rule-id  path:line  message`, then an indented "Why" (one line), "Try" (one line), and the standard reference. Full detail with `siftcode explain <rule-id>` or `--verbose`.
+- Each finding: `path:line  severity  rule-id  message` (the `path:line` first, so terminals and editors can open it), then an indented "Why" (one line), "Try" (one line), and one "Standard" line per reference. The full description with an example is `siftcode explain <rule-id>`.
 - Color is decoration only: severity is always also written as a word. `NO_COLOR` and non-TTY output disable color and progress bars.
 - No emoji needed to understand the output.
-- Empty state: "No findings. Scanned N files in M languages." Plus any skipped-file notes.
+- Empty state: the "Scanned N files" summary with per-language counts, then "No findings.", plus any not-checked and skipped-file notes.
 - Error state: what failed, the file or key involved, and how to fix it.
 
 ## 3. HTML report (self-contained, one file)

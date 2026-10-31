@@ -4,13 +4,13 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M0 is built; the owner reviews, pushes, and confirms CI on GitHub.
-- **Next:** M1 engine and reports.
+- **Now:** M1 is built; the owner reviews and pushes. (M0 is pushed and CI is green.)
+- **Next:** M2 metrics for all three languages.
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
 
-### M0: Walking skeleton (S, done: awaiting owner review and push)
+### M0: Walking skeleton (S, done; pushed, CI green)
 Goal: a fresh clone builds, tests, and runs `siftcode scan` end to end on one trivial check, with all tooling and CI in place.
 Scope: tooling and one tiny vertical path; no product rules yet.
 - Verify and add dependencies (names, publishers, licenses) per ADR 0001.
@@ -22,7 +22,7 @@ Scope: tooling and one tiny vertical path; no product rules yet.
 Exit: fresh clone → `npm ci && npm test && npm run build && node dist/cli.js scan test/fixtures` works; a test passes at each level set up; CI config written (reported "not verified until pushed").
 Stories: US-001 (partial), US-060 to US-062 (parse only).
 
-### M1: Engine, config, and report formats (M, planned)
+### M1: Engine, config, and report formats (M, done: awaiting owner review and push)
 Goal: the full pipeline exists with one real rule so every later rule is "add a file".
 Scope: discovery with ignores and limits; config schema; Code Model types; rule and catalog interfaces; finding model, fingerprints, ranking; terminal, JSON, Markdown, SARIF reporters; exit codes; parse-failure handling; one real rule (function length) as proof.
 Exit: SARIF validates against the 2.1.0 schema; deterministic output test; exit codes 0/1/2 covered; benchmark script recorded.
@@ -42,6 +42,17 @@ Stories: US-020 to US-022.
 Goal: starter CWE rule set, NIST SSDF-aligned repo hygiene checks, and detection of design/architecture documentation (UML, C4, Mermaid, PlantUML, ADRs, ...).
 Exit: every security finding shows a CWE ID; secrets are redacted in output; manifest checks work for npm, pip, and NuGet; design-artifact detection recognizes every format listed in US-033 and reports "no design documentation" with a concrete suggestion; positive and negative fixtures for each rule.
 Stories: US-030 to US-033.
+
+### M4b: Licenses and compliance (M, planned)
+Goal: detect whether a project has a license and which one, check it follows that license, and flag dependency licenses that conflict with it or are unknown.
+Scope:
+- Bundle the SPDX license list (license texts and metadata) as data; verify its license and the exact source before adding.
+- License file detection and identification by normalized-text similarity; manifest and `SPDX-License-Identifier` reading; SPDX expression parser.
+- Adherence checks: declared vs. file license, copyright holder and year, required notices (`NOTICE`, third-party attribution).
+- Dependency license reading offline (lockfiles, installed packages for npm, Python, NuGet); "unknown" when unavailable.
+- Compatibility table as versioned data with citations, plus the rules that apply it.
+Exit: identifies the standard licenses in a fixture set (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0, GPL-2.0/3.0, LGPL, AGPL-3.0, Unlicense, CC0) and a modified variant; reports "no license"; conflict cases covered by positive and negative fixtures; every finding includes the not-legal-advice note; the owner reviews the compatibility table.
+Stories: US-035 to US-037.
 
 ### M5: Git hotspots and design-doc freshness (S, planned)
 Goal: churn × complexity ranking from read-only Git history, and a low-confidence "design docs may be stale" check using the same history reader.
@@ -79,7 +90,7 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | ID | Item | Severity | Plan |
 |---|---|---|---|
 | TD-1 | `npm audit` reports 11 moderate findings, all dev-only (a `minimatch` denial-of-service advisory reached through `eslint` and `typescript-eslint`). Production dependencies: 0 findings. CI audits production only. | Low | Re-check when eslint or typescript-eslint release; consider an `overrides` entry in M1 |
-| TD-2 | Ignored folders are hard-coded (`node_modules`, `bin`, `obj`, `dist`, `build`, ...) and `.gitignore` is not read. | Low | M1 (US-002, configurable ignores) |
+| TD-2 | Ignore handling is close to Git's, not identical: only `.gitignore` files inside the scanned folder are read (not `.git/info/exclude` or the global ignore file), and a nested `.gitignore` cannot re-include a folder its parent ignored. | Low | Only if users hit it |
 | TD-3 | TypeScript is pinned to 6.0.3 because `typescript-eslint` does not support 7.x yet. | Low | Revisit with each typescript-eslint release |
-| TD-4 | Files are parsed one at a time on the main thread; no benchmark exists yet. | Low | M1 benchmark; worker threads in M2 if needed |
-| TD-5 | CI workflow is written but has never run (not verified until pushed). | Medium | Owner pushes; confirm green |
+| TD-4 | The first `npm test` needs network access to download the SARIF schema (cached afterwards, hash-checked), and JSON Schema `format` keywords are not validated (ADR 0004). | Low | Add `ajv-formats` if format checks become important |
+| TD-5 | Test and generated code is scanned like production code; there is no per-path rule override yet (the repo's own config just ignores `test/fixtures/`). | Low | Consider `overrides` in config when real rule noise shows up (M2/M3) |

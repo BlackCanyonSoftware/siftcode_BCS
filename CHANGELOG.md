@@ -9,6 +9,14 @@ All notable user-visible changes are recorded here. The format follows
 ### Added
 
 - `siftcode scan <path>` walks a folder (or one file), parses JavaScript, TypeScript, Python,
-  and C# files with tree-sitter, and prints a per-language summary. Files with syntax errors
-  are reported and the scan continues. Exit code is 2 for usage errors.
+  and C# files with tree-sitter, and reports findings. Files with syntax errors are reported as
+  not checked and the scan continues.
+- First rule, `SC-MET-001`: functions and methods longer than a limit (default 50 lines). Each
+  finding carries the standard behind it, why it matters, and a suggested fix.
+- Report formats: terminal text, JSON, Markdown, and SARIF 2.1.0 (`--format`, `--output`).
+- `siftcode.config.json`: ignore patterns, per-rule enable/severity/options, and `failOn`.
+  The project's `.gitignore` is respected.
+- `--fail-on <level>`: exit code 1 when a finding is at least that severe. Exit code 2 for usage
+  and configuration errors.
+- `siftcode explain <rule-id>` shows why a rule exists, its standards, and an example.
 - Apache-2.0 license.
