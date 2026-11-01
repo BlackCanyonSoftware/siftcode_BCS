@@ -1,10 +1,10 @@
 # SiftCode: Design
 
-SiftCode has no app UI. Its user-facing surfaces are the **terminal output** and the **HTML report**. This file defines both. The brand is defined in the `Brand Logos` project (`brands/siftcode/brand.toml`) and is the single source for logo, color, and type. Never retype a brand color, size, or font name here or in code; load the brand tokens. Current brand facts (from the generated `BRAND.md`): product brand "SiftCode", initials **SC**, typeface **Nunito**, brass mark with a two-tone/display wordmark that arrives at teal across "Code".
+SiftCode has no app UI. Its user-facing surfaces are the **terminal output** and the **HTML report**. This file defines both. The brand is defined in the `Brand Logos` project (`brands/siftcode/brand.toml`) and is the single source for logo, color, and type. Never retype a brand color, size, or font name here or in code; load the brand tokens. Current brand facts (from the generated `BRAND.md`, brandkit 1.49.0, 2026-11-01): product brand "SiftCode", initials **SC**, a brass mark with a two-tone/display wordmark that arrives at teal across "Code", and a typeface that the brand's Type section names (JetBrains Mono today). The typeface has already changed once when the brand was rebuilt, so it is never written into code or CSS: the face comes from the brand's `template/fonts.css`.
 
 Brand files in this repo:
 - `docs/brand/` holds the README set (`brandkit bundle siftcode docs/brand --set readme`): the light and dark README banners and `BUNDLE.json`. Verify with `brandkit check siftcode docs/brand --set readme`. Regenerate; never edit by hand.
-- The HTML report (Milestone 6) additionally needs the application set (tokens, font, UI icons including sun, moon, and info). It is bundled into the report build inputs then, not before.
+- The HTML report (Milestone 6) additionally needs the application set (tokens, `template/fonts.css` with `font/*.woff`, UI icons including sun, moon, and info). It is bundled into the report build inputs then, not before, because this repository has no CSS yet. When it does: the report takes its `@font-face` from `template/fonts.css` and embeds the `.woff` as a data URI so the report stays one self-contained file; no stylesheet or script names a font family itself; re-run `brandkit bundle` (and `brandkit check`) whenever the brand is rebuilt.
 - The brand has no tagline or domain set yet; the README must not invent one.
 
 ## 1. Audience and tone
@@ -45,7 +45,7 @@ Tokens come from the brand's `template/tokens.css` and `theme/theme.css` (light 
 |---|---|---|
 | Color roles | brand | `--ink`, `--accent`, `--mute`, `--logo`, `--brand`, `--page`, `--card`, `--line`, `--control`, `--on-brand` |
 | Status colors | brand | `--bad`/`--bad-bg`, `--warn`/`--warn-bg`, `--ok`/`--ok-bg`, `--on-bad` |
-| Type | brand | Nunito via `--font`, `--font-display`, `--mono`; sizes `--fs-xs` (12) to `--fs-3xl` (40) |
+| Type | brand | the brand's face via `--font`, `--font-display`, `--mono` (loaded from `template/fonts.css`, never a hand-written `font-family`); sizes `--fs-xs` (12) to `--fs-3xl` (40) |
 | Spacing | brand | `--s-1` (4) to `--s-8` (64) |
 | Radius | brand | `--r-sm`, `--r-md`, `--r-lg`, `--r-pill` |
 | Motion, breakpoints | brand | breakpoints from the brand's `layout.css`; 150 ms ease for expand/collapse, none under reduced motion |

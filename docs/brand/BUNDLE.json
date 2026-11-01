@@ -1,8 +1,8 @@
 {
   "brand": "siftcode",
   "files": {
-    "lockup/banner/lockup-horizontal-dark-banner.png": "ebc169215201b58dbc7823a488585c5a1563eb782c7164ab6ea33c2baaca3e34",
-    "lockup/banner/lockup-horizontal-light-banner.png": "4f426cbe8e6be29f0a9082ebb264794dc270a59230ea9e03560e380793a7d273"
+    "lockup/banner/lockup-horizontal-dark-banner.png": "02f13f35d8d86d97d6e923ed075fa65c09064e9654a865254717f15f0ecfa7ea",
+    "lockup/banner/lockup-horizontal-light-banner.png": "450a2a062485bf749176dfd53ab787820bb0d0bd2f30de3921f58864d6831379"
   },
   "note": "The readme set of this brand - the two images a repository's front page shows: the banner lockup, light and dark, for a <picture> block that follows the reader's own page colour. Every file with a hash of it. The folder names are part of it: a copy that renames or flattens them is a copy nothing written down describes. Export with: brandkit bundle siftcode <folder> --set readme. Check a copy with: brandkit check siftcode <folder> --set readme.",
   "set": "readme"

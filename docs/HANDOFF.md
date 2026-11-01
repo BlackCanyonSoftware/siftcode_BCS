@@ -59,6 +59,11 @@ None.
 - `brandkit` is not installed as a package; run it from the Brand Logos repo with
   `PYTHONPATH=src python -m brandkit ...`. Verify the bundle with
   `brandkit check siftcode <repo>/docs/brand --set readme`.
+- Brand re-sync (2026-11-01, brandkit 1.49.0): the typeface changed to JetBrains Mono. The README
+  banners in `docs/brand/` were re-bundled and verified (`brandkit check`). There is no CSS in this
+  repo yet, so nothing named a font; M6 must load `template/fonts.css` and ship the font beside it
+  (see DESIGN.md). After any brand rebuild: `brandkit check siftcode docs/brand --set readme`, and
+  re-bundle if it reports drift.
 - A local hook may require the shell command to start with `timeout N` for long-running commands.
 
 ## Placeholders and stubs
