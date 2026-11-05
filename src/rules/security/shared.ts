@@ -5,25 +5,8 @@ import type {
   ValueFact,
 } from '../../languages/model/types.js';
 import { enclosingUnit } from '../shared.js';
-import type { StandardRef } from '../types.js';
 
-export const cwe = (id: number, title: string): StandardRef => ({
-  standard: 'MITRE Common Weakness Enumeration',
-  id: `CWE-${id}: ${title}`,
-  url: `https://cwe.mitre.org/data/definitions/${id}.html`,
-});
-
-export const owaspTop10 = (code: string, title: string, slug: string): StandardRef => ({
-  standard: 'OWASP Top 10 (2021)',
-  id: `${code}: ${title}`,
-  url: `https://owasp.org/Top10/${slug}/`,
-});
-
-export const cheatSheet = (title: string, slug: string): StandardRef => ({
-  standard: 'OWASP Cheat Sheet Series',
-  id: title,
-  url: `https://cheatsheetseries.owasp.org/cheatsheets/${slug}.html`,
-});
+export { cheatSheet, cwe, owaspTop10 } from '../standards.js';
 
 /** Lowercase letters and digits only, so `$queryRawUnsafe`, `query_raw_unsafe`, and `QueryRawUnsafe` match. */
 export function plain(name: string): string {
