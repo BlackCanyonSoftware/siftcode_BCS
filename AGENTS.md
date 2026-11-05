@@ -37,7 +37,7 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 - `src/languages/` registry, `grammars.json` (single source for grammar file names), parser,
   `model/` (the Code Model rules see, and the metric formulas), `extract.ts` (syntax tree to
   named functions), `measure.ts` (complexity, Halstead, nesting, lines: ADR 0005), `facts/` (imports, member
-  chains, classes: ADR 0006)
+  chains, classes, calls, named values, strings: ADR 0006, 0007)
 - `src/rules/` one file per rule (metadata, suggestion, check) + `index.ts` registry
 - `src/reporters/` text, JSON, Markdown, SARIF, `explain`
 - `src/git/` planned (M5): see `docs/ARCHITECTURE.md`
@@ -70,7 +70,9 @@ another module's internals.
 
 - **Never execute, import, or build the code being scanned.** Parse only. No network access in
   the scan path; no telemetry.
-- Never print a detected secret in full; redact it.
+- Never print a detected secret, not even partly: a finding names the variable or the kind of
+  credential only. Tests build credential-shaped strings at run time (never commit one: push
+  protection would block it).
 - No secrets in code, logs, or git history.
 - New dependencies: justify, verify exact package name and publisher, check the license is
   Apache-2.0-compatible (no GPL/AGPL in the shipped package), pin exactly, and record the reason

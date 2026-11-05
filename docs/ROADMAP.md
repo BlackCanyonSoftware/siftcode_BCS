@@ -4,8 +4,8 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M3 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2 awaits push.)
-- **Next:** M4 security, supply chain, and design documentation.
+- **Now:** M4 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2 and M3 await push.)
+- **Next:** M4a repository hygiene (supply chain and design documentation).
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
@@ -40,10 +40,17 @@ Exit: positive and negative fixtures per language; false-positive review on at l
 Stories: US-020 to US-022.
 Result: rules `SC-DES-001` (Law of Demeter), `SC-DES-002` (Service Locator), `SC-DES-003` (class has too many methods), `SC-DES-004` (class cohesion, LCOM4), `SC-DES-005` (module fan-out); imports, member chains, and class facts in the Code Model; thresholds calibrated on the Python standard library and ESLint; definitions and evidence in [ADR 0006](adr/0006-design-heuristics.md). The false-positive review covered JavaScript and Python on real code; C# only on fixtures and 26 small files (TD-8).
 
-### M4: Security, supply chain, and design documentation (M, planned)
-Goal: starter CWE rule set, NIST SSDF-aligned repo hygiene checks, and detection of design/architecture documentation (UML, C4, Mermaid, PlantUML, ADRs, ...).
-Exit: every security finding shows a CWE ID; secrets are redacted in output; manifest checks work for npm, pip, and NuGet; design-artifact detection recognizes every format listed in US-033 and reports "no design documentation" with a concrete suggestion; positive and negative fixtures for each rule.
-Stories: US-030 to US-033.
+### M4: Security rules (M, done: awaiting owner review and push)
+Goal: a starter set of CWE-mapped security checks.
+Exit: every security finding shows a CWE ID; credentials are never repeated in output; positive and negative fixtures for each rule in each language; calibrated on real code.
+Stories: US-030.
+Result: rules `SC-SEC-001` hardcoded credentials (CWE-798), `SC-SEC-002` SQL injection (CWE-89), `SC-SEC-003` command injection (CWE-78), `SC-SEC-004` dynamic code evaluation (CWE-95), `SC-SEC-005` weak hash or cipher (CWE-327, 328), `SC-SEC-006` insecure deserialization (CWE-502), `SC-SEC-007` disabled certificate verification (CWE-295). New facts: calls with argument shapes, named values, and long strings. CWE tags in SARIF; per-finding severity; TypeScript declaration files are skipped. Definitions and evidence in [ADR 0007](adr/0007-security-rules.md). The original M4 was split because security reads code facts while supply chain and design documentation read repository files.
+
+### M4a: Repository hygiene: supply chain and design documentation (M, planned)
+Goal: NIST SSDF-aligned repository checks and detection of design and architecture documentation (UML, C4, Mermaid, PlantUML, ADRs, ...).
+Scope: a repository-level rule type that sees the project's files (manifests, lockfiles, CI configuration, docs, diagrams), not only source files; lockfile, pinning, SBOM, CI, dependency-update and secret-scanning configuration checks for npm, pip, and NuGet; design-artifact detection for every format listed in US-033.
+Exit: manifest checks work for npm, pip, and NuGet; design-artifact detection recognizes every format listed in US-033 and reports "no design documentation" with a concrete suggestion; positive and negative fixtures for each rule; calibrated on real repositories.
+Stories: US-031 to US-033.
 
 ### M4b: Licenses and compliance (M, planned)
 Goal: detect whether a project has a license and which one, check it follows that license, and flag dependency licenses that conflict with it or are unknown.
@@ -99,6 +106,8 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | TD-6 | Measuring walks every token twice (per function and per file) and allocates a wrapper per syntax node: the benchmark went from 0.74 s to 2.18 s for 52k lines, still 14 times inside NFR-4. | Low | Single pass or a tree cursor if rules grow heavier |
 | TD-7 | The JSON report carries every measure of every function, pretty-printed: 45 MB for the 59,000 functions of the Python standard library. | Low | Add a compact or `--no-metrics` option if it matters |
 | TD-8 | C# was verified on fixtures and 26 small real files (generated converters, interfaces); no real C# application code was available for a false-positive review of the design rules. JavaScript and Python were reviewed on ESLint and the Python standard library. | Medium | Review on a real C# project; the owner can point to one |
-| TD-9 | tree-sitter-typescript 0.23.2 cannot parse labeled tuple elements named `object`, `string`, `number`, `readonly`, `keyof`, `infer`, `abstract`, `any`, `unknown`, or `never`. Such files are reported as "not checked". | Low | Upgrade the grammar when a fixed release exists |
+| TD-9 | tree-sitter-typescript 0.23.2 cannot parse labeled tuple elements named `object`, `string`, `number`, `readonly`, `keyof`, `infer`, `abstract`, `any`, `unknown`, or `never`. Such files are reported as "not checked". SiftCode hit this on its own source in both M3 and M4. | Low | Upgrade the grammar when a fixed release exists |
+| TD-12 | The security rules work from syntax only: "built from a variable" does not mean the variable holds untrusted input, and indirection is followed only through a name assigned earlier in the same function. No taint tracking. | Medium | Taint analysis track (deferred) |
+| TD-13 | `require('child_process').exec(x)` written inline, without binding the module to a name, is not detected by `SC-SEC-003`. Credential detection is a short list of formats, not a full secret scanner. | Low | Extend when real misses are found |
 | TD-10 | `SC-DES-002` (Service Locator) found nothing in about 2,200 real files (no false positives), but none of that code uses a DI container: detection is verified on fixtures only. | Low | Check against a real ASP.NET, NestJS, or Python DI project |
 | TD-11 | Design rules skip test code by path (`test` folders, `*.test.*`, `test_*`, ...); a scan started inside a tests folder cannot see the folder name. | Low | Revisit with per-path rule overrides (TD-5) |

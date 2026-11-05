@@ -78,7 +78,7 @@ Acceptance criteria use Given/When/Then. Full criteria for later milestones are 
 - **US-022** SRP heuristics: oversized classes/modules (members, methods, imports from many unrelated areas) flagged as "likely multiple responsibilities".
 
 ### Security and supply chain
-- **US-030** Starter CWE-mapped patterns: hardcoded secrets (CWE-798), SQL built from string concatenation (CWE-89), OS command from non-constant input (CWE-78), dynamic code evaluation (CWE-95), weak hash/crypto algorithms (CWE-327/328), insecure deserialization calls (CWE-502), disabled TLS verification (CWE-295). Each finding shows the CWE ID.
+- **US-030** (M4, done) Starter CWE-mapped patterns: hardcoded secrets (CWE-798), SQL built from string concatenation (CWE-89), OS command from non-constant input (CWE-78), dynamic code evaluation (CWE-95), weak hash/crypto algorithms (CWE-327/328), insecure deserialization calls (CWE-502), disabled TLS verification (CWE-295). Each finding shows the CWE ID.
 - **US-031** Repo hygiene (NIST SSDF-aligned): lockfile present, dependencies pinned, SBOM or generation step present, CI config present, secret-scanning/dependency-update config present.
 - **US-032** Dependency declaration smells: unpinned ranges (`*`, `latest`), git/URL dependencies, per ecosystem (npm, pip, NuGet).
 
@@ -146,7 +146,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 | 4 CERT secure coding | S | Later | CERT C/C++/Java/Perl; none are v1 languages. Python/C# analogues possible later. |
 | 4 NIST SSDF supply chain | C/R | Yes | M4: lockfile, pinning, SBOM, signed-commit signal (R). |
 | 4 Taint analysis | D | No | Later milestone with its own design. |
-| (added by owner) Design and architecture documentation: UML, C4, ADRs, diagrams | C (presence, kind, linkage); R (freshness); D (content vs. code) | Presence and freshness yes; content-vs-code later | M4 (US-033), M5 (US-034). Drift/conformance checks are a later track and depend on parsing text-based diagram formats. |
+| (added by owner) Design and architecture documentation: UML, C4, ADRs, diagrams | C (presence, kind, linkage); R (freshness); D (content vs. code) | Presence and freshness yes; content-vs-code later | M4a (US-033), M5 (US-034). Drift/conformance checks are a later track and depend on parsing text-based diagram formats. |
 | (added by owner) License presence, identification, adherence, and dependency license compatibility | C (files, manifests, lockfiles, installed packages) | Yes, as its own milestone | M4b (US-035 to US-037). Related to NIST SSDF supply-chain checks (US-031). Not legal advice. |
 | 5.1 SOLID / GRASP | S | Partial | SRP and ISP heuristics, DIP via IoC; others need type info. |
 | 5.2 Law of Demeter | S | Yes | M3 |
@@ -161,7 +161,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 - **NFR-1 Offline and private:** no network access during a scan, no telemetry. Source code never leaves the machine.
 - **NFR-2 Safe on untrusted code:** the scanned code is parsed, never executed, imported, or built. Limits on file size and parse time; symlinks are not followed outside the scan root.
 - **NFR-3 Deterministic:** the same input and config produce byte-identical JSON/SARIF (stable ordering, no timestamps in the finding data).
-- **NFR-4 Performance:** scan 50k lines across mixed languages in under 30 seconds on a typical laptop; memory bounded by streaming files, not holding every tree. Measured in M3 (with metrics and design facts): 52k lines in 3.0 s, about 107 MB peak (see ARCHITECTURE). Re-measure as rules are added.
+- **NFR-4 Performance:** scan 50k lines across mixed languages in under 30 seconds on a typical laptop; memory bounded by streaming files, not holding every tree. Measured in M4 (with metrics, design, and security facts): 52k lines in about 2.5 s, about 102 MB peak (see ARCHITECTURE). Re-measure as rules are added.
 - **NFR-5 Portability:** Windows, macOS, Linux; Node LTS; no native compilation required to install.
 - **NFR-6 Signal over noise:** every rule has a confidence level; rules that are heuristic default to `warning` or lower; a false-positive report is a bug.
 - **NFR-7 Accessible reports:** HTML report meets WCAG 2.2 AA (keyboard operable, contrast, no color-only meaning). Terminal output respects `NO_COLOR` and does not depend on emoji.

@@ -31,4 +31,10 @@ All notable user-visible changes are recorded here. The format follows
   into 3 or more groups that share no state, `SC-DES-005` module importing more than 25 modules.
   They skip test code, barrel files, and composition roots. The JSON report lists each class with
   its method, field, and cohesion figures.
+- Security rules, each mapped to a CWE entry, an OWASP Top 10 category, and an OWASP cheat sheet:
+  `SC-SEC-001` hardcoded credentials (never printed; known key formats are errors), `SC-SEC-002` SQL
+  injection, `SC-SEC-003` command injection, `SC-SEC-004` dynamic code evaluation, `SC-SEC-005`
+  weak hash or cipher, `SC-SEC-006` insecure deserialization, `SC-SEC-007` disabled certificate
+  verification. They skip test code. SARIF output tags each rule with its CWE.
+- TypeScript declaration files (`.d.ts`) are no longer parsed or reported as "not checked".
 - Apache-2.0 license.

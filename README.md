@@ -12,10 +12,10 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 3).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with ten rules for JavaScript/TypeScript, Python, and C#:
-> five code metrics and five design heuristics. More rules arrive in the next milestones; see the
-> [roadmap](docs/ROADMAP.md).
+> **Status: early development (Milestone 4).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF) work, with seventeen rules for JavaScript/TypeScript, Python,
+> and C#: five code metrics, five design heuristics, and seven security checks. More rules arrive in
+> the next milestones; see the [roadmap](docs/ROADMAP.md).
 
 ## Quick start
 
@@ -79,11 +79,24 @@ rationale, the standards behind it, and an example.
 | `SC-DES-003` | A class has too many methods | `maxMethods` (25) | info |
 | `SC-DES-004` | A class holds groups of methods that share no state | `minMethods` (6), `minGroups` (3) | info |
 | `SC-DES-005` | A module imports too many other modules | `maxImports` (25) | info |
+| `SC-SEC-001` | A credential is written into the code (CWE-798) | `minLength` (8) | warning; error for a known key format |
+| `SC-SEC-002` | An SQL statement is built from a variable (CWE-89) | none | warning |
+| `SC-SEC-003` | An OS command is built from a variable (CWE-78) | none | warning |
+| `SC-SEC-004` | Code is built and run at run time (CWE-95) | none | warning |
+| `SC-SEC-005` | A weak hash or cipher is used (CWE-327, CWE-328) | none | warning |
+| `SC-SEC-006` | A deserializer that can run code is used (CWE-502) | none | warning |
+| `SC-SEC-007` | Certificate verification is switched off (CWE-295) | none | warning |
 | `SC-MET-001` | Function or method is too long | `maxLines` (50) | info |
 | `SC-MET-002` | Cyclomatic complexity is too high | `maxComplexity` (10) | warning |
 | `SC-MET-003` | Too many parameters | `maxParameters` (5) | info |
 | `SC-MET-004` | Control structures nested too deeply | `maxDepth` (4) | info |
 | `SC-MET-005` | Low Maintainability Index (0 to 100) | `minIndex` (20) | info |
+
+The security rules (`SC-SEC-*`) look for well-known risky patterns in the syntax; they cannot tell
+whether a value comes from an untrusted source, so they report at `warning`, skip test code, and
+never print a credential they find (only where it is). SARIF output carries the CWE as the
+`external/cwe/...` tag that GitHub code scanning displays. TypeScript declaration files (`.d.ts`)
+are skipped.
 
 The design rules (`SC-DES-*`) are heuristics: they read the shape of the code, not its types, so
 they skip test code and a few idioms (see [ADR 0006](docs/adr/0006-design-heuristics.md)) and report
