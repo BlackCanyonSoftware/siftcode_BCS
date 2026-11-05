@@ -96,7 +96,7 @@ describe('SC-MET-001 function length (US-010 family, US-040)', () => {
   it('describes the rule with its standards, rationale, and suggestion (US-040)', async () => {
     const result = await scan(negative);
 
-    const [rule] = result.rules;
+    const rule = result.rules.find((candidate) => candidate.id === RULE);
     expect(rule?.id).toBe(RULE);
     expect(rule?.standards.length).toBeGreaterThan(0);
     expect(rule?.rationale).not.toBe('');

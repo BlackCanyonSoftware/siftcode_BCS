@@ -27,6 +27,11 @@ describe('scan (US-001, US-071)', () => {
     const result = await scan(fixture('sample'));
 
     expect(result.rules.map((rule) => rule.id)).toEqual([
+      'SC-DES-001',
+      'SC-DES-002',
+      'SC-DES-003',
+      'SC-DES-004',
+      'SC-DES-005',
       'SC-MET-001',
       'SC-MET-002',
       'SC-MET-003',

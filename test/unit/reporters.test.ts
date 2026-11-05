@@ -62,6 +62,11 @@ describe('JSON report (US-004)', () => {
     expect(report.summary.findings).toEqual({ error: 0, warning: 0, info: 11, note: 0 });
     expect(report.summary.languages).toEqual({ 'C#': 1, JavaScript: 1, Python: 1, TypeScript: 2 });
     expect(report.rules.map((r) => r.id)).toEqual([
+      'SC-DES-001',
+      'SC-DES-002',
+      'SC-DES-003',
+      'SC-DES-004',
+      'SC-DES-005',
       'SC-MET-001',
       'SC-MET-002',
       'SC-MET-003',
@@ -91,6 +96,7 @@ describe('metrics in the JSON report (US-010 to US-012)', () => {
           language: string;
           lines: number;
           halstead: Record<string, number>;
+          classes: Record<string, unknown>[];
           units: Record<string, unknown>[];
         }[];
       };
@@ -116,6 +122,18 @@ describe('metrics in the JSON report (US-010 to US-012)', () => {
       'volume',
       'difficulty',
       'effort',
+    ]);
+    // Cart has two methods that use no class state, so there is no cohesion verdict.
+    expect(longPy?.classes).toEqual([
+      {
+        name: 'Cart',
+        kind: 'class',
+        startLine: 9,
+        endLine: 18,
+        methods: 2,
+        fields: 0,
+        cohesion: { methods: 0, components: 0 },
+      },
     ]);
     expect(longPy?.units.map((u) => u.name)).toEqual([
       'long_function',
@@ -210,16 +228,22 @@ describe('SARIF report (US-003)', () => {
     expect(run?.tool.driver.name).toBe('SiftCode');
     expect(run?.tool.driver.version).toBe('9.9.9');
     expect(run?.tool.driver.rules.map((r) => r.id)).toEqual([
+      'SC-DES-001',
+      'SC-DES-002',
+      'SC-DES-003',
+      'SC-DES-004',
+      'SC-DES-005',
       'SC-MET-001',
       'SC-MET-002',
       'SC-MET-003',
       'SC-MET-004',
       'SC-MET-005',
     ]);
-    expect(run?.tool.driver.rules[0]?.help.text).toContain('Extract cohesive blocks');
+    const lengthRule = run?.tool.driver.rules.find((rule) => rule.id === 'SC-MET-001');
+    expect(lengthRule?.help.text).toContain('Extract cohesive blocks');
     expect(run?.results).toHaveLength(11);
     for (const result of run?.results ?? []) {
-      expect(result.ruleIndex).toBe(0);
+      expect(run?.tool.driver.rules[result.ruleIndex]?.id).toBe('SC-MET-001');
       expect(result.level).toBe('note');
       expect(result.partialFingerprints['siftcodeFingerprint/v1']).toMatch(/^[0-9a-f]{32}$/);
       expect(result.locations[0]?.physicalLocation.region.startLine).toBeGreaterThan(0);

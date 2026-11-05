@@ -235,7 +235,7 @@ describe('explain command (US-041)', () => {
 
     expect(code).toBe(EXIT_USAGE);
     expect(stderr).toContain(
-      'Unknown rule "SC-NOPE-1". Known rules: SC-MET-001, SC-MET-002, SC-MET-003, SC-MET-004, SC-MET-005.',
+      'Unknown rule "SC-NOPE-1". Known rules: SC-DES-001, SC-DES-002, SC-DES-003, SC-DES-004, SC-DES-005, SC-MET-001, SC-MET-002, SC-MET-003, SC-MET-004, SC-MET-005.',
     );
   });
 
