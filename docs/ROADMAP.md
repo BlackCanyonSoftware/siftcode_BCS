@@ -4,8 +4,8 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M4 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2 and M3 await push.)
-- **Next:** M4a repository hygiene (supply chain and design documentation).
+- **Now:** M4a is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2, M3, M4, and M4a await push.)
+- **Next:** M4b licenses and compliance.
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
@@ -46,11 +46,12 @@ Exit: every security finding shows a CWE ID; credentials are never repeated in o
 Stories: US-030.
 Result: rules `SC-SEC-001` hardcoded credentials (CWE-798), `SC-SEC-002` SQL injection (CWE-89), `SC-SEC-003` command injection (CWE-78), `SC-SEC-004` dynamic code evaluation (CWE-95), `SC-SEC-005` weak hash or cipher (CWE-327, 328), `SC-SEC-006` insecure deserialization (CWE-502), `SC-SEC-007` disabled certificate verification (CWE-295). New facts: calls with argument shapes, named values, and long strings. CWE tags in SARIF; per-finding severity; TypeScript declaration files are skipped. Definitions and evidence in [ADR 0007](adr/0007-security-rules.md). The original M4 was split because security reads code facts while supply chain and design documentation read repository files.
 
-### M4a: Repository hygiene: supply chain and design documentation (M, planned)
+### M4a: Repository hygiene: supply chain and design documentation (M, done: awaiting owner review and push)
 Goal: NIST SSDF-aligned repository checks and detection of design and architecture documentation (UML, C4, Mermaid, PlantUML, ADRs, ...).
 Scope: a repository-level rule type that sees the project's files (manifests, lockfiles, CI configuration, docs, diagrams), not only source files; lockfile, pinning, SBOM, CI, dependency-update and secret-scanning configuration checks for npm, pip, and NuGet; design-artifact detection for every format listed in US-033.
 Exit: manifest checks work for npm, pip, and NuGet; design-artifact detection recognizes every format listed in US-033 and reports "no design documentation" with a concrete suggestion; positive and negative fixtures for each rule; calibrated on real repositories.
 Stories: US-031 to US-033.
+Result: a repository-level rule type (`defineRepoRule`, `RepoView`); rules `SC-SUP-001` lockfile, `SC-SUP-002` floating versions, `SC-SUP-003` git or URL dependencies, `SC-SUP-004` CI, `SC-SUP-005` dependency updates, `SC-SUP-006` SBOM, `SC-SUP-007` secret scanning; `SC-DOC-001` to `SC-DOC-004` design documentation (none, no diagrams, no decision records, unreferenced diagrams). Manifests for npm, Python, and NuGet are read without new dependencies. Calibrated on 19 local repositories. Definitions and evidence in [ADR 0008](adr/0008-repository-hygiene.md). `npm run sbom` added; `SC-SUP-007` is switched off for this repository (GitHub push protection).
 
 ### M4b: Licenses and compliance (M, planned)
 Goal: detect whether a project has a license and which one, check it follows that license, and flag dependency licenses that conflict with it or are unknown.
@@ -110,4 +111,6 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | TD-12 | The security rules work from syntax only: "built from a variable" does not mean the variable holds untrusted input, and indirection is followed only through a name assigned earlier in the same function. No taint tracking. | Medium | Taint analysis track (deferred) |
 | TD-13 | `require('child_process').exec(x)` written inline, without binding the module to a name, is not detected by `SC-SEC-003`. Credential detection is a short list of formats, not a full secret scanner. | Low | Extend when real misses are found |
 | TD-10 | `SC-DES-002` (Service Locator) found nothing in about 2,200 real files (no false positives), but none of that code uses a DI container: detection is verified on fixtures only. | Low | Check against a real ASP.NET, NestJS, or Python DI project |
+| TD-14 | `pyproject.toml` and `Pipfile` are read with a narrow line reader, not a TOML parser: dependency arrays and Poetry/Pipenv tables only. An unusual layout shows fewer dependencies, never invented ones. | Low | Add a TOML parser if real misses are found |
+| TD-15 | Whole-project repository checks (CI, updates, SBOM, secret scanning, design documentation) run only at the top of a Git repository. A folder that is not a repository gets none, and agent working copies inside a project (such as `.claude/worktrees/`) are scanned like any other folder. SiftCode also cannot see platform settings (GitHub secret scanning, branch protection). | Low | Revisit with per-path overrides (TD-5) |
 | TD-11 | Design rules skip test code by path (`test` folders, `*.test.*`, `test_*`, ...); a scan started inside a tests folder cannot see the folder name. | Low | Revisit with per-path rule overrides (TD-5) |

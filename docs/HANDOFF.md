@@ -5,24 +5,28 @@ Pick-up-here file. Read this first, update it at the end of every session.
 ## Current state (2026-11-05)
 
 - **Milestones 0 and 1: done, pushed, CI green** (Node 24 and 26, Ubuntu and Windows).
-- **Milestones 2, 3, and 4: built and verified locally; awaiting owner review and push** (M2's and
-  M3's commits are not pushed yet; M4 sits on top of them). CI has not run on any of them.
+- **Milestones 2, 3, 4, and 4a: built and verified locally; awaiting owner review and push**
+  (M2's and M3's commits are not pushed yet; M4 and M4a sit on top of them). CI has not run on any
+  of them.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
-- Seventeen rules. Metrics `SC-MET-001` to `005`; design `SC-DES-001` to `005`; security
-  `SC-SEC-001` to `007` (hardcoded credentials, SQL injection, command injection, dynamic code
-  evaluation, weak crypto, insecure deserialization, disabled TLS verification), each mapped to a
-  CWE entry. All limits are rule options. Design and security rules skip test code; a recognizable
-  credential format is reported even in tests.
-- A rule hit can set its own severity (`error` for a known key format, `warning` for a guess); a
-  severity in the config file overrides it.
-- SARIF tags each rule with its CWE (`external/cwe/cwe-798`); the JSON report has a `metrics`
-  section with every file, class, and function.
+- 28 rules. Metrics `SC-MET-001` to `005`; design `SC-DES-001` to `005`; security
+  `SC-SEC-001` to `007` (each mapped to a CWE entry); supply chain `SC-SUP-001` to `007`;
+  design documentation `SC-DOC-001` to `004` (ADR 0008). All limits are rule options. Design and
+  security rules skip test code; a recognizable credential format is reported even in tests.
+- **Repository-level rules (M4a):** `defineRepoRule` gives a rule a `RepoView` (every non-ignored
+  path, cached size-capped `read`, source-file count, whether the scan root holds `.git`). They run
+  once after the file loop and their hits carry a `path`. Manifest checks run on any folder; CI,
+  update, SBOM, secret-scanning, and design-documentation checks only at a Git repository root.
+- A rule hit can set its own severity; a severity in the config file overrides it.
+- SARIF tags each rule with its CWE; the JSON report has a `metrics` section.
 - TypeScript declaration files (`.d.ts`) are skipped.
-- Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0007. License Apache-2.0. Brand
+- Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0008. License Apache-2.0. Brand
   re-synced 2026-11-01 (typeface JetBrains Mono).
-- Dogfood: `node dist/cli/main.js scan .` is clean (88 files, all seventeen rules). Keep it so.
+- Dogfood: `node dist/cli/main.js scan .` is clean (98 files, all 28 rules; `SC-SUP-007` is switched
+  off in `siftcode.config.json` because GitHub push protection is on, and `npm run sbom` satisfies
+  `SC-SUP-006`). Keep it so.
 
 ## Work in progress
 
@@ -30,26 +34,18 @@ None.
 
 ## Next steps
 
-1. Owner reviews M2, M3, and M4, pushes, and confirms CI is green.
-2. **Start M4a: repository hygiene** (US-031 supply chain, US-032 dependency declaration smells,
-   US-033 design documentation presence). It needs a new kind of rule that sees the *repository*,
-   not one source file. Suggested design:
-   - Discovery currently keeps only supported source files and counts the rest as "unsupported".
-     Keep a list of **all** non-ignored file paths (relative, with sizes) in `Discovery`, and give
-     rules a `RepoView` (`files`, `read(path)` with a size limit, and whether the scan root is a
-     repository root, i.e. has `.git`).
-   - Add `defineRepoRule` next to `defineRule`; its hits carry a `path` (the file, or the folder).
-     `ConfiguredRule` gains an optional repository check. Per-hit severity already exists, so
-     "small repository: `note`, otherwise `warning`" (US-033) needs no new plumbing.
-   - Parse manifests with plain JSON/TOML/XML/line parsing (no new dependency unless justified):
-     `package.json` + lockfiles, `requirements*.txt`/`pyproject.toml`/`Pipfile`, `*.csproj`/
-     `packages.config`/`Directory.Packages.props`. Evaluate each manifest folder; evaluate CI,
-     Dependabot/Renovate, secret-scanning and SBOM only when the scan root is a repository root.
-   - Design documentation: detect by file name, extension, and folder (list in US-033), plus
-     fenced `mermaid` blocks in Markdown (read only Markdown files, size-limited).
-   - Calibrate on real repositories: this repo, the Brand Logos repo (Python), and any open-source
-     checkout the owner allows. Re-run the false-positive review before choosing defaults.
-3. Start M4a in a fresh session; this file carries the context.
+1. Owner reviews M2, M3, M4, and M4a, pushes, and confirms CI is green. (M4a added no CI step;
+   attaching `npm run sbom` output to releases belongs to M7.)
+2. **Start M4b: licenses and compliance** (US-035 to US-037; scope in `docs/ROADMAP.md`). It can
+   reuse the M4a machinery: `defineRepoRule`, `readManifests` (`src/rules/supply-chain/manifests.ts`
+   already lists every dependency per ecosystem), and the standards builders in
+   `src/rules/standards.ts`. New work: bundle the SPDX license list as data (verify its license and
+   exact source first), identify license files by normalized-text similarity, read dependency
+   licenses offline (lockfiles, installed `node_modules`/site-packages/NuGet cache; "unknown" when
+   absent), and a versioned compatibility table with citations that **the owner reviews before it
+   ships** (PRD R8). Every finding carries the not-legal-advice note.
+3. Then M5 (Git hotspots, design-doc freshness; `detectDesignArtifacts` in
+   `src/rules/documentation/detect.ts` already lists the design documents to date-check).
 
 ## Open questions for the owner
 
@@ -76,6 +72,14 @@ None.
   reports such files as "not checked". This bit twice (M3 and M4): do not use those labels in this
   repo's TypeScript (`[field: string, name: string]`, not `[object: string, ...]`), or dogfood
   silently skips the file.
+- **Shell escaping eats backslashes.** A `node -e '...'` or `sed` command with regexes lost every
+  `\s`/`\w` in M4a and wrote broken code. Write the edit script to the scratchpad with the Write
+  tool, or use the Edit tool.
+- **Chain commits and checks with care:** `a; b && git commit` commits even when `b` is a grep that
+  hides a failing test run. Check test output before committing (M4a committed a broken registry
+  order once and fixed it in the next commit).
+- **Keep `ALL_RULES` in id order** (a test checks it); tests derive the rule list from it, so
+  adding a rule needs no test edit for the list.
 - **Never run `sed` with `\|` or alternations on regex-heavy source.** In basic regex `\|` is
   alternation and corrupted a rule file in M4 (the tests caught it). Use a small Node script with
   exact string replacement that throws if the text is missing, or the Edit tool.
@@ -118,6 +122,10 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-05, session 1 (continued):** Milestone 4a (repository hygiene). Added the repository-level
+  rule type, manifest reading for npm, Python, and NuGet, seven supply-chain rules and four
+  design-documentation rules, and `npm run sbom`. Calibrated on 19 local repositories (ADR 0008);
+  dogfood caught complexity in the TOML reader (split into small functions). 645 unit tests.
 - **2026-11-05, session 1 (continued):** Milestone 4 (security rules). Split the original M4: this
   session built US-030; the repository-level checks are now M4a. Built calls, named values, and
   string facts; per-hit severity; seven CWE-mapped rules; CWE tags in SARIF; skipped `.d.ts` files.

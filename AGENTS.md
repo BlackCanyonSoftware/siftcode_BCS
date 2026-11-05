@@ -44,8 +44,10 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 - `scripts/` build helpers; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored
 - `test/unit`, `test/e2e`, `test/helpers`, `test/fixtures/rules/<rule-id>/{positive,negative}`
 
-Adding a rule: new file under `src/rules/<area>/`, register it in `src/rules/index.ts`, add
-positive and negative fixtures for every language it covers, and tests. See CONTRIBUTING.md.
+Adding a rule: new file under `src/rules/<area>/`, register it in `src/rules/index.ts` (keep the
+list in id order), add positive and negative fixtures for every language it covers, and tests. See
+CONTRIBUTING.md. A rule about the project rather than one file (manifests, CI, documentation) uses
+`defineRepoRule` and the `RepoView` it receives (ADR 0008).
 
 Dependency direction: `cli → core → {discovery, languages, rules, git, reporters}`; `languages`
 and `reporters` never import `rules`. A folder exposes a small public surface; do not import

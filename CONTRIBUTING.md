@@ -63,7 +63,7 @@ covers, plus tests for both. Rules see the language-neutral `CodeFile`, never tr
 a rule needs more than the Code Model offers, extend the model and its extraction for all
 languages, with tests. A new measurement is defined in [ADR 0005](docs/adr/0005-metric-definitions.md)
 style first, implemented identically for every language, and checked with the shared fixtures in
-`test/fixtures/metrics`. Design and security rules read `file.facts` and `file.classes` (ADR 0006, 0007) and skip test code with `isTestFile`. A rule's hit may set its own `severity` (the config file still wins). A security rule must never put a secret in a message or a `key`.
+`test/fixtures/metrics`. Design and security rules read `file.facts` and `file.classes` (ADR 0006, 0007) and skip test code with `isTestFile`. A rule's hit may set its own `severity` (the config file still wins). A security rule must never put a secret in a message or a `key`. A rule that reads the project instead of one file (manifests, lockfiles, CI, documentation) uses `defineRepoRule` and the `RepoView` it is given (ADR 0008); test it with a temporary project that contains a `.git` folder when it only applies at a repository root.
 Check new rules against real code (for example ESLint's `lib` folder or
 Python's standard library) before choosing defaults. `siftcode explain <rule-id>` and every report
 read the same `meta`.

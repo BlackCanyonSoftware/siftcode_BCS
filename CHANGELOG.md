@@ -37,4 +37,15 @@ All notable user-visible changes are recorded here. The format follows
   weak hash or cipher, `SC-SEC-006` insecure deserialization, `SC-SEC-007` disabled certificate
   verification. They skip test code. SARIF output tags each rule with its CWE.
 - TypeScript declaration files (`.d.ts`) are no longer parsed or reported as "not checked".
+- Supply-chain rules, which read the project's manifests and files: `SC-SUP-001` dependencies with
+  no lockfile, `SC-SUP-002` a dependency that accepts any version, `SC-SUP-003` a dependency from a
+  git repository or web address (npm, Python, and NuGet), `SC-SUP-004` no CI configuration,
+  `SC-SUP-005` no Dependabot or Renovate, `SC-SUP-006` no SBOM, `SC-SUP-007` no secret scanner.
+  The last four only run when the scanned folder is the top of a Git repository.
+- Design-documentation rules: `SC-DOC-001` no design or architecture documentation (a warning from
+  20 source files, otherwise a note), `SC-DOC-002` documents but no diagrams, `SC-DOC-003` diagrams
+  but no decision records, `SC-DOC-004` a diagram no document mentions. Recognizes architecture and
+  design documents, ADRs, Mermaid, PlantUML, D2, DBML, Structurizr, draw.io, Excalidraw, Visio, UML
+  and ArchiMate files, diagram images, fenced diagram blocks in Markdown, and OpenAPI/AsyncAPI.
+- `npm run sbom` writes a CycloneDX bill of materials for the production dependencies.
 - Apache-2.0 license.

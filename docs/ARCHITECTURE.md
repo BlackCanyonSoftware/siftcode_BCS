@@ -52,6 +52,8 @@ Key idea: **languages produce a Code Model, rules consume a Code Model.** A rule
 
 Beyond measurements, the Code Model carries **facts** that rules read: per-file imports, member-access chains, calls with the shape of their arguments, named values, and long string literals (all dropped after the rules have run), and per-class method and field counts and cohesion (kept in the JSON report). See [ADR 0006](adr/0006-design-heuristics.md) and [ADR 0007](adr/0007-security-rules.md).
 
+Repository-level rules (`defineRepoRule`) read a `RepoView` instead of a file: every non-ignored path, a size-capped cached `read(path)`, the source-file count, and whether the scan root is the top of a Git repository. They run once per folder scan, after the file rules, and their hits name the file they are about. See [ADR 0008](adr/0008-repository-hygiene.md).
+
 ## 4. Folder structure and module boundaries
 
 Organized by feature, not file type. Each folder exposes a small public surface through its `index.ts`; nothing imports another module's internals.
@@ -72,8 +74,8 @@ src/
     metrics/        cyclomatic, halstead, maintainability
     design/         demeter, service-locator, srp
     security/       CWE pattern rules
-    supply-chain/   lockfile, pinning, SBOM, CI signals
-    documentation/  design/architecture artifact detection (diagrams, ADRs), freshness
+    supply-chain/   manifests (npm, Python, NuGet), lockfile, pinning, SBOM, CI, update and secret-scanning signals (ADR 0008)
+    documentation/  design/architecture artifact detection (diagrams, ADRs); freshness arrives in M5
     licenses/       license detection, adherence, dependency license compatibility (M4b; uses
                     bundled SPDX data and a versioned compatibility table)
     readiness/      testing-readiness hints

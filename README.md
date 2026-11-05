@@ -12,10 +12,11 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 4).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with seventeen rules for JavaScript/TypeScript, Python,
-> and C#: five code metrics, five design heuristics, and seven security checks. More rules arrive in
-> the next milestones; see the [roadmap](docs/ROADMAP.md).
+> **Status: early development (Milestone 4a).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF) work, with 28 rules for JavaScript/TypeScript, Python, and C#:
+> five code metrics, five design heuristics, seven security checks, seven supply-chain checks, and
+> four design-documentation checks. More rules arrive in the next milestones; see the
+> [roadmap](docs/ROADMAP.md).
 
 ## Quick start
 
@@ -79,6 +80,10 @@ rationale, the standards behind it, and an example.
 | `SC-DES-003` | A class has too many methods | `maxMethods` (25) | info |
 | `SC-DES-004` | A class holds groups of methods that share no state | `minMethods` (6), `minGroups` (3) | info |
 | `SC-DES-005` | A module imports too many other modules | `maxImports` (25) | info |
+| `SC-DOC-001` | No design or architecture documentation at all | `minSourceFiles` (20) | warning from 20 source files, otherwise note |
+| `SC-DOC-002` | Design documents but no diagram | `minSourceFiles` (20) | info |
+| `SC-DOC-003` | Diagrams but no architecture decision records | `minSourceFiles` (20) | note |
+| `SC-DOC-004` | A diagram file that no document mentions | none | note |
 | `SC-SEC-001` | A credential is written into the code (CWE-798) | `minLength` (8) | warning; error for a known key format |
 | `SC-SEC-002` | An SQL statement is built from a variable (CWE-89) | none | warning |
 | `SC-SEC-003` | An OS command is built from a variable (CWE-78) | none | warning |
@@ -91,12 +96,30 @@ rationale, the standards behind it, and an example.
 | `SC-MET-003` | Too many parameters | `maxParameters` (5) | info |
 | `SC-MET-004` | Control structures nested too deeply | `maxDepth` (4) | info |
 | `SC-MET-005` | Low Maintainability Index (0 to 100) | `minIndex` (20) | info |
+| `SC-SUP-001` | Dependencies with no lockfile | none | warning; info for `pyproject.toml` and NuGet |
+| `SC-SUP-002` | A dependency accepts any version (`*`, `latest`, no version) | none | warning |
+| `SC-SUP-003` | A dependency comes from a git repository or web address | none | warning; info if pinned to a commit |
+| `SC-SUP-004` | No CI configuration | none | info |
+| `SC-SUP-005` | Dependencies but no Dependabot or Renovate configuration | none | info |
+| `SC-SUP-006` | Dependencies but no SBOM or SBOM generation step | none | note |
+| `SC-SUP-007` | No secret scanner configured | none | note |
 
 The security rules (`SC-SEC-*`) look for well-known risky patterns in the syntax; they cannot tell
 whether a value comes from an untrusted source, so they report at `warning`, skip test code, and
 never print a credential they find (only where it is). SARIF output carries the CWE as the
 `external/cwe/...` tag that GitHub code scanning displays. TypeScript declaration files (`.d.ts`)
 are skipped.
+
+The supply-chain and documentation rules (`SC-SUP-*`, `SC-DOC-*`) read the project's files instead
+of its code: package manifests (`package.json`, `requirements*.txt`, `pyproject.toml`, `Pipfile`,
+`*.csproj`), lockfiles, CI configuration, Markdown, and diagram files. The manifest checks
+(`SC-SUP-001` to `003`) run on every manifest found; the rest only run when you scan the top of a
+Git repository (a folder holding `.git`), because scanning a subfolder cannot tell whether the
+project as a whole has CI or documentation. Design documentation is found by file and folder names
+and fenced diagram blocks (Mermaid, PlantUML, D2, draw.io, ADRs, C4, OpenAPI, and more); see
+[ADR 0008](docs/adr/0008-repository-hygiene.md). `SC-SUP-006` and `SC-SUP-007` cannot see settings
+kept on the hosting platform (such as GitHub secret scanning); switch a rule off with
+`"SC-SUP-007": { "enabled": false }`.
 
 The design rules (`SC-DES-*`) are heuristics: they read the shape of the code, not its types, so
 they skip test code and a few idioms (see [ADR 0006](docs/adr/0006-design-heuristics.md)) and report
