@@ -47,6 +47,12 @@ export interface RuleHit {
    * fingerprint survives code moving around the file.
    */
   readonly key: string;
+  /**
+   * Overrides the rule's default severity for this hit, for a rule whose findings differ in
+   * seriousness (a secret in a known token format versus a guess from a variable name). A severity
+   * set in the config file still wins.
+   */
+  readonly severity?: Severity;
 }
 
 export type FileCheck = (file: AnalyzedFile) => readonly RuleHit[];

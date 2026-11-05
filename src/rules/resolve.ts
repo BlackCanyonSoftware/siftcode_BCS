@@ -3,10 +3,11 @@ import { UsageError } from '../core/errors.js';
 import type { Severity } from '../core/severity.js';
 import type { FileCheck, RuleDefinition, RuleMeta } from './types.js';
 
-/** A rule that is switched on, with its effective severity and validated options bound in. */
+/** A rule that is switched on, with the severity the config gave it (if any) and validated options bound in. */
 export interface ConfiguredRule {
   readonly meta: RuleMeta;
-  readonly severity: Severity;
+  /** Set when the config file names a severity for the rule; it beats the rule's and a hit's own. */
+  readonly severityOverride?: Severity;
   readonly check: FileCheck;
 }
 
@@ -35,7 +36,7 @@ export function resolveRules(
     return [
       {
         meta: rule.meta,
-        severity: setting?.severity ?? rule.meta.defaultSeverity,
+        ...(setting?.severity === undefined ? {} : { severityOverride: setting.severity }),
         check: rule.configure(setting?.options ?? {}),
       },
     ];

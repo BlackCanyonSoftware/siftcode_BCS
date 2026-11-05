@@ -34,7 +34,7 @@ export function createFinding(
   const identity = [rule.meta.id, path, hit.key, occurrence].join('\n');
   return {
     ruleId: rule.meta.id,
-    severity: rule.severity,
+    severity: rule.severityOverride ?? hit.severity ?? rule.meta.defaultSeverity,
     confidence: rule.meta.confidence,
     path,
     startLine: hit.startLine,

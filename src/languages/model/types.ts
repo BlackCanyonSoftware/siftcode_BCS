@@ -30,6 +30,73 @@ export interface AnalyzedFile extends CodeFile {
 export interface FileFacts {
   readonly imports: readonly ImportFact[];
   readonly chains: readonly MemberChain[];
+  /** Every function call and object creation, with the shape of its arguments. */
+  readonly calls: readonly CallFact[];
+  /** Every place a name is given a value: declarations, assignments, object entries, keyword arguments. */
+  readonly namedValues: readonly NamedValueFact[];
+  /** String literals of at least 16 characters (shorter ones cannot hold what rules look for). */
+  readonly strings: readonly StringFact[];
+}
+
+export type ValueKind =
+  | 'string' // a constant string, however it is written (also `"a" + "b"`)
+  | 'dynamic-string' // a string built from something not constant: `"a" + x`, `f"a{x}"`, `"a%s" % x`
+  | 'number'
+  | 'boolean'
+  | 'null'
+  | 'name' // an identifier or dotted name: `x`, `ssl.CERT_NONE`
+  | 'object' // an object or dictionary literal
+  | 'other';
+
+/** The shape of an expression, as far as rules need it. Never the whole expression tree. */
+export interface ValueFact {
+  readonly kind: ValueKind;
+  /**
+   * For a `string`, its content; for a `dynamic-string`, the constant parts joined; for any other
+   * kind, the source text. Truncated.
+   */
+  readonly text: string;
+  /** Entries of an object or dictionary literal whose keys are plain names or strings. */
+  readonly props?: readonly PropFact[];
+}
+
+export interface PropFact {
+  readonly key: string;
+  readonly value: ValueFact;
+}
+
+export interface ArgumentFact {
+  /** The keyword or named-argument name (`shell` in `run(cmd, shell=True)`), if it has one. */
+  readonly name?: string;
+  readonly value: ValueFact;
+}
+
+export interface CallFact {
+  /** `os.system`, `child_process.exec`, `eval`; `…` stands for a part that is not a plain name. */
+  readonly callee: string;
+  /** The last part: `system`, `exec`, `eval`. For `new Foo()`, `Foo`. */
+  readonly name: string;
+  /** Everything before the last part: `os`, `child_process`, or '' for a bare call. */
+  readonly receiver: string;
+  /** True for `new Foo(...)` and `new Foo`. */
+  readonly isNew: boolean;
+  readonly args: readonly ArgumentFact[];
+  readonly line: number;
+}
+
+export interface NamedValueFact {
+  /** The full dotted name that receives the value: `password`, `this.apiKey`, `process.env.X`. */
+  readonly target: string;
+  /** The last part of `target`. */
+  readonly name: string;
+  readonly value: ValueFact;
+  readonly line: number;
+}
+
+export interface StringFact {
+  /** The content without quotes, truncated. */
+  readonly value: string;
+  readonly line: number;
 }
 
 /** One module a file depends on. */

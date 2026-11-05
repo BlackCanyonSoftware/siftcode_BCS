@@ -72,7 +72,12 @@ function specifierBinding(specifier: Node): string[] {
 
 /** `const a = require('x')` and `const { a, b: c } = require('x')`. */
 function requireBindings(call: Node): string[] {
-  const declarator = call.parent;
+  // `const exec = require('child_process').exec` binds a member of the module: same module, so the
+  // name it introduces counts as coming from it.
+  const member = call.parent;
+  const reached =
+    member?.type === 'member_expression' && member.childForFieldName('object')?.id === call.id;
+  const declarator = reached ? member.parent : call.parent;
   const target =
     declarator?.type === 'variable_declarator' ? declarator.childForFieldName('name') : null;
   if (!target) {
