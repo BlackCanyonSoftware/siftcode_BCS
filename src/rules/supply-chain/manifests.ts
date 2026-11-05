@@ -1,0 +1,301 @@
+import { posix } from 'node:path';
+import type { RepoView } from '../types.js';
+
+export type Ecosystem = 'npm' | 'python' | 'nuget';
+
+/**
+ * How firmly a dependency's version is fixed:
+ * - `pinned`: one exact version
+ * - `ranged`: a bounded range, such as `^1.2.0` or `>=2,<3` (normal when a lockfile exists)
+ * - `floating`: any version, or whatever is newest (`*`, `latest`, no version at all, `1.*`)
+ * - `git`, `url`: fetched from a repository or address instead of the package registry
+ * - `local`: a path or workspace link inside the project
+ */
+export type Pinning = 'pinned' | 'ranged' | 'floating' | 'git' | 'url' | 'local';
+
+export interface Dependency {
+  readonly name: string;
+  readonly spec: string;
+  readonly pinning: Pinning;
+  /** 1-based line in the manifest. */
+  readonly line: number;
+}
+
+export interface Manifest {
+  /** Path relative to the scan root. */
+  readonly path: string;
+  readonly ecosystem: Ecosystem;
+  readonly dependencies: readonly Dependency[];
+}
+
+/** Folder of a repository-relative path; `.` for the top. */
+export function directoryOf(path: string): string {
+  return posix.dirname(path);
+}
+
+/** Whether `directory` is `ancestor` or lies below it (`.` is the ancestor of everything). */
+export function isInside(directory: string, ancestor: string): boolean {
+  return ancestor === '.' || directory === ancestor || directory.startsWith(`${ancestor}/`);
+}
+
+/** 1-based number of the first line containing `needle`, or 1. */
+export function lineOf(text: string, needle: string): number {
+  const index = text.indexOf(needle);
+  return index < 0 ? 1 : text.slice(0, index).split('\n').length;
+}
+
+// ---------- npm: package.json
+
+const NPM_SECTIONS = ['dependencies', 'devDependencies', 'optionalDependencies'] as const;
+
+export function classifyNpm(raw: string): Pinning {
+  const spec = raw.trim();
+  if (/^(?:workspace|file|link|portal):|^\.{1,2}\/|^~\//.test(spec)) {
+    return 'local';
+  }
+  if (
+    /^(?:git\+|git:|git@|github:|gitlab:|bitbucket:|gist:|ssh:)/.test(spec) ||
+    /^[\w.-]+\/[\w.-]+(?:#.*)?$/.test(spec)
+  ) {
+    return 'git';
+  }
+  if (/^https?:\/\//.test(spec)) {
+    return 'url';
+  }
+  // Empty, `*`, `x`, `>=0`, or a dist-tag such as `latest` or `next`: whatever is newest.
+  if (/^(?:\*|[xX]|>=\s*0(?:\.0\.0)?|[A-Za-z][\w-]*)?$/.test(spec)) {
+    return 'floating';
+  }
+  return /^\d+\.\d+\.\d+(?:[-+][\w.+-]+)?$/.test(spec) ? 'pinned' : 'ranged';
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parsePackageJson(path: string, text: string): Manifest | undefined {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+  if (!isObject(json)) {
+    return undefined;
+  }
+  const dependencies: Dependency[] = [];
+  for (const section of NPM_SECTIONS) {
+    const table = json[section];
+    if (!isObject(table)) {
+      continue;
+    }
+    for (const [name, spec] of Object.entries(table)) {
+      if (typeof spec === 'string') {
+        dependencies.push({
+          name,
+          spec,
+          pinning: classifyNpm(spec),
+          line: lineOf(text, `"${name}"`),
+        });
+      }
+    }
+  }
+  return { path, ecosystem: 'npm', dependencies };
+}
+
+// ---------- Python: requirements*.txt, pyproject.toml, Pipfile
+
+export function classifyPython(raw: string): Pinning {
+  const spec = raw.trim();
+  if (spec === '' || spec === '*') {
+    return 'floating';
+  }
+  return /^===?\s*\d[\w.!+-]*$/.test(spec) ? 'pinned' : 'ranged';
+}
+
+/** One requirement such as `requests[socks]>=2.0,<3 ; python_version > "3"`. */
+export function parseRequirement(raw: string, line: number): Dependency | undefined {
+  const text = raw
+    .replace(/\s+#.*$/, '')
+    .replace(/\s+--hash.*$/, '')
+    .replace(/\\$/, '')
+    .trim();
+  if (text === '' || text.startsWith('#')) {
+    return undefined;
+  }
+  const editable = text.replace(/^(?:-e|--editable)\s+/, '');
+  if (editable.startsWith('-')) {
+    return undefined; // an option such as `-r other.txt` or `--index-url`
+  }
+  if (/^(?:\.{1,2}(?:\/|$)|\/|file:)/.test(editable)) {
+    return { name: editable, spec: editable, pinning: 'local', line };
+  }
+  const egg = /#egg=([\w.-]+)/.exec(editable)?.[1];
+  const direct = /^([A-Za-z0-9][\w.-]*)\s*(?:\[[^\]]*\])?\s*@\s*(\S+)/.exec(editable);
+  const address = direct?.[2] ?? editable;
+  if (direct || /^(?:git|hg|svn|bzr)\+|^https?:\/\//.test(editable)) {
+    return {
+      name: direct?.[1] ?? egg ?? address,
+      spec: address,
+      pinning: /^git\+|^git:|\.git(?:[#@]|$)/.test(address) ? 'git' : 'url',
+      line,
+    };
+  }
+  const match = /^([A-Za-z0-9][\w.-]*)\s*(?:\[[^\]]*\])?\s*([^;]*)/.exec(editable);
+  if (!match?.[1]) {
+    return undefined;
+  }
+  const spec = (match[2] ?? '').trim();
+  return { name: match[1], spec, pinning: classifyPython(spec), line };
+}
+
+function parseRequirementsTxt(path: string, text: string): Manifest {
+  const dependencies = text.split(/\r\n|\r|\n/).flatMap((raw, index) => {
+    const dependency = parseRequirement(raw, index + 1);
+    return dependency ? [dependency] : [];
+  });
+  return { path, ecosystem: 'python', dependencies };
+}
+
+/** The value of `name = ...` in a TOML table of dependencies (Poetry, Pipenv). */
+function tableDependency(name: string, value: string, line: number): Dependency | undefined {
+  if (name === 'python') {
+    return undefined;
+  }
+  const quoted = /^["']([^"']*)["']/.exec(value)?.[1];
+  if (quoted !== undefined) {
+    const exact = /^\d+(?:\.\d+)*$/.test(quoted);
+    return { name, spec: quoted, pinning: exact ? 'pinned' : classifyPython(quoted), line };
+  }
+  if (!value.startsWith('{')) {
+    return undefined;
+  }
+  if (/\bgit\s*=/.test(value)) {
+    return { name, spec: value, pinning: 'git', line };
+  }
+  if (/\burl\s*=/.test(value)) {
+    return { name, spec: value, pinning: 'url', line };
+  }
+  if (/\bpath\s*=/.test(value)) {
+    return { name, spec: value, pinning: 'local', line };
+  }
+  const version = /\bversion\s*=\s*["']([^"']*)["']/.exec(value)?.[1] ?? '';
+  const exact = /^\d+(?:\.\d+)*$/.test(version);
+  return { name, spec: version, pinning: exact ? 'pinned' : classifyPython(version), line };
+}
+
+const TOML_DEPENDENCY_TABLES =
+  /^(?:tool\.poetry(?:\.group\.[\w-]+)?\.(?:dev-)?dependencies|packages|dev-packages)$/;
+const TOML_ARRAY_TABLES = /^(?:project\.optional-dependencies|dependency-groups)$/;
+
+/**
+ * Reads the dependency lists of a pyproject.toml or Pipfile without a TOML parser: the arrays of
+ * requirement strings (`[project]`, optional dependencies, dependency groups) and the
+ * `name = "version"` tables (Poetry, Pipenv). Anything else in the file is left alone.
+ */
+function parseToml(path: string, text: string): Manifest {
+  const dependencies: Dependency[] = [];
+  let table = '';
+  let inArray = false;
+  const lines = text.split(/\r\n|\r|\n/);
+  for (const [index, raw] of lines.entries()) {
+    const line = raw.replace(/\s+#.*$/, '').trim();
+    const header = /^\[\[?([^\]]+)\]\]?$/.exec(line)?.[1];
+    if (!inArray && header !== undefined) {
+      table = header.trim();
+      continue;
+    }
+    const startsArray: boolean =
+      !inArray &&
+      ((table === 'project' && /^dependencies\s*=\s*\[/.test(line)) ||
+        (TOML_ARRAY_TABLES.test(table) && /^[\w-]+\s*=\s*\[/.test(line)));
+    if (startsArray || inArray) {
+      const content: string = startsArray ? line.slice(line.indexOf('[') + 1) : line;
+      for (const item of content.matchAll(/"([^"]+)"|'([^']+)'/g)) {
+        const dependency = parseRequirement(item[1] ?? item[2] ?? '', index + 1);
+        if (dependency) {
+          dependencies.push(dependency);
+        }
+      }
+      // A `]` inside a quoted extra such as "requests[socks]" does not close the array.
+      inArray = !content.replace(/"[^"]*"|'[^']*'/g, '').includes(']');
+      continue;
+    }
+    if (TOML_DEPENDENCY_TABLES.test(table)) {
+      const entry = /^["']?([A-Za-z0-9][\w.-]*)["']?\s*=\s*(.+)$/.exec(line);
+      const dependency =
+        entry?.[1] && entry[2] ? tableDependency(entry[1], entry[2], index + 1) : undefined;
+      if (dependency) {
+        dependencies.push(dependency);
+      }
+    }
+  }
+  return { path, ecosystem: 'python', dependencies };
+}
+
+// ---------- NuGet: *.csproj
+
+export function classifyNuget(raw: string): Pinning {
+  const version = raw.trim();
+  if (version.includes('*') || /,\s*[)\]]\s*$/.test(version)) {
+    return 'floating'; // `1.*`, or a range with no upper bound such as `[1.0,)`
+  }
+  return /^\[?\d+(?:\.\d+){1,3}(?:-[\w.]+)?\]?$/.test(version) && !version.includes(',')
+    ? 'pinned'
+    : 'ranged';
+}
+
+function parseCsproj(path: string, text: string): Manifest {
+  const dependencies: Dependency[] = [];
+  const references = text.matchAll(
+    /<PackageReference\b([^>]*?)(?:\/>|>([\s\S]*?)<\/PackageReference>)/g,
+  );
+  for (const reference of references) {
+    const attributes = reference[1] ?? '';
+    const name = /\b(?:Include|Update)\s*=\s*"([^"]+)"/.exec(attributes)?.[1];
+    const version =
+      /\bVersion\s*=\s*"([^"]*)"/.exec(attributes)?.[1] ??
+      /<Version>\s*([^<]*?)\s*<\/Version>/.exec(reference[2] ?? '')?.[1];
+    if (name && version !== undefined) {
+      // A version taken from a property (`$(Version)`) is not visible here: treat it as a range.
+      const pinning = version.includes('$(') ? 'ranged' : classifyNuget(version);
+      dependencies.push({
+        name,
+        spec: version,
+        pinning,
+        line: text.slice(0, reference.index).split('\n').length,
+      });
+    }
+  }
+  return { path, ecosystem: 'nuget', dependencies };
+}
+
+// ---------- discovery of manifests
+
+function parserFor(
+  path: string,
+): ((path: string, text: string) => Manifest | undefined) | undefined {
+  const name = posix.basename(path);
+  if (name === 'package.json') {
+    return parsePackageJson;
+  }
+  if (/^requirements(?:[-_.][\w.-]*)?\.txt$/i.test(name)) {
+    return parseRequirementsTxt;
+  }
+  if (name === 'pyproject.toml' || name === 'Pipfile') {
+    return parseToml;
+  }
+  return name.endsWith('.csproj') ? parseCsproj : undefined;
+}
+
+/** Reads every dependency manifest in the project (npm, Python, NuGet). */
+export async function readManifests(repo: RepoView): Promise<readonly Manifest[]> {
+  const manifests = await Promise.all(
+    repo.files.map(async (path) => {
+      const parse = parserFor(path);
+      const text = parse ? await repo.read(path) : undefined;
+      return parse && text !== undefined ? parse(path, text) : undefined;
+    }),
+  );
+  return manifests.filter((manifest) => manifest !== undefined);
+}

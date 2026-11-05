@@ -14,6 +14,17 @@ import { insecureDeserialization } from './security/insecure-deserialization.js'
 import { sqlInjection } from './security/sql-injection.js';
 import { tlsVerification } from './security/tls-verification.js';
 import { weakCryptography } from './security/weak-cryptography.js';
+import {
+  floatingVersions,
+  missingLockfile,
+  remoteDependencies,
+} from './supply-chain/dependency-rules.js';
+import {
+  missingContinuousIntegration,
+  missingDependencyUpdates,
+  missingSbom,
+  missingSecretScanning,
+} from './supply-chain/repository-hygiene.js';
 import type { RuleDefinition } from './types.js';
 
 /** Every rule SiftCode ships, in id order. Adding a rule means adding it here. */
@@ -35,6 +46,13 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   weakCryptography,
   insecureDeserialization,
   tlsVerification,
+  missingLockfile,
+  floatingVersions,
+  remoteDependencies,
+  missingContinuousIntegration,
+  missingDependencyUpdates,
+  missingSbom,
+  missingSecretScanning,
 ];
 
 export function findRule(id: string): RuleDefinition | undefined {
