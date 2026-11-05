@@ -1,0 +1,7 @@
+public class Wide
+{
+    public int[] Many(int a, int b, int c, int d, int e, int f)
+    {
+        return new[] { a, b, c, d, e, f };
+    }
+}

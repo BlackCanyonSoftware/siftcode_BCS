@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SyntaxParser } from '../../src/languages/parser.js';
 import type { GrammarId } from '../../src/languages/registry.js';
+import { parseOk } from '../helpers/parse.js';
 
 let parser: SyntaxParser;
 
@@ -44,7 +45,7 @@ describe('SyntaxParser (US-060, US-061, US-062)', () => {
 
 describe('function and method extraction', () => {
   const unitsOf = async (grammar: GrammarId, source: string) =>
-    (await parser.parse(grammar, source)).units.map(({ kind, name }) => `${kind}:${name}`);
+    (await parseOk(parser, grammar, source)).units.map(({ kind, name }) => `${kind}:${name}`);
 
   it('names declared functions, assigned arrows, and object and class members in JavaScript', async () => {
     const source = [
@@ -105,8 +106,10 @@ describe('function and method extraction', () => {
   });
 
   it('records 1-based inclusive line numbers', async () => {
-    const { units } = await parser.parse('python', '\n\ndef spaced():\n    return 1\n');
+    const { units } = await parseOk(parser, 'python', '\n\ndef spaced():\n    return 1\n');
 
-    expect(units).toEqual([{ kind: 'function', name: 'spaced', startLine: 3, endLine: 4 }]);
+    expect(
+      units.map(({ kind, name, startLine, endLine }) => ({ kind, name, startLine, endLine })),
+    ).toEqual([{ kind: 'function', name: 'spaced', startLine: 3, endLine: 4 }]);
   });
 });

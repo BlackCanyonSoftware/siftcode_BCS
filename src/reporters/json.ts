@@ -1,4 +1,5 @@
 import type { ScanResult } from '../core/result.js';
+import type { CodeFile } from '../languages/model/types.js';
 import { TOOL_NAME, countBySeverity, withRules, type ReportContext } from './shared.js';
 
 /** Current version of the JSON report layout. Bump it when a field is removed or changes meaning. */
@@ -26,6 +27,24 @@ export function renderJson(result: ScanResult, context: ReportContext): string {
       suggestion: rule.suggestion,
     })),
     problems: result.problems,
+    metrics: { files: result.files.map(describeFile) },
   };
   return `${JSON.stringify(report, null, 2)}\n`;
+}
+
+/** The measurements of one file and of each function and method in it. */
+function describeFile(file: CodeFile) {
+  return {
+    path: file.path,
+    language: file.language,
+    lines: file.lineCount,
+    ...file.metrics,
+    units: file.units.map((unit) => ({
+      kind: unit.kind,
+      name: unit.name,
+      startLine: unit.startLine,
+      endLine: unit.endLine,
+      ...unit.metrics,
+    })),
+  };
 }

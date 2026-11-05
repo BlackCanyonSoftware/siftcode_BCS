@@ -25,12 +25,16 @@ export async function scan(path: string, options: ScanOptions = {}): Promise<Sca
   const parser = await SyntaxParser.create();
   const languageCounts = new Map<string, number>();
   const findings: Finding[] = [];
+  const files: CodeFile[] = [];
   const problems: FileProblem[] = [];
   try {
     for (const file of discovery.files) {
       languageCounts.set(file.displayName, (languageCounts.get(file.displayName) ?? 0) + 1);
       const analysis = await analyzeFile(file, parser, rules);
       findings.push(...analysis.findings);
+      if (analysis.file) {
+        files.push(analysis.file);
+      }
       if (analysis.problem) {
         problems.push({ path: file.relativePath, reason: analysis.problem });
       }
@@ -44,6 +48,7 @@ export async function scan(path: string, options: ScanOptions = {}): Promise<Sca
     filesScanned: discovery.files.length,
     byLanguage: [...languageCounts].sort(([a], [b]) => compareStrings(a, b)),
     findings: findings.sort(compareFindings),
+    files,
     rules: rules.map((rule) => rule.meta).sort((a, b) => compareStrings(a.id, b.id)),
     problems,
     skipped: discovery.skipped,
@@ -52,6 +57,8 @@ export async function scan(path: string, options: ScanOptions = {}): Promise<Sca
 
 interface FileAnalysis {
   readonly findings: readonly Finding[];
+  /** The measured file; absent when it could not be read or parsed cleanly. */
+  readonly file?: CodeFile;
   readonly problem?: FileProblem['reason'];
 }
 
@@ -67,18 +74,19 @@ async function analyzeFile(
     return { findings: [], problem: 'unreadable' };
   }
 
-  const { outcome, units } = await parser.parse(file.grammar, source);
-  if (outcome !== 'ok') {
-    return { findings: [], problem: outcome };
+  const parsed = await parser.parse(file.grammar, source);
+  if (parsed.outcome !== 'ok') {
+    return { findings: [], problem: parsed.outcome };
   }
   const codeFile: CodeFile = {
     path: file.relativePath,
     language: file.displayName,
     grammar: file.grammar,
     lineCount: countLines(source),
-    units,
+    metrics: parsed.metrics,
+    units: parsed.units,
   };
-  return { findings: runRules(codeFile, rules) };
+  return { findings: runRules(codeFile, rules), file: codeFile };
 }
 
 function runRules(file: CodeFile, rules: readonly ConfiguredRule[]): Finding[] {

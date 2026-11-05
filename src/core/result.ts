@@ -1,4 +1,5 @@
 import type { SkippedCounts } from '../discovery/discover.js';
+import type { CodeFile } from '../languages/model/types.js';
 import type { RuleMeta } from '../rules/types.js';
 import type { Finding } from './finding.js';
 
@@ -16,6 +17,11 @@ export interface ScanResult {
   readonly byLanguage: readonly (readonly [language: string, count: number])[];
   /** Findings in deterministic order (file, line, rule). */
   readonly findings: readonly Finding[];
+  /**
+   * Every file that was parsed cleanly, in scan order, with its measurements and the measured
+   * functions and methods in it.
+   */
+  readonly files: readonly CodeFile[];
   /** The rules that were switched on for this scan, in id order. */
   readonly rules: readonly RuleMeta[];
   /**

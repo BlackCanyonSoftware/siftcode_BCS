@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Language, Parser } from 'web-tree-sitter';
-import { extractUnits } from './extract.js';
-import type { CodeUnit } from './model/types.js';
+import { extractUnits, measureFile } from './extract.js';
+import type { CodeMetrics, CodeUnit } from './model/types.js';
 import { grammarFileName, type GrammarId } from './registry.js';
 
 /** `grammars/` sits two levels above this file in both `src/` and `dist/`. */
@@ -19,11 +19,19 @@ export const PARSE_TIMEOUT_MS = 5_000;
  */
 export type ParseOutcome = 'ok' | 'syntax-error' | 'timeout';
 
-export interface ParseResult {
-  readonly outcome: ParseOutcome;
-  /** Named functions and methods found; empty when parsing timed out. */
-  readonly units: readonly CodeUnit[];
-}
+/**
+ * A file is only measured when it parsed cleanly: figures from half-parsed code would be
+ * unreliable, so files with syntax errors or timeouts carry no units or metrics.
+ */
+export type ParseResult =
+  | {
+      readonly outcome: 'ok';
+      /** Named functions and methods, each measured. */
+      readonly units: readonly CodeUnit[];
+      /** Measurements of the whole file. */
+      readonly metrics: CodeMetrics;
+    }
+  | { readonly outcome: 'syntax-error' | 'timeout' };
 
 let initialization: Promise<void> | undefined;
 
@@ -53,12 +61,17 @@ export class SyntaxParser {
     });
     if (tree === null) {
       this.parser.reset();
-      return { outcome: 'timeout', units: [] };
+      return { outcome: 'timeout' };
     }
     try {
+      const root = tree.rootNode;
+      if (root.hasError) {
+        return { outcome: 'syntax-error' };
+      }
       return {
-        outcome: tree.rootNode.hasError ? 'syntax-error' : 'ok',
-        units: extractUnits(grammar, tree.rootNode),
+        outcome: 'ok',
+        units: extractUnits(grammar, root),
+        metrics: measureFile(grammar, root),
       };
     } finally {
       tree.delete();

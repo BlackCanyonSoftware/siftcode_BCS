@@ -1,5 +1,7 @@
 import type { Node } from 'web-tree-sitter';
-import type { CodeUnit, UnitKind } from './model/types.js';
+import { measure } from './measure.js';
+import { buildMetrics } from './model/formulas.js';
+import type { CodeMetrics, CodeUnit, UnitKind } from './model/types.js';
 import type { GrammarId } from './registry.js';
 
 const JAVASCRIPT_LIKE = [
@@ -28,19 +30,32 @@ const UNIT_NODE_TYPES: Readonly<Record<GrammarId, readonly string[]>> = {
 
 const MAX_NAME_LENGTH = 100;
 
-/** Finds every named function and method in a syntax tree. */
+/** Measures a whole file. */
+export function measureFile(grammar: GrammarId, root: Node): CodeMetrics {
+  return buildMetrics(measure(grammar, root));
+}
+
+/** Finds every named function and method in a syntax tree and measures each one. */
 export function extractUnits(grammar: GrammarId, root: Node): CodeUnit[] {
   const units: CodeUnit[] = [];
   for (const node of root.descendantsOfType([...UNIT_NODE_TYPES[grammar]])) {
     const name = unitName(node);
-    if (name !== undefined) {
-      units.push({
-        kind: unitKind(node),
-        name,
-        startLine: node.startPosition.row + 1,
-        endLine: node.endPosition.row + 1,
-      });
+    if (name === undefined) {
+      continue;
     }
+    const kind = unitKind(node);
+    const { maxNesting, ...raw } = measure(grammar, node);
+    units.push({
+      kind,
+      name,
+      startLine: node.startPosition.row + 1,
+      endLine: node.endPosition.row + 1,
+      metrics: {
+        ...buildMetrics(raw),
+        parameters: countParameters(grammar, node, kind),
+        maxNesting,
+      },
+    });
   }
   return units;
 }
@@ -53,9 +68,11 @@ function unitKind(node: Node): UnitKind {
     case 'destructor_declaration':
     case 'operator_declaration':
       return 'method';
-    case 'function_definition':
-      // Python: a function directly inside a class body is a method.
-      return node.parent?.parent?.type === 'class_definition' ? 'method' : 'function';
+    case 'function_definition': {
+      // Python: a function directly inside a class body is a method, decorated or not.
+      const declaration = node.parent?.type === 'decorated_definition' ? node.parent : node;
+      return declaration.parent?.parent?.type === 'class_definition' ? 'method' : 'function';
+    }
     default:
       return 'function';
   }
@@ -97,4 +114,67 @@ function assignedName(node: Node): string | undefined {
     default:
       return undefined;
   }
+}
+
+/** Parameter-list nodes that are not parameters. */
+const NOT_PARAMETERS = new Set(['comment', 'positional_separator', 'keyword_separator']);
+
+/**
+ * Number of declared parameters. The receiver is not counted: Python's `self` or `cls`,
+ * TypeScript's `this: T` pseudo-parameter, and C#'s `this` on an extension method.
+ */
+function countParameters(grammar: GrammarId, unit: Node, kind: UnitKind): number {
+  // An arrow function with one bare parameter (`x => x`) has a `parameter` field, not a list.
+  if (unit.childForFieldName('parameter')) {
+    return 1;
+  }
+  const list = unit.childForFieldName('parameters');
+  if (!list) {
+    return 0;
+  }
+  const pythonMethod = grammar === 'python' && kind === 'method';
+  return list.namedChildren.filter(
+    (child, index) =>
+      !NOT_PARAMETERS.has(child.type) &&
+      !isTypeOfParamsParameter(grammar, list, child, index) &&
+      !isReceiver(child, pythonMethod && index === 0),
+  ).length;
+}
+
+/**
+ * The C# grammar does not wrap `params int[] values` in a `parameter` node: its type and its name
+ * sit loose in the parameter list. The name stands for the parameter; the type is not one.
+ */
+function isTypeOfParamsParameter(
+  grammar: GrammarId,
+  list: Node,
+  child: Node,
+  index: number,
+): boolean {
+  return (
+    grammar === 'csharp' &&
+    child.type !== 'parameter' &&
+    list.fieldNameForNamedChild(index) !== 'name'
+  );
+}
+
+/** `firstOfPythonMethod` is true only for the first parameter of a method in Python. */
+function isReceiver(parameter: Node, firstOfPythonMethod: boolean): boolean {
+  // TypeScript: `function f(this: Foo, ...)`
+  if (parameter.childForFieldName('pattern')?.type === 'this') {
+    return true;
+  }
+  // C#: `static int F(this Foo receiver, ...)`
+  if (
+    parameter.type === 'parameter' &&
+    parameter.children.some((child) => child.type === 'modifier' && child.text === 'this')
+  ) {
+    return true;
+  }
+  // Python: the first parameter of a method, by convention `self` or `cls`
+  if (firstOfPythonMethod) {
+    const first = parameter.type === 'identifier' ? parameter : parameter.namedChildren[0];
+    return first?.text === 'self' || first?.text === 'cls';
+  }
+  return false;
 }
