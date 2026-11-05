@@ -61,7 +61,13 @@ describe('JSON report (US-004)', () => {
     expect(report.summary.filesScanned).toBe(5);
     expect(report.summary.findings).toEqual({ error: 0, warning: 0, info: 11, note: 0 });
     expect(report.summary.languages).toEqual({ 'C#': 1, JavaScript: 1, Python: 1, TypeScript: 2 });
-    expect(report.rules.map((r) => r.id)).toEqual(['SC-MET-001']);
+    expect(report.rules.map((r) => r.id)).toEqual([
+      'SC-MET-001',
+      'SC-MET-002',
+      'SC-MET-003',
+      'SC-MET-004',
+      'SC-MET-005',
+    ]);
     expect(report.findings).toHaveLength(11);
     expect(report.findings[0]).toMatchObject({
       ruleId: 'SC-MET-001',
@@ -73,6 +79,73 @@ describe('JSON report (US-004)', () => {
       suggestion: { summary: expect.any(String) as string },
       fingerprint: expect.stringMatching(/^[0-9a-f]{32}$/) as string,
     });
+  });
+});
+
+describe('metrics in the JSON report (US-010 to US-012)', () => {
+  it('lists every cleanly parsed file with its measures and each function and method', () => {
+    const report = JSON.parse(renderReport('json', withFindings, context)) as {
+      metrics: {
+        files: {
+          path: string;
+          language: string;
+          lines: number;
+          halstead: Record<string, number>;
+          units: Record<string, unknown>[];
+        }[];
+      };
+    };
+
+    const files = report.metrics.files;
+    expect(files.map((f) => f.path)).toEqual([
+      'Cart.cs',
+      'long.js',
+      'long.py',
+      'long.ts',
+      'long.tsx',
+    ]);
+    const longPy = files.find((f) => f.path === 'long.py');
+    expect(longPy).toMatchObject({ language: 'Python', lines: 21 });
+    expect(Object.keys(longPy?.halstead ?? {})).toEqual([
+      'distinctOperators',
+      'distinctOperands',
+      'totalOperators',
+      'totalOperands',
+      'vocabulary',
+      'length',
+      'volume',
+      'difficulty',
+      'effort',
+    ]);
+    expect(longPy?.units.map((u) => u.name)).toEqual([
+      'long_function',
+      'long_method',
+      'short_method',
+    ]);
+    expect(longPy?.units[0]).toMatchObject({
+      kind: 'function',
+      startLine: 1,
+      endLine: 6,
+      parameters: 1,
+      cyclomatic: 2,
+      maxNesting: 1,
+      codeLines: 6,
+    });
+  });
+
+  it('omits files that could not be parsed', async () => {
+    const folder = await projects.create({
+      'good.js': longJsFunction('work', 3),
+      'bad.py': 'def broken(:\n',
+    });
+
+    const report = JSON.parse(renderReport('json', await scan(folder), context)) as {
+      metrics: { files: { path: string }[] };
+      problems: { path: string }[];
+    };
+
+    expect(report.metrics.files.map((f) => f.path)).toEqual(['good.js']);
+    expect(report.problems.map((p) => p.path)).toEqual(['bad.py']);
   });
 });
 
@@ -136,7 +209,13 @@ describe('SARIF report (US-003)', () => {
     const [run] = sarif.runs;
     expect(run?.tool.driver.name).toBe('SiftCode');
     expect(run?.tool.driver.version).toBe('9.9.9');
-    expect(run?.tool.driver.rules.map((r) => r.id)).toEqual(['SC-MET-001']);
+    expect(run?.tool.driver.rules.map((r) => r.id)).toEqual([
+      'SC-MET-001',
+      'SC-MET-002',
+      'SC-MET-003',
+      'SC-MET-004',
+      'SC-MET-005',
+    ]);
     expect(run?.tool.driver.rules[0]?.help.text).toContain('Extract cohesive blocks');
     expect(run?.results).toHaveLength(11);
     for (const result of run?.results ?? []) {

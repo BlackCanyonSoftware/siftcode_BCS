@@ -1,9 +1,7 @@
 import { z } from 'zod';
-import { defineRule } from '../define.js';
+import { defineUnitThresholdRule, unitLabel } from './threshold.js';
 
-const DEFAULT_MAX_LINES = 50;
-
-export const functionLength = defineRule({
+export const functionLength = defineUnitThresholdRule({
   meta: {
     id: 'SC-MET-001',
     title: 'Function or method is too long',
@@ -39,24 +37,11 @@ export const functionLength = defineRule({
       ].join('\n'),
     },
   },
-  options: z.strictObject({
-    maxLines: z.number().int().positive().default(DEFAULT_MAX_LINES),
-  }),
-  check(file, { maxLines }) {
-    return file.units.flatMap((unit) => {
-      const lines = unit.endLine - unit.startLine + 1;
-      if (lines <= maxLines) {
-        return [];
-      }
-      const label = unit.kind === 'method' ? 'Method' : 'Function';
-      return [
-        {
-          startLine: unit.startLine,
-          endLine: unit.endLine,
-          message: `${label} "${unit.name}" is ${lines} lines long (limit ${maxLines}).`,
-          key: `${unit.kind}:${unit.name}`,
-        },
-      ];
-    });
-  },
+  option: 'maxLines',
+  limit: z.number().int().positive(),
+  defaultLimit: 50,
+  measure: (unit) => unit.endLine - unit.startLine + 1,
+  breaks: 'above',
+  message: (unit, lines, limit) =>
+    `${unitLabel(unit)} "${unit.name}" is ${lines} lines long (limit ${limit}).`,
 });

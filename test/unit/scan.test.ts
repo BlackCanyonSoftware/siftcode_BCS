@@ -26,7 +26,13 @@ describe('scan (US-001, US-071)', () => {
   it('lists the rules that ran, in id order', async () => {
     const result = await scan(fixture('sample'));
 
-    expect(result.rules.map((rule) => rule.id)).toEqual(['SC-MET-001']);
+    expect(result.rules.map((rule) => rule.id)).toEqual([
+      'SC-MET-001',
+      'SC-MET-002',
+      'SC-MET-003',
+      'SC-MET-004',
+      'SC-MET-005',
+    ]);
   });
 
   it('reports a file that does not parse and still finishes the scan', async () => {

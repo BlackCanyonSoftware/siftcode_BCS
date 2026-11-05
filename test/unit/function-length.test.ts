@@ -90,7 +90,7 @@ describe('SC-MET-001 function length (US-010 family, US-040)', () => {
     const result = await scan(positive, { config });
 
     expect(result.findings).toEqual([]);
-    expect(result.rules).toEqual([]);
+    expect(result.rules.map((rule) => rule.id)).not.toContain(RULE);
   });
 
   it('describes the rule with its standards, rationale, and suggestion (US-040)', async () => {

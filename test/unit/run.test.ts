@@ -234,7 +234,9 @@ describe('explain command (US-041)', () => {
     const { code, stderr } = await runCli('explain', 'SC-NOPE-1');
 
     expect(code).toBe(EXIT_USAGE);
-    expect(stderr).toContain('Unknown rule "SC-NOPE-1". Known rules: SC-MET-001.');
+    expect(stderr).toContain(
+      'Unknown rule "SC-NOPE-1". Known rules: SC-MET-001, SC-MET-002, SC-MET-003, SC-MET-004, SC-MET-005.',
+    );
   });
 
   it('exits 2 when no id is given', async () => {
