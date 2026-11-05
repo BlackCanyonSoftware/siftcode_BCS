@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach } from 'vitest';
+import { parseConfig } from '../../src/config/load.js';
+import { ALL_RULES } from '../../src/rules/index.js';
 
 /** Absolute path of something under `test/fixtures`. */
 export function fixture(relativePath: string): string {
@@ -40,4 +42,13 @@ export function useProjects(): Projects {
 export function longJsFunction(name: string, lines: number): string {
   const body = Array.from({ length: Math.max(0, lines - 2) }, (_, i) => `  total += ${i};`);
   return [`function ${name}() {`, ...body, '}', ''].join('\n');
+}
+
+/** A config with only the rule `id` switched on, so a test sees that rule's findings and no others. */
+export function onlyRule(id: string, options: object = {}) {
+  const rules: Record<string, object> = {};
+  for (const rule of ALL_RULES) {
+    rules[rule.meta.id] = rule.meta.id === id ? { options } : { enabled: false };
+  }
+  return parseConfig(JSON.stringify({ rules }), 'test config');
 }

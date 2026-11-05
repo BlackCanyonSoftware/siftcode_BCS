@@ -71,6 +71,14 @@ export function renderSarif(result: ScanResult, context: ReportContext): string 
   return `${JSON.stringify(log, null, 2)}\n`;
 }
 
+/** `external/cwe/cwe-798` for each CWE entry a rule cites: the tag GitHub code scanning shows as a CWE. */
+function cweTags(rule: RuleMeta): string[] {
+  return rule.standards.flatMap((standard) => {
+    const id = /^CWE-\d+/.exec(standard.id ?? '')?.[0];
+    return id === undefined ? [] : [`external/cwe/${id.toLowerCase()}`];
+  });
+}
+
 function describeRule(rule: RuleMeta) {
   const helpUri = rule.standards.find((standard) => standard.url !== undefined)?.url;
   const standards = rule.standards.map(formatStandard);
@@ -87,7 +95,7 @@ function describeRule(rule: RuleMeta) {
     ...(helpUri === undefined ? {} : { helpUri }),
     defaultConfiguration: { level: LEVELS[rule.defaultSeverity] },
     properties: {
-      tags: [rule.category, ...(rule.heuristic ? ['heuristic'] : [])],
+      tags: [rule.category, ...(rule.heuristic ? ['heuristic'] : []), ...cweTags(rule)],
       precision: rule.confidence,
     },
   };

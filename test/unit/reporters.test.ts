@@ -72,6 +72,13 @@ describe('JSON report (US-004)', () => {
       'SC-MET-003',
       'SC-MET-004',
       'SC-MET-005',
+      'SC-SEC-001',
+      'SC-SEC-002',
+      'SC-SEC-003',
+      'SC-SEC-004',
+      'SC-SEC-005',
+      'SC-SEC-006',
+      'SC-SEC-007',
     ]);
     expect(report.findings).toHaveLength(11);
     expect(report.findings[0]).toMatchObject({
@@ -238,6 +245,13 @@ describe('SARIF report (US-003)', () => {
       'SC-MET-003',
       'SC-MET-004',
       'SC-MET-005',
+      'SC-SEC-001',
+      'SC-SEC-002',
+      'SC-SEC-003',
+      'SC-SEC-004',
+      'SC-SEC-005',
+      'SC-SEC-006',
+      'SC-SEC-007',
     ]);
     const lengthRule = run?.tool.driver.rules.find((rule) => rule.id === 'SC-MET-001');
     expect(lengthRule?.help.text).toContain('Extract cohesive blocks');
@@ -248,6 +262,23 @@ describe('SARIF report (US-003)', () => {
       expect(result.partialFingerprints['siftcodeFingerprint/v1']).toMatch(/^[0-9a-f]{32}$/);
       expect(result.locations[0]?.physicalLocation.region.startLine).toBeGreaterThan(0);
     }
+  });
+
+  it('tags each security rule with the CWE entries it cites, so code scanning shows them', () => {
+    const sarif = JSON.parse(renderReport('sarif', withFindings, context)) as {
+      runs: { tool: { driver: { rules: { id: string; properties: { tags: string[] } }[] } } }[];
+    };
+
+    const rules = sarif.runs[0]?.tool.driver.rules ?? [];
+    const tagsOf = (id: string) => rules.find((rule) => rule.id === id)?.properties.tags;
+    expect(tagsOf('SC-SEC-001')).toEqual(['security', 'heuristic', 'external/cwe/cwe-798']);
+    expect(tagsOf('SC-SEC-005')).toEqual([
+      'security',
+      'heuristic',
+      'external/cwe/cwe-327',
+      'external/cwe/cwe-328',
+    ]);
+    expect(tagsOf('SC-MET-001')).toEqual(['maintainability', 'heuristic']);
   });
 
   it('maps warning and error severities to the same SARIF levels', async () => {

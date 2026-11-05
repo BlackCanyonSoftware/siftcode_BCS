@@ -37,6 +37,13 @@ describe('scan (US-001, US-071)', () => {
       'SC-MET-003',
       'SC-MET-004',
       'SC-MET-005',
+      'SC-SEC-001',
+      'SC-SEC-002',
+      'SC-SEC-003',
+      'SC-SEC-004',
+      'SC-SEC-005',
+      'SC-SEC-006',
+      'SC-SEC-007',
     ]);
   });
 
