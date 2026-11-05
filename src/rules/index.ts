@@ -40,6 +40,10 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   classSize,
   classCohesion,
   moduleFanOut,
+  noDesignDocumentation,
+  documentationWithoutDiagrams,
+  diagramsWithoutDecisionRecords,
+  unreferencedDiagrams,
   functionLength,
   cyclomaticComplexity,
   parameterCount,
@@ -59,10 +63,6 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   missingDependencyUpdates,
   missingSbom,
   missingSecretScanning,
-  noDesignDocumentation,
-  documentationWithoutDiagrams,
-  diagramsWithoutDecisionRecords,
-  unreferencedDiagrams,
 ];
 
 export function findRule(id: string): RuleDefinition | undefined {
