@@ -1,3 +1,9 @@
+import {
+  diagramsWithoutDecisionRecords,
+  documentationWithoutDiagrams,
+  noDesignDocumentation,
+  unreferencedDiagrams,
+} from './documentation/design-documentation.js';
 import { classCohesion, classSize } from './design/class-rules.js';
 import { lawOfDemeter } from './design/law-of-demeter.js';
 import { moduleFanOut } from './design/module-fan-out.js';
@@ -53,6 +59,10 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   missingDependencyUpdates,
   missingSbom,
   missingSecretScanning,
+  noDesignDocumentation,
+  documentationWithoutDiagrams,
+  diagramsWithoutDecisionRecords,
+  unreferencedDiagrams,
 ];
 
 export function findRule(id: string): RuleDefinition | undefined {
