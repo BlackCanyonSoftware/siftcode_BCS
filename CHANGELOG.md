@@ -19,4 +19,10 @@ All notable user-visible changes are recorded here. The format follows
 - `--fail-on <level>`: exit code 1 when a finding is at least that severe. Exit code 2 for usage
   and configuration errors.
 - `siftcode explain <rule-id>` shows why a rule exists, its standards, and an example.
+- Code metrics for JavaScript, TypeScript, Python, and C#, measured the same way in every
+  language: cyclomatic complexity, Halstead measures, Maintainability Index, lines of code,
+  nesting depth, and parameter count. The JSON report lists them for every file and function.
+- Rules `SC-MET-002` (cyclomatic complexity, default limit 10), `SC-MET-003` (parameters, 5),
+  `SC-MET-004` (nesting depth, 4), and `SC-MET-005` (Maintainability Index below 20), each with
+  a configurable limit, the standards behind it, and a suggested fix.
 - Apache-2.0 license.

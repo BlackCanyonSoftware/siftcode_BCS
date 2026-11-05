@@ -61,7 +61,11 @@ Then register it in `src/rules/index.ts` and add fixtures under
 `test/fixtures/rules/<rule-id>/{positive,negative}` with a case for every language the rule
 covers, plus tests for both. Rules see the language-neutral `CodeFile`, never tree-sitter types; if
 a rule needs more than the Code Model offers, extend the model and its extraction for all
-languages, with tests. `siftcode explain <rule-id>` and every report read the same `meta`.
+languages, with tests. A new measurement is defined in [ADR 0005](docs/adr/0005-metric-definitions.md)
+style first, implemented identically for every language, and checked with the shared fixtures in
+`test/fixtures/metrics`. Check new rules against real code (for example ESLint's `lib` folder or
+Python's standard library) before choosing defaults. `siftcode explain <rule-id>` and every report
+read the same `meta`.
 
 ## Testing
 

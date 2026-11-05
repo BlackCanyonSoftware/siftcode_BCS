@@ -12,10 +12,9 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 1).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with one rule so far: functions that are too long, for
-> JavaScript/TypeScript, Python, and C#. More rules arrive in the next milestones; see the
-> [roadmap](docs/ROADMAP.md).
+> **Status: early development (Milestone 2).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF) work, with five code-metric rules for JavaScript/TypeScript,
+> Python, and C#. More rules arrive in the next milestones; see the [roadmap](docs/ROADMAP.md).
 
 ## Quick start
 
@@ -62,7 +61,23 @@ siftcode explain <rule-id>         why a rule exists, the standards behind it, h
 
 Exit codes: `0` success, `1` a finding at or above `--fail-on`, `2` usage or configuration error.
 
-Upload results to GitHub code scanning with `--format sarif`.
+Upload results to GitHub code scanning with `--format sarif`. `--format json` also includes the
+measurements of every file and function: cyclomatic complexity, Halstead measures, Maintainability
+Index, lines of code, nesting depth, and parameter count (how they are defined:
+[ADR 0005](docs/adr/0005-metric-definitions.md)).
+
+## Rules
+
+Each rule's option goes under `options` in the config file. `siftcode explain <rule-id>` shows the
+rationale, the standards behind it, and an example.
+
+| Rule | Finds | Option (default) | Severity |
+| --- | --- | --- | --- |
+| `SC-MET-001` | Function or method is too long | `maxLines` (50) | info |
+| `SC-MET-002` | Cyclomatic complexity is too high | `maxComplexity` (10) | warning |
+| `SC-MET-003` | Too many parameters | `maxParameters` (5) | info |
+| `SC-MET-004` | Control structures nested too deeply | `maxDepth` (4) | info |
+| `SC-MET-005` | Low Maintainability Index (0 to 100) | `minIndex` (20) | info |
 
 ## Configuration
 

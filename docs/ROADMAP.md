@@ -4,8 +4,8 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M1 is built; the owner reviews and pushes. (M0 is pushed and CI is green.)
-- **Next:** M2 metrics for all three languages.
+- **Now:** M2 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green.)
+- **Next:** M3 design heuristics (Law of Demeter, Service Locator, SRP).
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
@@ -22,16 +22,17 @@ Scope: tooling and one tiny vertical path; no product rules yet.
 Exit: fresh clone → `npm ci && npm test && npm run build && node dist/cli.js scan test/fixtures` works; a test passes at each level set up; CI config written (reported "not verified until pushed").
 Stories: US-001 (partial), US-060 to US-062 (parse only).
 
-### M1: Engine, config, and report formats (M, done: awaiting owner review and push)
+### M1: Engine, config, and report formats (M, done; pushed, CI green)
 Goal: the full pipeline exists with one real rule so every later rule is "add a file".
 Scope: discovery with ignores and limits; config schema; Code Model types; rule and catalog interfaces; finding model, fingerprints, ranking; terminal, JSON, Markdown, SARIF reporters; exit codes; parse-failure handling; one real rule (function length) as proof.
 Exit: SARIF validates against the 2.1.0 schema; deterministic output test; exit codes 0/1/2 covered; benchmark script recorded.
 Stories: US-001 to US-004, US-006, US-040, US-041, US-071.
 
-### M2: Metrics for all three languages (M, planned)
+### M2: Metrics for all three languages (M, done: awaiting owner review and push)
 Goal: cyclomatic complexity, Halstead, Maintainability Index, size/nesting/parameter metrics, with identical meaning across JS/TS, Python, C#.
 Exit: shared cross-language fixtures produce expected numbers; thresholds configurable; each rule has rationale, references, suggestion.
 Stories: US-010 to US-012, US-060 to US-062.
+Result: rules `SC-MET-001` to `SC-MET-005` (function length, cyclomatic complexity, parameters, nesting, maintainability index of a function); every measure of every file and function in the JSON report; definitions in [ADR 0005](adr/0005-metric-definitions.md). A file-level maintainability rule was built, tested on real code, and dropped as noise (see the ADR).
 
 ### M3: Design heuristics (M, planned)
 Goal: Law of Demeter, Service Locator / IoC, SRP (oversized class/module) rules.
@@ -93,4 +94,7 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | TD-2 | Ignore handling is close to Git's, not identical: only `.gitignore` files inside the scanned folder are read (not `.git/info/exclude` or the global ignore file), and a nested `.gitignore` cannot re-include a folder its parent ignored. | Low | Only if users hit it |
 | TD-3 | TypeScript is pinned to 6.0.3 because `typescript-eslint` does not support 7.x yet. | Low | Revisit with each typescript-eslint release |
 | TD-4 | The first `npm test` needs network access to download the SARIF schema (cached afterwards, hash-checked), and JSON Schema `format` keywords are not validated (ADR 0004). | Low | Add `ajv-formats` if format checks become important |
-| TD-5 | Test and generated code is scanned like production code; there is no per-path rule override yet (the repo's own config just ignores `test/fixtures/`). | Low | Consider `overrides` in config when real rule noise shows up (M2/M3) |
+| TD-5 | Test and generated code is scanned like production code; there is no per-path rule override yet (the repo's own config just ignores `test/fixtures/`). | Low | Consider `overrides` in config when real rule noise shows up (M3) |
+| TD-6 | Measuring walks every token twice (per function and per file) and allocates a wrapper per syntax node: the benchmark went from 0.74 s to 2.18 s for 52k lines, still 14 times inside NFR-4. | Low | Single pass or a tree cursor if rules grow heavier |
+| TD-7 | The JSON report carries every measure of every function, pretty-printed: 45 MB for the 59,000 functions of the Python standard library. | Low | Add a compact or `--no-metrics` option if it matters |
+| TD-8 | C# was verified on fixtures only; no real C# code was available locally for a false-positive review (JavaScript and Python were reviewed on ESLint and the Python standard library). | Medium | Review on a real C# project before M3 ships |
