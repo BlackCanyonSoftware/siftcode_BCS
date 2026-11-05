@@ -29,3 +29,19 @@ describe('languageForFile (US-060, US-061, US-062)', () => {
     },
   );
 });
+
+describe('languageForFile and TypeScript declaration files (US-060)', () => {
+  it.each(['types.d.ts', 'types.d.cts', 'types.d.mts', 'buffer.d.buffer.d.ts', 'TYPES.D.TS'])(
+    'skips the declaration file %s: it has types only, no code',
+    (path) => {
+      expect(languageForFile(path)).toBeUndefined();
+    },
+  );
+
+  it.each(['index.ts', 'app.tsx', 'module.mts', 'd.ts.js', 'model.d.py'])(
+    'still reads %s, which only looks like a declaration file',
+    (path) => {
+      expect(languageForFile(path)).toBeDefined();
+    },
+  );
+});
