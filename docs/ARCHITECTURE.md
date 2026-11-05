@@ -50,6 +50,8 @@ flowchart TD
 
 Key idea: **languages produce a Code Model, rules consume a Code Model.** A rule written once against the model works for every language that has an adapter. Rules that need raw syntax (e.g., a security sink pattern) are declared per language and use that language's tree-sitter queries.
 
+Beyond measurements, the Code Model carries **facts** that design rules read: per-file imports and member-access chains (dropped after the rules have run) and per-class method and field counts and cohesion (kept in the JSON report). See [ADR 0006](adr/0006-design-heuristics.md).
+
 ## 4. Folder structure and module boundaries
 
 Organized by feature, not file type. Each folder exposes a small public surface through its `index.ts`; nothing imports another module's internals.
@@ -64,7 +66,8 @@ src/
     typescript/     adapter (covers JS/JSX/TS/TSX)
     python/         adapter
     csharp/         adapter
-    model/          Code Model types (language-neutral)
+    model/          Code Model types (language-neutral) and the metric formulas
+    facts/          imports, member chains, and classes extracted from syntax trees (ADR 0006)
   rules/
     metrics/        cyclomatic, halstead, maintainability
     design/         demeter, service-locator, srp
@@ -183,6 +186,6 @@ sequenceDiagram
   - HTML report escapes all code-derived text and ships no remote scripts or fonts;
   - rule regexes are reviewed for catastrophic backtracking, and run on bounded input;
   - code snippets in reports are redacted for matched secrets (never print a found secret in full).
-- **Performance:** files are processed one at a time; syntax trees are freed as soon as the Code Model is extracted. Measured by `npm run benchmark` (Windows, Node 26): 500 files / 52,375 lines in 0.74 s before code metrics (M1) and 2.18 s with them (M2, about 24,000 lines/s), peak memory about 107 MB, against the NFR-4 target of 30 s. On real code the first 13,000 files of the Python distribution (5.1 million lines) parsed and measured in 134 s with no failures. Worker threads are not needed yet; revisit if rules grow much heavier.
+- **Performance:** files are processed one at a time; syntax trees are freed as soon as the Code Model is extracted. Measured by `npm run benchmark` (Windows, Node 26): 500 files / 52,375 lines in 0.74 s before code metrics (M1) 2.18 s with them (M2), and 2.99 s with design facts (M3, about 17,500 lines/s), peak memory about 107 MB, against the NFR-4 target of 30 s. On real code the first 13,000 files of the Python distribution (5.1 million lines) parsed and measured in 134 s with no failures. Worker threads are not needed yet; revisit if rules grow much heavier.
 - **Extensibility:** a rule is a plain object (`id`, `category`, `run(model) → findings`) plus a catalog entry (standards, rationale, suggestion). New rules and new languages are added without editing the orchestrator.
 - **Self-checking:** CI runs SiftCode on its own source (PRD US-072).

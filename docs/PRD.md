@@ -161,7 +161,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 - **NFR-1 Offline and private:** no network access during a scan, no telemetry. Source code never leaves the machine.
 - **NFR-2 Safe on untrusted code:** the scanned code is parsed, never executed, imported, or built. Limits on file size and parse time; symlinks are not followed outside the scan root.
 - **NFR-3 Deterministic:** the same input and config produce byte-identical JSON/SARIF (stable ordering, no timestamps in the finding data).
-- **NFR-4 Performance:** scan 50k lines across mixed languages in under 30 seconds on a typical laptop; memory bounded by streaming files, not holding every tree. Measured in M2 (with metrics): 52k lines in 2.2 s, about 107 MB peak (see ARCHITECTURE). Re-measure as rules are added.
+- **NFR-4 Performance:** scan 50k lines across mixed languages in under 30 seconds on a typical laptop; memory bounded by streaming files, not holding every tree. Measured in M3 (with metrics and design facts): 52k lines in 3.0 s, about 107 MB peak (see ARCHITECTURE). Re-measure as rules are added.
 - **NFR-5 Portability:** Windows, macOS, Linux; Node LTS; no native compilation required to install.
 - **NFR-6 Signal over noise:** every rule has a confidence level; rules that are heuristic default to `warning` or lower; a false-positive report is a bug.
 - **NFR-7 Accessible reports:** HTML report meets WCAG 2.2 AA (keyboard operable, contrast, no color-only meaning). Terminal output respects `NO_COLOR` and does not depend on emoji.

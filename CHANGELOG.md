@@ -25,4 +25,10 @@ All notable user-visible changes are recorded here. The format follows
 - Rules `SC-MET-002` (cyclomatic complexity, default limit 10), `SC-MET-003` (parameters, 5),
   `SC-MET-004` (nesting depth, 4), and `SC-MET-005` (Maintainability Index below 20), each with
   a configurable limit, the standards behind it, and a suggested fix.
+- Design rules, all heuristics: `SC-DES-001` Law of Demeter (a chain reaching through more than 3
+  members), `SC-DES-002` Service Locator (fetching a dependency from a container instead of
+  receiving it), `SC-DES-003` class with too many methods (25), `SC-DES-004` class whose methods fall
+  into 3 or more groups that share no state, `SC-DES-005` module importing more than 25 modules.
+  They skip test code, barrel files, and composition roots. The JSON report lists each class with
+  its method, field, and cohesion figures.
 - Apache-2.0 license.

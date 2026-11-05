@@ -36,7 +36,8 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 - `src/discovery/` file walking, `.gitignore` and config ignores, size limits
 - `src/languages/` registry, `grammars.json` (single source for grammar file names), parser,
   `model/` (the Code Model rules see, and the metric formulas), `extract.ts` (syntax tree to
-  named functions), `measure.ts` (complexity, Halstead, nesting, lines: ADR 0005)
+  named functions), `measure.ts` (complexity, Halstead, nesting, lines: ADR 0005), `facts/` (imports, member
+  chains, classes: ADR 0006)
 - `src/rules/` one file per rule (metadata, suggestion, check) + `index.ts` registry
 - `src/reporters/` text, JSON, Markdown, SARIF, `explain`
 - `src/git/` planned (M5): see `docs/ARCHITECTURE.md`

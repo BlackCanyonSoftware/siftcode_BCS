@@ -12,9 +12,10 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 2).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with five code-metric rules for JavaScript/TypeScript,
-> Python, and C#. More rules arrive in the next milestones; see the [roadmap](docs/ROADMAP.md).
+> **Status: early development (Milestone 3).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF) work, with ten rules for JavaScript/TypeScript, Python, and C#:
+> five code metrics and five design heuristics. More rules arrive in the next milestones; see the
+> [roadmap](docs/ROADMAP.md).
 
 ## Quick start
 
@@ -73,11 +74,21 @@ rationale, the standards behind it, and an example.
 
 | Rule | Finds | Option (default) | Severity |
 | --- | --- | --- | --- |
+| `SC-DES-001` | A chain reaches through several objects (Law of Demeter) | `maxChain` (3), `includeDataChains` (false) | info |
+| `SC-DES-002` | A dependency is fetched from a container (Service Locator) | none | warning |
+| `SC-DES-003` | A class has too many methods | `maxMethods` (25) | info |
+| `SC-DES-004` | A class holds groups of methods that share no state | `minMethods` (6), `minGroups` (3) | info |
+| `SC-DES-005` | A module imports too many other modules | `maxImports` (25) | info |
 | `SC-MET-001` | Function or method is too long | `maxLines` (50) | info |
 | `SC-MET-002` | Cyclomatic complexity is too high | `maxComplexity` (10) | warning |
 | `SC-MET-003` | Too many parameters | `maxParameters` (5) | info |
 | `SC-MET-004` | Control structures nested too deeply | `maxDepth` (4) | info |
 | `SC-MET-005` | Low Maintainability Index (0 to 100) | `minIndex` (20) | info |
+
+The design rules (`SC-DES-*`) are heuristics: they read the shape of the code, not its types, so
+they skip test code and a few idioms (see [ADR 0006](docs/adr/0006-design-heuristics.md)) and report
+at `info` with low confidence. `SC-DES-001` also needs a method call in the chain by default, so the
+example `user.getAccount().getSubscription().cancel()` (3 members) is caught with `maxChain: 2`.
 
 ## Configuration
 
