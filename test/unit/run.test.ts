@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { EXIT_FINDINGS, EXIT_OK, EXIT_USAGE, run } from '../../src/cli/run.js';
-import { fixture, longJsFunction, useProjects } from '../helpers/project.js';
+import { allRuleIds, fixture, longJsFunction, useProjects } from '../helpers/project.js';
 
 const sample = fixture('sample');
 const projects = useProjects();
@@ -234,9 +234,7 @@ describe('explain command (US-041)', () => {
     const { code, stderr } = await runCli('explain', 'SC-NOPE-1');
 
     expect(code).toBe(EXIT_USAGE);
-    expect(stderr).toContain(
-      'Unknown rule "SC-NOPE-1". Known rules: SC-DES-001, SC-DES-002, SC-DES-003, SC-DES-004, SC-DES-005, SC-MET-001, SC-MET-002, SC-MET-003, SC-MET-004, SC-MET-005, SC-SEC-001, SC-SEC-002, SC-SEC-003, SC-SEC-004, SC-SEC-005, SC-SEC-006, SC-SEC-007.',
-    );
+    expect(stderr).toContain(`Unknown rule "SC-NOPE-1". Known rules: ${allRuleIds().join(', ')}.`);
   });
 
   it('exits 2 when no id is given', async () => {

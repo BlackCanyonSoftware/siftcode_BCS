@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseConfig } from '../../src/config/load.js';
 import { UsageError } from '../../src/core/errors.js';
 import { scan } from '../../src/core/scan.js';
-import { fixture, longJsFunction, useProjects } from '../helpers/project.js';
+import { allRuleIds, fixture, longJsFunction, useProjects } from '../helpers/project.js';
 
 const projects = useProjects();
 const strict = parseConfig('{"rules":{"SC-MET-001":{"options":{"maxLines":3}}}}', 'test');
@@ -26,25 +26,7 @@ describe('scan (US-001, US-071)', () => {
   it('lists the rules that ran, in id order', async () => {
     const result = await scan(fixture('sample'));
 
-    expect(result.rules.map((rule) => rule.id)).toEqual([
-      'SC-DES-001',
-      'SC-DES-002',
-      'SC-DES-003',
-      'SC-DES-004',
-      'SC-DES-005',
-      'SC-MET-001',
-      'SC-MET-002',
-      'SC-MET-003',
-      'SC-MET-004',
-      'SC-MET-005',
-      'SC-SEC-001',
-      'SC-SEC-002',
-      'SC-SEC-003',
-      'SC-SEC-004',
-      'SC-SEC-005',
-      'SC-SEC-006',
-      'SC-SEC-007',
-    ]);
+    expect(result.rules.map((rule) => rule.id)).toEqual(allRuleIds());
   });
 
   it('reports a file that does not parse and still finishes the scan', async () => {

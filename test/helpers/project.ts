@@ -44,6 +44,11 @@ export function longJsFunction(name: string, lines: number): string {
   return [`function ${name}() {`, ...body, '}', ''].join('\n');
 }
 
+/** The id of every rule SiftCode ships, in id order. */
+export function allRuleIds(): string[] {
+  return ALL_RULES.map((rule) => rule.meta.id).sort();
+}
+
 /** A config with only the rule `id` switched on, so a test sees that rule's findings and no others. */
 export function onlyRule(id: string, options: object = {}) {
   const rules: Record<string, object> = {};

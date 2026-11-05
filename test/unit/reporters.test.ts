@@ -4,7 +4,7 @@ import type { ScanResult } from '../../src/core/result.js';
 import { scan } from '../../src/core/scan.js';
 import { REPORT_FORMATS, renderReport } from '../../src/reporters/index.js';
 import { escapeMarkdown } from '../../src/reporters/markdown.js';
-import { fixture, longJsFunction, useProjects } from '../helpers/project.js';
+import { allRuleIds, fixture, longJsFunction, useProjects } from '../helpers/project.js';
 import { sarifErrors } from '../helpers/sarif.js';
 
 const strict = parseConfig('{"rules":{"SC-MET-001":{"options":{"maxLines":5}}}}', 'test');
@@ -61,25 +61,7 @@ describe('JSON report (US-004)', () => {
     expect(report.summary.filesScanned).toBe(5);
     expect(report.summary.findings).toEqual({ error: 0, warning: 0, info: 11, note: 0 });
     expect(report.summary.languages).toEqual({ 'C#': 1, JavaScript: 1, Python: 1, TypeScript: 2 });
-    expect(report.rules.map((r) => r.id)).toEqual([
-      'SC-DES-001',
-      'SC-DES-002',
-      'SC-DES-003',
-      'SC-DES-004',
-      'SC-DES-005',
-      'SC-MET-001',
-      'SC-MET-002',
-      'SC-MET-003',
-      'SC-MET-004',
-      'SC-MET-005',
-      'SC-SEC-001',
-      'SC-SEC-002',
-      'SC-SEC-003',
-      'SC-SEC-004',
-      'SC-SEC-005',
-      'SC-SEC-006',
-      'SC-SEC-007',
-    ]);
+    expect(report.rules.map((r) => r.id)).toEqual(allRuleIds());
     expect(report.findings).toHaveLength(11);
     expect(report.findings[0]).toMatchObject({
       ruleId: 'SC-MET-001',
@@ -234,25 +216,7 @@ describe('SARIF report (US-003)', () => {
     const [run] = sarif.runs;
     expect(run?.tool.driver.name).toBe('SiftCode');
     expect(run?.tool.driver.version).toBe('9.9.9');
-    expect(run?.tool.driver.rules.map((r) => r.id)).toEqual([
-      'SC-DES-001',
-      'SC-DES-002',
-      'SC-DES-003',
-      'SC-DES-004',
-      'SC-DES-005',
-      'SC-MET-001',
-      'SC-MET-002',
-      'SC-MET-003',
-      'SC-MET-004',
-      'SC-MET-005',
-      'SC-SEC-001',
-      'SC-SEC-002',
-      'SC-SEC-003',
-      'SC-SEC-004',
-      'SC-SEC-005',
-      'SC-SEC-006',
-      'SC-SEC-007',
-    ]);
+    expect(run?.tool.driver.rules.map((r) => r.id)).toEqual(allRuleIds());
     const lengthRule = run?.tool.driver.rules.find((rule) => rule.id === 'SC-MET-001');
     expect(lengthRule?.help.text).toContain('Extract cohesive blocks');
     expect(run?.results).toHaveLength(11);
