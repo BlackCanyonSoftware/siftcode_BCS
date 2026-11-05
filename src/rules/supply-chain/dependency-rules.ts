@@ -59,7 +59,7 @@ function lockfileHit(manifest: Manifest, advice: string, severity?: 'info'): Rep
     path: manifest.path,
     startLine: 1,
     endLine: 1,
-    message: `${posix.basename(manifest.path)} lists ${external(manifest).length} dependencies but no lockfile is committed: ${advice}`,
+    message: `${posix.basename(manifest.path)} lists ${external(manifest).length} ${external(manifest).length === 1 ? 'dependency' : 'dependencies'} but no lockfile is committed: ${advice}`,
     key: `lockfile:${manifest.path}`,
     ...(severity ? { severity } : {}),
   };

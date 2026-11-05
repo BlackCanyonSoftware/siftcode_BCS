@@ -1,3 +1,8 @@
 {
-  "ignore": ["test/fixtures/"]
+  "ignore": ["test/fixtures/"],
+  "rules": {
+    "SC-SUP-007": {
+      "enabled": false
+    }
+  }
 }

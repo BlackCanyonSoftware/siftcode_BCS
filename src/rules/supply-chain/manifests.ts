@@ -113,8 +113,8 @@ export function classifyPython(raw: string): Pinning {
   return /^===?\s*\d[\w.!+-]*$/.test(spec) ? 'pinned' : 'ranged';
 }
 
-/** One requirement such as `requests[socks]>=2.0,<3 ; python_version > "3"`. */
-export function parseRequirement(raw: string, line: number): Dependency | undefined {
+/** The requirement on a line of a requirements file, or undefined for blanks, comments, and options. */
+function requirementText(raw: string): string | undefined {
   const text = raw
     .replace(/\s+#.*$/, '')
     .replace(/\s+--hash.*$/, '')
@@ -124,24 +124,39 @@ export function parseRequirement(raw: string, line: number): Dependency | undefi
     return undefined;
   }
   const editable = text.replace(/^(?:-e|--editable)\s+/, '');
-  if (editable.startsWith('-')) {
-    return undefined; // an option such as `-r other.txt` or `--index-url`
+  return editable.startsWith('-') ? undefined : editable; // `-r other.txt`, `--index-url …`
+}
+
+/** A requirement that is a path, a repository, or a web address instead of a name and version. */
+function addressRequirement(text: string, line: number): Dependency | undefined {
+  if (/^(?:\.{1,2}(?:\/|$)|\/|file:)/.test(text)) {
+    return { name: text, spec: text, pinning: 'local', line };
   }
-  if (/^(?:\.{1,2}(?:\/|$)|\/|file:)/.test(editable)) {
-    return { name: editable, spec: editable, pinning: 'local', line };
+  const egg = /#egg=([\w.-]+)/.exec(text)?.[1];
+  const direct = /^([A-Za-z0-9][\w.-]*)\s*(?:\[[^\]]*\])?\s*@\s*(\S+)/.exec(text);
+  const address = direct?.[2] ?? text;
+  if (!direct && !/^(?:git|hg|svn|bzr)\+|^https?:\/\//.test(text)) {
+    return undefined;
   }
-  const egg = /#egg=([\w.-]+)/.exec(editable)?.[1];
-  const direct = /^([A-Za-z0-9][\w.-]*)\s*(?:\[[^\]]*\])?\s*@\s*(\S+)/.exec(editable);
-  const address = direct?.[2] ?? editable;
-  if (direct || /^(?:git|hg|svn|bzr)\+|^https?:\/\//.test(editable)) {
-    return {
-      name: direct?.[1] ?? egg ?? address,
-      spec: address,
-      pinning: /^git\+|^git:|\.git(?:[#@]|$)/.test(address) ? 'git' : 'url',
-      line,
-    };
+  return {
+    name: direct?.[1] ?? egg ?? address,
+    spec: address,
+    pinning: /^git\+|^git:|\.git(?:[#@]|$)/.test(address) ? 'git' : 'url',
+    line,
+  };
+}
+
+/** One requirement such as `requests[socks]>=2.0,<3 ; python_version > "3"`. */
+export function parseRequirement(raw: string, line: number): Dependency | undefined {
+  const text = requirementText(raw);
+  if (text === undefined) {
+    return undefined;
   }
-  const match = /^([A-Za-z0-9][\w.-]*)\s*(?:\[[^\]]*\])?\s*([^;]*)/.exec(editable);
+  const address = addressRequirement(text, line);
+  if (address) {
+    return address;
+  }
+  const match = /^([A-Za-z0-9][\w.-]*)\s*(?:\[[^\]]*\])?\s*([^;]*)/.exec(text);
   if (!match?.[1]) {
     return undefined;
   }
@@ -188,6 +203,27 @@ const TOML_DEPENDENCY_TABLES =
   /^(?:tool\.poetry(?:\.group\.[\w-]+)?\.(?:dev-)?dependencies|packages|dev-packages)$/;
 const TOML_ARRAY_TABLES = /^(?:project\.optional-dependencies|dependency-groups)$/;
 
+/** Whether a line opens one of the arrays of requirement strings in a pyproject.toml. */
+function opensRequirementArray(table: string, line: string): boolean {
+  return table === 'project'
+    ? /^dependencies\s*=\s*\[/.test(line)
+    : TOML_ARRAY_TABLES.test(table) && /^[\w-]+\s*=\s*\[/.test(line);
+}
+
+/** The requirements quoted on one line of an array. */
+function quotedRequirements(content: string, lineNumber: number): Dependency[] {
+  return [...content.matchAll(/"([^"]+)"|'([^']+)'/g)].flatMap((item) => {
+    const dependency = parseRequirement(item[1] ?? item[2] ?? '', lineNumber);
+    return dependency ? [dependency] : [];
+  });
+}
+
+/** `name = "version"` or `name = { git = "…" }` in a Poetry or Pipenv table. */
+function tableEntry(line: string, lineNumber: number): Dependency | undefined {
+  const entry = /^["']?([A-Za-z0-9][\w.-]*)["']?\s*=\s*(.+)$/.exec(line);
+  return entry?.[1] && entry[2] ? tableDependency(entry[1], entry[2], lineNumber) : undefined;
+}
+
 /**
  * Reads the dependency lists of a pyproject.toml or Pipfile without a TOML parser: the arrays of
  * requirement strings (`[project]`, optional dependencies, dependency groups) and the
@@ -197,34 +233,18 @@ function parseToml(path: string, text: string): Manifest {
   const dependencies: Dependency[] = [];
   let table = '';
   let inArray = false;
-  const lines = text.split(/\r\n|\r|\n/);
-  for (const [index, raw] of lines.entries()) {
+  for (const [index, raw] of text.split(/\r\n|\r|\n/).entries()) {
     const line = raw.replace(/\s+#.*$/, '').trim();
     const header = /^\[\[?([^\]]+)\]\]?$/.exec(line)?.[1];
     if (!inArray && header !== undefined) {
       table = header.trim();
-      continue;
-    }
-    const startsArray: boolean =
-      !inArray &&
-      ((table === 'project' && /^dependencies\s*=\s*\[/.test(line)) ||
-        (TOML_ARRAY_TABLES.test(table) && /^[\w-]+\s*=\s*\[/.test(line)));
-    if (startsArray || inArray) {
-      const content: string = startsArray ? line.slice(line.indexOf('[') + 1) : line;
-      for (const item of content.matchAll(/"([^"]+)"|'([^']+)'/g)) {
-        const dependency = parseRequirement(item[1] ?? item[2] ?? '', index + 1);
-        if (dependency) {
-          dependencies.push(dependency);
-        }
-      }
+    } else if (inArray || opensRequirementArray(table, line)) {
+      const content: string = inArray ? line : line.slice(line.indexOf('[') + 1);
+      dependencies.push(...quotedRequirements(content, index + 1));
       // A `]` inside a quoted extra such as "requests[socks]" does not close the array.
       inArray = !content.replace(/"[^"]*"|'[^']*'/g, '').includes(']');
-      continue;
-    }
-    if (TOML_DEPENDENCY_TABLES.test(table)) {
-      const entry = /^["']?([A-Za-z0-9][\w.-]*)["']?\s*=\s*(.+)$/.exec(line);
-      const dependency =
-        entry?.[1] && entry[2] ? tableDependency(entry[1], entry[2], index + 1) : undefined;
+    } else if (TOML_DEPENDENCY_TABLES.test(table)) {
+      const dependency = tableEntry(line, index + 1);
       if (dependency) {
         dependencies.push(dependency);
       }
