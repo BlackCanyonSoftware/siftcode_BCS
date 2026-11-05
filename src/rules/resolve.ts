@@ -1,7 +1,7 @@
 import type { Config } from '../config/schema.js';
 import { UsageError } from '../core/errors.js';
 import type { Severity } from '../core/severity.js';
-import type { FileCheck, RuleDefinition, RuleMeta } from './types.js';
+import type { FileCheck, RepoCheck, RuleDefinition, RuleMeta } from './types.js';
 
 /** A rule that is switched on, with the severity the config gave it (if any) and validated options bound in. */
 export interface ConfiguredRule {
@@ -9,6 +9,8 @@ export interface ConfiguredRule {
   /** Set when the config file names a severity for the rule; it beats the rule's and a hit's own. */
   readonly severityOverride?: Severity;
   readonly check: FileCheck;
+  /** Set for a repository-level rule. */
+  readonly repoCheck?: RepoCheck;
 }
 
 /**
@@ -38,6 +40,7 @@ export function resolveRules(
         meta: rule.meta,
         ...(setting?.severity === undefined ? {} : { severityOverride: setting.severity }),
         check: rule.configure(setting?.options ?? {}),
+        ...(rule.configureRepo ? { repoCheck: rule.configureRepo(setting?.options ?? {}) } : {}),
       },
     ];
   });

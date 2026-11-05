@@ -2,28 +2,55 @@ import type { z } from 'zod';
 import { UsageError } from '../core/errors.js';
 import { describeIssues } from '../core/issues.js';
 import type { AnalyzedFile } from '../languages/model/types.js';
-import type { RuleDefinition, RuleHit, RuleMeta } from './types.js';
+import type { RepoHit, RepoView, RuleDefinition, RuleHit, RuleMeta } from './types.js';
 
-interface RuleSpec<Options> {
+interface RuleSpec<Options, Check> {
   readonly meta: RuleMeta;
   /** Schema for the rule's `options` in the config file; supply defaults for every option. */
   readonly options: z.ZodType<Options>;
-  readonly check: (file: AnalyzedFile, options: Options) => readonly RuleHit[];
+  readonly check: Check;
 }
 
-/** Declares a rule with typed options. */
-export function defineRule<Options>(spec: RuleSpec<Options>): RuleDefinition {
+/** Validates the options a rule was given, or throws a `UsageError` naming the rule and the key. */
+function validated<Options>(spec: { meta: RuleMeta; options: z.ZodType<Options> }, raw: unknown) {
+  const parsed = spec.options.safeParse(raw);
+  if (!parsed.success) {
+    throw new UsageError(
+      `Invalid options for rule ${spec.meta.id}:\n${describeIssues(parsed.error)}`,
+    );
+  }
+  return parsed.data;
+}
+
+/** Declares a rule that checks one source file at a time, with typed options. */
+export function defineRule<Options>(
+  spec: RuleSpec<Options, (file: AnalyzedFile, options: Options) => readonly RuleHit[]>,
+): RuleDefinition {
   return {
     meta: spec.meta,
     configure(rawOptions) {
-      const parsed = spec.options.safeParse(rawOptions);
-      if (!parsed.success) {
-        throw new UsageError(
-          `Invalid options for rule ${spec.meta.id}:\n${describeIssues(parsed.error)}`,
-        );
-      }
-      const options = parsed.data;
+      const options = validated(spec, rawOptions);
       return (file) => spec.check(file, options);
+    },
+  };
+}
+
+/**
+ * Declares a rule that checks the whole repository (its manifests, lockfiles, CI configuration,
+ * documentation), not one source file. It runs once per scan of a folder.
+ */
+export function defineRepoRule<Options>(
+  spec: RuleSpec<Options, (repo: RepoView, options: Options) => Promise<readonly RepoHit[]>>,
+): RuleDefinition {
+  return {
+    meta: spec.meta,
+    configure(rawOptions) {
+      validated(spec, rawOptions);
+      return () => []; // there is nothing to check in a single source file
+    },
+    configureRepo(rawOptions) {
+      const options = validated(spec, rawOptions);
+      return (repo) => spec.check(repo, options);
     },
   };
 }

@@ -41,6 +41,12 @@ export interface Discovery {
   readonly root: string;
   readonly files: readonly SourceFile[];
   readonly skipped: SkippedCounts;
+  /** False when the path named a single file rather than a folder. */
+  readonly isDirectory: boolean;
+  /** Relative paths of every file that was not ignored, supported or not, in sorted order. */
+  readonly allFiles: readonly string[];
+  /** True when the scanned folder holds a `.git` entry, so it is the top of a repository. */
+  readonly isRepositoryRoot: boolean;
 }
 
 export interface DiscoverOptions {
@@ -65,7 +71,8 @@ export async function discoverFiles(
   }
 
   const walk = new Walk();
-  if (rootStat.isDirectory()) {
+  const isDirectory = rootStat.isDirectory();
+  if (isDirectory) {
     const ignores = IgnoreStack.create(
       DEFAULT_IGNORED_DIRECTORIES.map((name) => `${name}/`),
       options.ignore ?? [],
@@ -74,11 +81,25 @@ export async function discoverFiles(
   } else {
     await walk.file(root, basename(root));
   }
-  return { root, files: walk.files, skipped: walk.skipped };
+  const isRepositoryRoot =
+    isDirectory &&
+    (await stat(join(root, '.git')).then(
+      () => true,
+      () => false,
+    ));
+  return {
+    root,
+    files: walk.files,
+    skipped: walk.skipped,
+    isDirectory,
+    allFiles: walk.allFiles,
+    isRepositoryRoot,
+  };
 }
 
 class Walk {
   readonly files: SourceFile[] = [];
+  readonly allFiles: string[] = [];
   readonly skipped = { unsupported: 0, tooLarge: 0, symlinks: 0 };
 
   async directory(absolute: string, relativePath: string, inherited: IgnoreStack): Promise<void> {
@@ -96,6 +117,7 @@ class Walk {
           await this.directory(childPath, childRelative, ignores);
         }
       } else if (entry.isFile() && !ignores.isIgnored(childRelative, false)) {
+        this.allFiles.push(childRelative);
         await this.file(childPath, childRelative);
       }
     }

@@ -5,8 +5,10 @@ import type { AnalyzedFile, CodeFile } from '../languages/model/types.js';
 import { SyntaxParser } from '../languages/parser.js';
 import { ALL_RULES } from '../rules/index.js';
 import { resolveRules, type ConfiguredRule } from '../rules/resolve.js';
+import type { RepoView } from '../rules/types.js';
 import { compareStrings } from './compare.js';
 import { compareFindings, createFinding, type Finding } from './finding.js';
+import { createRepoView } from './repo-view.js';
 import type { FileProblem, ScanResult } from './result.js';
 
 export interface ScanOptions {
@@ -41,6 +43,9 @@ export async function scan(path: string, options: ScanOptions = {}): Promise<Sca
     }
   } finally {
     parser.dispose();
+  }
+  if (discovery.isDirectory) {
+    findings.push(...(await runRepoRules(createRepoView(discovery), rules)));
   }
 
   return {
@@ -101,6 +106,21 @@ function runRules(file: AnalyzedFile, rules: readonly ConfiguredRule[]): Finding
       return createFinding(rule, file.path, hit, occurrence);
     }),
   );
+}
+
+/** Runs the repository-level rules (manifests, lockfiles, CI, documentation) once for the scan. */
+async function runRepoRules(repo: RepoView, rules: readonly ConfiguredRule[]): Promise<Finding[]> {
+  const occurrences = new Map<string, number>();
+  const findings: Finding[] = [];
+  for (const rule of rules) {
+    for (const hit of (await rule.repoCheck?.(repo)) ?? []) {
+      const identity = `${rule.meta.id}\n${hit.path}\n${hit.key}`;
+      const occurrence = (occurrences.get(identity) ?? 0) + 1;
+      occurrences.set(identity, occurrence);
+      findings.push(createFinding(rule, hit.path, hit, occurrence));
+    }
+  }
+  return findings;
 }
 
 /** Number of lines, not counting the empty "line" after a trailing newline. */

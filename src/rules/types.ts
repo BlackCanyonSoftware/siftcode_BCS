@@ -2,7 +2,13 @@ import type { Severity } from '../core/severity.js';
 import type { AnalyzedFile } from '../languages/model/types.js';
 
 export type Category =
-  'maintainability' | 'design' | 'reliability' | 'security' | 'performance' | 'documentation';
+  | 'maintainability'
+  | 'design'
+  | 'reliability'
+  | 'security'
+  | 'performance'
+  | 'documentation'
+  | 'supply-chain';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -57,9 +63,32 @@ export interface RuleHit {
 
 export type FileCheck = (file: AnalyzedFile) => readonly RuleHit[];
 
+/** What a repository-level rule sees: the project's files, not one source file. */
+export interface RepoView {
+  /** True when the scanned folder is the top of a Git repository (it holds `.git`). */
+  readonly isRepositoryRoot: boolean;
+  /** Paths of every file that was not ignored, relative to the scan root, in sorted order. */
+  readonly files: readonly string[];
+  /** How many supported source files were found. */
+  readonly sourceFileCount: number;
+  /** Whether `path` (relative to the scan root, forward slashes) is one of the files. */
+  has(path: string): boolean;
+  /** The text of a file, or undefined if it is missing, unreadable, or larger than 1 MiB. */
+  read(path: string): Promise<string | undefined>;
+}
+
+/** A hit from a repository-level rule: it names the file (or `.`) it is about. */
+export interface RepoHit extends RuleHit {
+  readonly path: string;
+}
+
+export type RepoCheck = (repo: RepoView) => Promise<readonly RepoHit[]>;
+
 /** A rule as registered: its description, and a way to bind it to validated options. */
 export interface RuleDefinition {
   readonly meta: RuleMeta;
   /** Validates `options` against the rule's schema (throws `UsageError`) and returns the check. */
   configure(options: unknown): FileCheck;
+  /** Present on a repository-level rule: validates `options` and returns its repository check. */
+  configureRepo?(options: unknown): RepoCheck;
 }
