@@ -2,7 +2,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Language, Parser } from 'web-tree-sitter';
 import { extractUnits, measureFile } from './extract.js';
-import type { CodeMetrics, CodeUnit } from './model/types.js';
+import { extractFacts } from './facts/index.js';
+import type { ClassFact, CodeMetrics, CodeUnit, FileFacts } from './model/types.js';
 import { grammarFileName, type GrammarId } from './registry.js';
 
 /** `grammars/` sits two levels above this file in both `src/` and `dist/`. */
@@ -30,6 +31,10 @@ export type ParseResult =
       readonly units: readonly CodeUnit[];
       /** Measurements of the whole file. */
       readonly metrics: CodeMetrics;
+      /** Named classes, structs, and records. */
+      readonly classes: readonly ClassFact[];
+      /** Imports and member-access chains, for the rules that run on the file. */
+      readonly facts: FileFacts;
     }
   | { readonly outcome: 'syntax-error' | 'timeout' };
 
@@ -72,6 +77,7 @@ export class SyntaxParser {
         outcome: 'ok',
         units: extractUnits(grammar, root),
         metrics: measureFile(grammar, root),
+        ...extractFacts(grammar, root),
       };
     } finally {
       tree.delete();

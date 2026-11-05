@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { DEFAULT_CONFIG, type Config } from '../config/schema.js';
 import { discoverFiles, type SourceFile } from '../discovery/discover.js';
-import type { CodeFile } from '../languages/model/types.js';
+import type { AnalyzedFile, CodeFile } from '../languages/model/types.js';
 import { SyntaxParser } from '../languages/parser.js';
 import { ALL_RULES } from '../rules/index.js';
 import { resolveRules, type ConfiguredRule } from '../rules/resolve.js';
@@ -85,11 +85,13 @@ async function analyzeFile(
     lineCount: countLines(source),
     metrics: parsed.metrics,
     units: parsed.units,
+    classes: parsed.classes,
   };
-  return { findings: runRules(codeFile, rules), file: codeFile };
+  // The facts are only needed while rules run, so the summary kept in the result leaves them out.
+  return { findings: runRules({ ...codeFile, facts: parsed.facts }, rules), file: codeFile };
 }
 
-function runRules(file: CodeFile, rules: readonly ConfiguredRule[]): Finding[] {
+function runRules(file: AnalyzedFile, rules: readonly ConfiguredRule[]): Finding[] {
   const occurrences = new Map<string, number>();
   return rules.flatMap((rule) =>
     rule.check(file).map((hit) => {

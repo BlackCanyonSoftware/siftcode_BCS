@@ -1,8 +1,8 @@
 import type { Severity } from '../core/severity.js';
-import type { CodeFile } from '../languages/model/types.js';
+import type { AnalyzedFile } from '../languages/model/types.js';
 
 export type Category =
-  'maintainability' | 'reliability' | 'security' | 'performance' | 'documentation';
+  'maintainability' | 'design' | 'reliability' | 'security' | 'performance' | 'documentation';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
@@ -49,7 +49,7 @@ export interface RuleHit {
   readonly key: string;
 }
 
-export type FileCheck = (file: CodeFile) => readonly RuleHit[];
+export type FileCheck = (file: AnalyzedFile) => readonly RuleHit[];
 
 /** A rule as registered: its description, and a way to bind it to validated options. */
 export interface RuleDefinition {

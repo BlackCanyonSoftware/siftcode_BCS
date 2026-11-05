@@ -39,6 +39,7 @@ function describeFile(file: CodeFile) {
     language: file.language,
     lines: file.lineCount,
     ...file.metrics,
+    classes: file.classes,
     units: file.units.map((unit) => ({
       kind: unit.kind,
       name: unit.name,
