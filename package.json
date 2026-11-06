@@ -27,6 +27,7 @@
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "build:grammars": "node scripts/copy-grammars.mjs",
     "build:licenses": "node scripts/build-licenses.mjs",
+    "review:license-table": "node scripts/license-table-review.mjs",
     "build": "npm run build:grammars && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

@@ -127,7 +127,6 @@ const PERMISSIVE = [
   'Libpng',
   'FTL',
   'HPND',
-  'JSON',
   'Beerware',
   'MIT-CMU',
   'MIT-Modern-Variant',
