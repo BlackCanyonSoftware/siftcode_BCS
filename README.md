@@ -12,10 +12,10 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 4a).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with 28 rules for JavaScript/TypeScript, Python, and C#:
-> five code metrics, five design heuristics, seven security checks, seven supply-chain checks, and
-> four design-documentation checks. More rules arrive in the next milestones; see the
+> **Status: early development (Milestone 4b).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF) work, with 36 rules for JavaScript/TypeScript, Python, and C#:
+> five code metrics, five design heuristics, seven security checks, seven supply-chain checks,
+> four design-documentation checks, and eight license checks. More rules arrive in the next milestones; see the
 > [roadmap](docs/ROADMAP.md).
 
 ## Quick start
@@ -84,6 +84,14 @@ rationale, the standards behind it, and an example.
 | `SC-DOC-002` | Design documents but no diagram | `minSourceFiles` (20) | info |
 | `SC-DOC-003` | Diagrams but no architecture decision records | `minSourceFiles` (20) | note |
 | `SC-DOC-004` | A diagram file that no document mentions | none | note |
+| `SC-LIC-001` | The project has no license | none | warning |
+| `SC-LIC-002` | The license file is a modified or unrecognized text | none | info |
+| `SC-LIC-003` | The declared license is not valid SPDX, or differs from the license file | none | warning; info if not valid |
+| `SC-LIC-004` | The license file has unfilled placeholders or no copyright holder | none | warning; info if no holder |
+| `SC-LIC-005` | A bundled folder has its own license that nothing mentions | none | warning |
+| `SC-LIC-006` | Source files tagged with a different license, or only some tagged | none | warning; info if untagged |
+| `SC-LIC-007` | A dependency's license conflicts with the project's | none | warning; info for weak copyleft |
+| `SC-LIC-008` | A dependency's license is missing, unclear, or not granted | none | info; warning if none is granted |
 | `SC-SEC-001` | A credential is written into the code (CWE-798) | `minLength` (8) | warning; error for a known key format |
 | `SC-SEC-002` | An SQL statement is built from a variable (CWE-89) | none | warning |
 | `SC-SEC-003` | An OS command is built from a variable (CWE-78) | none | warning |
@@ -121,6 +129,17 @@ and fenced diagram blocks (Mermaid, PlantUML, D2, draw.io, ADRs, C4, OpenAPI, an
 kept on the hosting platform (such as GitHub secret scanning); switch a rule off with
 `"SC-SUP-007": { "enabled": false }`.
 
+The license rules (`SC-LIC-*`) identify the project's license from its `LICENSE` file (by comparing
+the text with the bundled SPDX list; modified and custom licenses are told apart from standard
+ones) and from `package.json`, `pyproject.toml`, and `.csproj` declarations, and check the two agree.
+They read each dependency's license offline, from the npm lockfile, installed `node_modules`, a
+Python virtual environment, or restored NuGet packages, and compare it with the project's using a
+cited, versioned compatibility table. A dependency whose license cannot be found is reported as
+unknown, never guessed. **Every license finding is a check against published license data, not legal
+advice.** `SC-LIC-001` to `006` only run at the top of a Git repository; see
+[ADR 0009](docs/adr/0009-license-checks.md) for how licenses are matched, what the table covers, and
+its limits.
+
 The design rules (`SC-DES-*`) are heuristics: they read the shape of the code, not its types, so
 they skip test code and a few idioms (see [ADR 0006](docs/adr/0006-design-heuristics.md)) and report
 at `info` with low confidence. `SC-DES-001` also needs a method call in the chain by default, so the
@@ -150,6 +169,8 @@ Optional `siftcode.config.json` in the scanned folder. Unknown keys are rejected
 | Command                  | What it does                                                                |
 | ------------------------ | --------------------------------------------------------------------------- |
 | `npm run build`          | Copies the grammars into `grammars/` and compiles TypeScript to `dist`      |
+| `npm run build:licenses` | Refreshes `data/licenses` from the SPDX list (dev dependency, committed)    |
+| `npm run sbom`           | Writes a CycloneDX bill of materials (`sbom.cdx.json`)                      |
 | `npm run dev`            | Recompiles on change                                                        |
 | `npm test`               | Unit tests (downloads the SARIF schema on first run)                        |
 | `npm run test:e2e`       | Builds, then runs the built CLI end to end                                  |

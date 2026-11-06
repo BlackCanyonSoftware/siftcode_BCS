@@ -17,6 +17,7 @@ finding. Rigor tier: **MVP**. Product owner: the repository owner; you are the t
 npm ci                  # install (scripts disabled, exact versions)
 npm run hooks:install   # once per clone: pre-commit runs format:check, lint, typecheck
 npm run build           # copy grammars + compile to dist
+npm run build:licenses  # refresh data/licenses from the SPDX list (dev dependency; committed output)
 npm test                # unit tests (test/unit); downloads the SARIF schema on first run
 npm run benchmark       # build, then time a scan of a generated 50k-line project
 npm run test:e2e        # build, then run the built CLI (test/e2e)
@@ -41,6 +42,7 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 - `src/rules/` one file per rule (metadata, suggestion, check) + `index.ts` registry
 - `src/reporters/` text, JSON, Markdown, SARIF, `explain`
 - `src/git/` planned (M5): see `docs/ARCHITECTURE.md`
+- `data/licenses/` generated SPDX ids and license texts (committed, shipped; ADR 0009)
 - `scripts/` build helpers; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored
 - `test/unit`, `test/e2e`, `test/helpers`, `test/fixtures/rules/<rule-id>/{positive,negative}`
 

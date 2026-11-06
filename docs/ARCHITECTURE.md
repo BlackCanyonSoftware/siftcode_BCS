@@ -1,6 +1,6 @@
 # SiftCode: Architecture
 
-Status: plan, nothing built yet. Decisions: see [ADR 0001](adr/0001-typescript-and-tree-sitter.md). Requirements: see [PRD](PRD.md).
+Status: built through Milestone 4b (see [ROADMAP](ROADMAP.md) and the ADRs); later sections describe the plan. Decisions: see [ADR 0001](adr/0001-typescript-and-tree-sitter.md). Requirements: see [PRD](PRD.md).
 
 ## 1. Stack and rationale
 
@@ -76,8 +76,9 @@ src/
     security/       CWE pattern rules
     supply-chain/   manifests (npm, Python, NuGet), lockfile, pinning, SBOM, CI, update and secret-scanning signals (ADR 0008)
     documentation/  design/architecture artifact detection (diagrams, ADRs); freshness arrives in M5
-    licenses/       license detection, adherence, dependency license compatibility (M4b; uses
-                    bundled SPDX data and a versioned compatibility table)
+    licenses/       license detection, adherence, dependency license compatibility (ADR 0009:
+                    bundled SPDX data in data/licenses, expression parser, text matcher, offline
+                    dependency licenses, versioned compatibility table)
     readiness/      testing-readiness hints
     (each rule is one file holding its metadata, suggestion text, and check: ADR 0004)
   git/              read-only history access (churn)
