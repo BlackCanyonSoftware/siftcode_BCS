@@ -9,6 +9,10 @@ import { lawOfDemeter } from './design/law-of-demeter.js';
 import { moduleFanOut } from './design/module-fan-out.js';
 import { serviceLocator } from './design/service-locator.js';
 import {
+  dependencyLicenseConflicts,
+  unknownDependencyLicenses,
+} from './licenses/dependency-license-rules.js';
+import {
   licenseDeclarationMismatch,
   licenseNotices,
   noLicense,
@@ -58,6 +62,8 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   licenseNotices,
   undocumentedThirdPartyLicenses,
   spdxHeaders,
+  dependencyLicenseConflicts,
+  unknownDependencyLicenses,
   functionLength,
   cyclomaticComplexity,
   parameterCount,

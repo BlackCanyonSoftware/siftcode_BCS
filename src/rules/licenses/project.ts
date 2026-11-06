@@ -13,8 +13,8 @@ export interface LicenseFile {
   readonly identification: Identification;
 }
 
-/** A license a manifest declares for the project, classified. */
-export type DeclaredLicense = { readonly path: string; readonly raw: string } & (
+/** License text from a manifest, classified. */
+export type LicenseClaim = { readonly raw: string } & (
   | { readonly kind: 'expression'; readonly expression: Expression }
   /** Not SPDX syntax (`MIT License`, `Apache 2.0`): written for people, not for tools. */
   | { readonly kind: 'invalid'; readonly reason: string }
@@ -23,6 +23,9 @@ export type DeclaredLicense = { readonly path: string; readonly raw: string } & 
   /** `SEE LICENSE IN LICENSE.md`: the license is in a file. */
   | { readonly kind: 'see-file' }
 );
+
+/** A license a manifest declares for the project. */
+export type DeclaredLicense = LicenseClaim & { readonly path: string };
 
 export interface ProjectLicense {
   /** License files at the top of the project (and in a REUSE `LICENSES/` folder). */
@@ -59,17 +62,18 @@ async function readLicenseFiles(repo: RepoView, catalog: Catalog): Promise<Licen
   return files.filter((file) => file !== undefined);
 }
 
-function classify(path: string, raw: string, catalog: Catalog): DeclaredLicense {
-  if (/^(?:unlicensed|proprietary|commercial)$/i.test(raw.trim())) {
-    return { path, raw, kind: 'proprietary' };
+/** Classifies the `license` field of a manifest or package: an SPDX expression or something else. */
+export function classifyLicenseText(raw: string, catalog: Catalog): LicenseClaim {
+  if (/^(?:unlicensed|proprietary|commercial|none)$/i.test(raw.trim())) {
+    return { raw, kind: 'proprietary' };
   }
   if (/^see licen[cs]e in\b/i.test(raw.trim())) {
-    return { path, raw, kind: 'see-file' };
+    return { raw, kind: 'see-file' };
   }
   const parsed = parseExpression(raw, catalog);
   return parsed.ok
-    ? { path, raw, kind: 'expression', expression: parsed.expression }
-    : { path, raw, kind: 'invalid', reason: parsed.reason };
+    ? { raw, kind: 'expression', expression: parsed.expression }
+    : { raw, kind: 'invalid', reason: parsed.reason };
 }
 
 /** What the manifests at the top of the project (and every .NET project) say its license is. */
@@ -78,7 +82,7 @@ async function readDeclared(repo: RepoView, catalog: Catalog): Promise<DeclaredL
   return manifests.flatMap((manifest) =>
     manifest.license !== undefined &&
     (directoryOf(manifest.path) === '.' || manifest.ecosystem === 'nuget')
-      ? [classify(manifest.path, manifest.license, catalog)]
+      ? [{ ...classifyLicenseText(manifest.license, catalog), path: manifest.path }]
       : [],
   );
 }
@@ -113,8 +117,13 @@ function effectiveLicense(
       ? [identification.ids.find((id) => id.endsWith('-only')) ?? identification.ids[0]]
       : [],
   );
-  return anyOf([...new Set(ids.filter((id) => id !== undefined))]);
+  const fromFiles = anyOf([...new Set(ids.filter((id) => id !== undefined))]);
+  const proprietary = declared.some((entry) => entry.kind === 'proprietary');
+  return fromFiles ?? (proprietary ? PROPRIETARY : undefined);
 }
+
+/** Stands for "all rights reserved" when a project declares itself proprietary. */
+const PROPRIETARY: Expression = { kind: 'license', id: 'LicenseRef-Proprietary', known: false };
 
 const cache = new WeakMap<RepoView, Promise<ProjectLicense>>();
 

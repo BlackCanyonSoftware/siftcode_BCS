@@ -110,7 +110,7 @@ function parsePackageJson(path: string, text: string): Manifest | undefined {
 }
 
 /** `"license": "MIT"`, the old `{ "type": "MIT" }`, or the old `"licenses": [{ "type": … }]`. */
-function npmLicense(json: Record<string, unknown>): string | undefined {
+export function npmLicense(json: Record<string, unknown>): string | undefined {
   const { license, licenses } = json;
   const typeOf = (value: unknown): string | undefined =>
     typeof value === 'string'
