@@ -22,6 +22,7 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - A rule hit can set its own severity; a severity in the config file overrides it.
 - SARIF tags each rule with its CWE; the JSON report has a `metrics` section.
 - TypeScript declaration files (`.d.ts`) are skipped.
+- Brand last checked: 2026-11-05 · brandkit 1.56.0 · Brand Logos commit c51448c1 (dirty, only `requests/` changed) · set: readme · result: in sync (design-standard rollout: IBM Carbon recorded in DESIGN.md; no screen to rebuild until M6)
 - Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0008. License Apache-2.0. Brand
   re-synced 2026-11-01 (typeface JetBrains Mono).
 - Dogfood: `node dist/cli/main.js scan .` is clean (98 files, all 28 rules; `SC-SUP-007` is switched

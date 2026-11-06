@@ -1,6 +1,8 @@
 # SiftCode: Design
 
-SiftCode has no app UI. Its user-facing surfaces are the **terminal output** and the **HTML report**. This file defines both. The brand is defined in the `Brand Logos` project (`brands/siftcode/brand.toml`) and is the single source for logo, color, and type. Never retype a brand color, size, or font name here or in code; load the brand tokens. Current brand facts (from the generated `BRAND.md`, brandkit 1.49.0, 2026-11-01): product brand "SiftCode", initials **SC**, a brass mark with a two-tone/display wordmark that arrives at teal across "Code", and a typeface that the brand's Type section names (JetBrains Mono today). The typeface has already changed once when the brand was rebuilt, so it is never written into code or CSS: the face comes from the brand's `template/fonts.css`.
+SiftCode has no app UI. Its user-facing surfaces are the **terminal output** and the **HTML report**. This file defines both. The brand is defined in the `Brand Logos` project (`brands/siftcode/brand.toml`) and is the single source for logo, color, and type. Never retype a brand color, size, or font name here or in code; load the brand tokens. Current brand facts (from the generated `BRAND.md`, brandkit 1.56.0, 2026-11-05): product brand "SiftCode", initials **SC**, a brass mark with a two-tone/display wordmark that arrives at teal across "Code", named in JetBrains Mono and read in Public Sans. The typeface has already changed once when the brand was rebuilt, so it is never written into code or CSS: the faces come from the brand's `template/fonts.css`.
+
+**Design standard: IBM Carbon** (brandkit 1.56.0 onward; the brand is built to exactly this one standard and to no other, so no pattern is borrowed from Material, Ant, or Apple). Carbon owns the interface: corner radii, the type scale, control heights, spacing, elevation, motion, and how a control and the page shell look. The brand still owns colors, the mark, and the display face. What this means for the HTML report: square corners (only a tag, a toggle, and a circle are round); depth from background tone (page, then `layer-01`, `02`, `03`), not shadow, with a shadow only on what floats; regular-weight text in the productive type scale, no capitals, sentence-case labels; controls 32, 40, or 48 px high (40 by default); a selection is a tint with a stripe on its edge; a tag is a small pill; an inline notification has a stripe on its near edge. The report is built from the brand's `components.css` and `layout.css` classes, not from its own copies. A flat-looking screen is the standard, not a defect.
 
 Brand files in this repo:
 - `docs/brand/` holds the README set (`brandkit bundle siftcode docs/brand --set readme`): the light and dark README banners and `BUNDLE.json`. Verify with `brandkit check siftcode docs/brand --set readme`. Regenerate; never edit by hand.
@@ -45,10 +47,12 @@ Tokens come from the brand's `template/tokens.css` and `theme/theme.css` (light 
 |---|---|---|
 | Color roles | brand | `--ink`, `--accent`, `--mute`, `--logo`, `--brand`, `--page`, `--card`, `--line`, `--control`, `--on-brand` |
 | Status colors | brand | `--bad`/`--bad-bg`, `--warn`/`--warn-bg`, `--ok`/`--ok-bg`, `--on-bad` |
-| Type | brand | the brand's face via `--font`, `--font-display`, `--mono` (loaded from `template/fonts.css`, never a hand-written `font-family`); sizes `--fs-xs` (12) to `--fs-3xl` (40) |
-| Spacing | brand | `--s-1` (4) to `--s-8` (64) |
-| Radius | brand | `--r-sm`, `--r-md`, `--r-lg`, `--r-pill` |
-| Motion, breakpoints | brand | breakpoints from the brand's `layout.css`; 150 ms ease for expand/collapse, none under reduced motion |
+| Type | brand | the brand's face via `--font`, `--font-display`, `--mono` (loaded from `template/fonts.css`, never a hand-written `font-family`); sizes `--fs-xs` to `--fs-3xl` |
+| Spacing | brand (Carbon scale) | `--s-1` to `--s-8` |
+| Radius | brand (Carbon: square) | `--r-sm`, `--r-md`, `--r-lg` (none), `--r-pill` (tags and toggles only) |
+| Control height | brand (Carbon) | `--control-h-sm`, `--control-h`, `--control-h-lg` |
+| Elevation | brand (Carbon) | `--shadow-1` to `--shadow-3`, used only for what floats (a menu, a toast); layers are background tones |
+| Motion, breakpoints | brand (Carbon) | `--t-fast` for a state change, `--t-med` for movement, `--ease` (and `--ease-entrance`, `--ease-exit`); breakpoints from the brand's `layout.css`; none under reduced motion |
 
 **Severity mapping (report-specific, built from brand roles):**
 
