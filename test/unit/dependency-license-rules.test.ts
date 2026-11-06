@@ -300,3 +300,82 @@ describe('SC-LIC-008 unclear or missing dependency licenses (US-037)', () => {
     expect(findings).toEqual([]);
   });
 });
+
+describe('grouping and proprietary projects (US-037)', () => {
+  it('reports dependencies that share a license and an issue as one finding', async () => {
+    const findings = await findingsFor(
+      'SC-LIC-007',
+      project(
+        'MIT',
+        { a: '1', b: '1', c: '1' },
+        {
+          'package-lock.json': lockfile({
+            'node_modules/a': { version: '1.0.0', license: 'MPL-2.0' },
+            'node_modules/b': { version: '1.0.0', license: 'MPL-2.0' },
+            'node_modules/c': { version: '1.0.0', license: 'MPL-2.0' },
+          }),
+        },
+      ),
+    );
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.message).toContain(
+      '3 dependencies (a 1.0.0, b 1.0.0, c 1.0.0) are licensed MPL-2.0',
+    );
+  });
+
+  it('keeps different issues apart, and says "and N more" past five names', async () => {
+    const many = Object.fromEntries(
+      Array.from({ length: 7 }, (_, i) => [
+        `node_modules/p${i}`,
+        { version: '1.0.0', license: 'GPL-3.0-only' },
+      ]),
+    );
+    const findings = await findingsFor(
+      'SC-LIC-007',
+      project(
+        'MIT',
+        {},
+        {
+          'package-lock.json': lockfile({
+            ...many,
+            'node_modules/x': { version: '1.0.0', license: 'SSPL-1.0' },
+          }),
+        },
+      ),
+    );
+
+    expect(findings).toHaveLength(2);
+    expect(findings.map((f) => f.message).join('\n')).toContain('and 2 more');
+  });
+
+  it('checks copyleft dependencies against a proprietary LICENSE file', async () => {
+    const files = {
+      ...CODE,
+      LICENSE:
+        'Copyright (c) 2026 Acme. All rights reserved.\n\nThis software is proprietary. No licence is granted except with the written permission of Acme, and nothing here may be copied or shared.',
+      'package.json': JSON.stringify({ name: 'demo', dependencies: { a: '1' } }),
+      'package-lock.json': lockfile({
+        'node_modules/a': { version: '1.0.0', license: 'GPL-3.0-only' },
+      }),
+    };
+
+    const findings = await findingsFor('SC-LIC-007', files);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.message).toContain('proprietary project');
+  });
+
+  it('knows permissive licenses beyond the common ones, such as MIT-CMU', async () => {
+    const findings = await findingsFor(
+      'SC-LIC-008',
+      project(
+        'MIT',
+        { pillow: '1' },
+        { 'node_modules/pillow/package.json': packageJson('MIT-CMU') },
+      ),
+    );
+
+    expect(findings).toEqual([]);
+  });
+});

@@ -11,6 +11,19 @@ export interface LicenseFile {
   readonly path: string;
   readonly text: string;
   readonly identification: Identification;
+  /** Not an open-source license: it reserves all rights and grants none ("proprietary"). */
+  readonly proprietary: boolean;
+}
+
+/** A license file that says "All rights reserved" and withholds permission. */
+export function isProprietaryNotice(text: string, identification: Identification): boolean {
+  return (
+    identification.kind === 'unrecognized' &&
+    /\ball rights reserved\b/i.test(text) &&
+    /\bproprietary\b|\bno licen[cs]e is granted\b|\bgrants no licen[cs]e\b|\bwithout (?:the )?(?:prior )?written permission\b/i.test(
+      text,
+    )
+  );
 }
 
 /** License text from a manifest, classified. */
@@ -54,9 +67,11 @@ async function readLicenseFiles(repo: RepoView, catalog: Catalog): Promise<Licen
   const files = await Promise.all(
     paths.map(async (path) => {
       const text = await repo.read(path);
-      return text === undefined
-        ? undefined
-        : { path, text, identification: identifyLicenseText(text, catalog) };
+      if (text === undefined) {
+        return undefined;
+      }
+      const identification = identifyLicenseText(text, catalog);
+      return { path, text, identification, proprietary: isProprietaryNotice(text, identification) };
     }),
   );
   return files.filter((file) => file !== undefined);
@@ -118,7 +133,9 @@ function effectiveLicense(
       : [],
   );
   const fromFiles = anyOf([...new Set(ids.filter((id) => id !== undefined))]);
-  const proprietary = declared.some((entry) => entry.kind === 'proprietary');
+  const proprietary =
+    declared.some((entry) => entry.kind === 'proprietary') ||
+    files.some((file) => file.proprietary);
   return fromFiles ?? (proprietary ? PROPRIETARY : undefined);
 }
 

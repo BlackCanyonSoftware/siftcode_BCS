@@ -259,8 +259,13 @@ function tomlLicense(table: string, line: string): string | undefined {
   if (table !== 'project' && table !== 'tool.poetry') {
     return undefined;
   }
-  const value = /^license\s*=\s*(.+)$/.exec(line)?.[1];
-  return value === undefined ? undefined : /["']([^"']+)["']\s*\}?\s*$/.exec(value)?.[1];
+  const value = /^license\s*=\s*(.+)$/.exec(line)?.[1]?.trim();
+  if (value === undefined) {
+    return undefined;
+  }
+  // `{ file = "LICENSE" }` points at a file; only `{ text = "MIT" }` or a plain string names a license.
+  const pattern = value.startsWith('{') ? /\btext\s*=\s*["']([^"']+)["']/ : /^["']([^"']+)["']/;
+  return pattern.exec(value)?.[1];
 }
 
 /**

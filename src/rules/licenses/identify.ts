@@ -32,7 +32,7 @@ export type Identification =
       readonly verbatim: boolean;
     }
   | { readonly kind: 'modified'; readonly ids: readonly string[]; readonly score: number }
-  /** The file holds the full text of several licenses. */
+  /** The file holds the full text of one or more licenses among other content (several licenses, or a license plus extra terms). */
   | { readonly kind: 'multiple'; readonly ids: readonly string[] }
   | { readonly kind: 'unrecognized' };
 
@@ -209,7 +209,10 @@ export function identifyLicenseText(text: string, catalog: Catalog): Identificat
     undefined,
   );
   if (!best || best.score < MODIFIED_SIMILARITY) {
-    return { kind: 'unrecognized' };
+    // The full text of one license among other terms (a dual-license file, a license plus assets).
+    return included.length === 1
+      ? { kind: 'multiple', ids: included.flatMap((reference) => reference.ids).sort() }
+      : { kind: 'unrecognized' };
   }
   const changed =
     Math.max(

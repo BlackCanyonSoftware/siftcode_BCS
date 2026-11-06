@@ -14,23 +14,56 @@ import { NOT_LEGAL_ADVICE } from './messages.js';
 import { classifyLicenseText, detectProjectLicense } from './project.js';
 import { formatExpression, licensesIn } from './spdx.js';
 
+/** How many package names a grouped finding lists before saying "and N more". */
+const LISTED_NAMES = 5;
+
 const label = (dependency: DependencyLicense): string =>
   dependency.version === undefined ? dependency.name : `${dependency.name} ${dependency.version}`;
 
-function hit(
-  dependency: DependencyLicense,
-  key: string,
-  message: string,
-  severity: 'warning' | 'info',
-): RepoHit {
-  return {
-    path: dependency.manifest,
-    startLine: 1,
-    endLine: 1,
-    message: `${message} ${NOT_LEGAL_ADVICE}`,
-    key,
-    severity,
-  };
+/** "left-pad 1.3.0", or "12 dependencies (a, b, c, d, e, and 7 more)". */
+function subject(members: readonly DependencyLicense[]): string {
+  const [only] = members;
+  if (members.length === 1 && only) {
+    return label(only);
+  }
+  const names = members.slice(0, LISTED_NAMES).map(label).join(', ');
+  const more = members.length > LISTED_NAMES ? `, and ${members.length - LISTED_NAMES} more` : '';
+  return `${members.length} dependencies (${names}${more})`;
+}
+
+/** A finding about one or more dependencies of one manifest that share the same issue. */
+interface Issue {
+  readonly dependency: DependencyLicense;
+  /** Dependencies with the same group are reported together. */
+  readonly group: string;
+  readonly severity: 'warning' | 'info';
+  /** The sentence, given the subject and whether there is more than one. */
+  readonly say: (who: string, plural: boolean) => string;
+}
+
+function toHits(issues: readonly Issue[], keyPrefix: string): RepoHit[] {
+  const groups = new Map<string, Issue[]>();
+  for (const issue of issues) {
+    const key = `${issue.dependency.manifest}\n${issue.group}`;
+    groups.set(key, [...(groups.get(key) ?? []), issue]);
+  }
+  return [...groups.values()].flatMap((members): RepoHit[] => {
+    const [first] = members;
+    if (!first) {
+      return [];
+    }
+    const plural = members.length > 1;
+    return [
+      {
+        path: first.dependency.manifest,
+        startLine: 1,
+        endLine: 1,
+        message: `${first.say(subject(members.map((member) => member.dependency)), plural)} ${NOT_LEGAL_ADVICE}`,
+        key: `${keyPrefix}:${first.group}`,
+        severity: first.severity,
+      },
+    ];
+  });
 }
 
 export const dependencyLicenseConflicts = defineRepoRule({
@@ -55,65 +88,79 @@ export const dependencyLicenseConflicts = defineRepoRule({
       detectProjectLicense(repo),
       collectDependencyLicenses(repo),
     ]);
-    return dependencies.flatMap((dependency): RepoHit[] => {
+    const issues = dependencies.flatMap((dependency): Issue[] => {
       const claim =
         dependency.license === undefined
           ? undefined
           : classifyLicenseText(dependency.license, catalog);
-      if (claim?.kind !== 'expression') {
+      const assessment =
+        claim?.kind === 'expression'
+          ? assessDependency(project.effective, claim.expression)
+          : undefined;
+      if (claim?.kind !== 'expression' || !assessment) {
         return [];
       }
-      const assessment = assessDependency(project.effective, claim.expression);
-      if (!assessment) {
-        return [];
-      }
+      const license = formatExpression(claim.expression);
       const source = assessment.sources[0];
       return [
-        hit(
+        {
           dependency,
-          `conflict:${dependency.ecosystem}:${dependency.name}`,
-          `${label(dependency)} is licensed ${formatExpression(claim.expression)}. ${assessment.reason}.${source ? ` (${source.standard}: ${source.url ?? ''})` : ''}`,
-          assessment.severity,
-        ),
+          group: `${license}|${assessment.kind}|${assessment.severity}`,
+          severity: assessment.severity,
+          say: (who, plural) =>
+            `${who} ${plural ? 'are' : 'is'} licensed ${license}. ${assessment.reason}.${source ? ` (${source.standard}: ${source.url ?? ''})` : ''}`,
+        },
       ];
     });
+    return toHits(issues, 'conflict');
   },
 });
 
-/** Why a license text could not be used, or undefined when it can. */
-function unusableReason(
-  dependency: DependencyLicense,
-  catalog: Catalog,
-): { text: string; severity: 'warning' | 'info' } | undefined {
+/** Why a dependency's license text could not be used, or undefined when it can. */
+function unclearIssue(dependency: DependencyLicense, catalog: Catalog): Issue | undefined {
   if (dependency.license === undefined) {
     return undefined;
   }
   const claim = classifyLicenseText(dependency.license, catalog);
+  const group = `${claim.kind}|${claim.raw}`;
   switch (claim.kind) {
     case 'proprietary':
       return {
-        text: `${label(dependency)} states "${claim.raw}", meaning no license is granted (all rights reserved): you may not have permission to use it`,
+        dependency,
+        group,
         severity: 'warning',
+        say: (who, plural) =>
+          `${who} ${plural ? 'state' : 'states'} "${claim.raw}", meaning no license is granted (all rights reserved): you may not have permission to use ${plural ? 'them' : 'it'}.`,
       };
     case 'see-file':
       return {
-        text: `${label(dependency)} says "${claim.raw}": its license is in a file SiftCode does not read`,
+        dependency,
+        group,
         severity: 'info',
+        say: (who, plural) =>
+          `${who} ${plural ? 'say' : 'says'} "${claim.raw}": the license is in a file SiftCode does not read.`,
       };
     case 'invalid':
       return {
-        text: `${label(dependency)} states the license "${claim.raw}", which is not an SPDX expression (for example "BSD" does not say which BSD license): check the package`,
+        dependency,
+        group,
         severity: 'info',
+        say: (who, plural) =>
+          `${who} ${plural ? 'state' : 'states'} the license "${claim.raw}", which is not an SPDX expression (for example "BSD" does not say which BSD license): check the package.`,
       };
     case 'expression': {
       const known = licensesIn(claim.expression).some((entry) =>
         traitsOf(entry.id, entry.exception),
       );
+      const license = formatExpression(claim.expression);
       return known
         ? undefined
         : {
-            text: `${label(dependency)} is licensed ${formatExpression(claim.expression)}, which SiftCode’s compatibility table (version ${COMPATIBILITY_TABLE_VERSION}) does not cover: check its terms`,
+            dependency,
+            group: `unclassified|${license}`,
             severity: 'info',
+            say: (who, plural) =>
+              `${who} ${plural ? 'are' : 'is'} licensed ${license}, which SiftCode’s compatibility table (version ${COMPATIBILITY_TABLE_VERSION}) does not cover: check its terms.`,
           };
     }
   }
@@ -130,22 +177,25 @@ function missingInformation(dependencies: readonly DependencyLicense[]): RepoHit
   }
   return [...byManifest].flatMap(([manifest, all]): RepoHit[] => {
     const missing = all.filter((dependency) => dependency.license === undefined);
-    const [first] = missing;
-    if (!first) {
+    if (missing.length === 0) {
       return [];
     }
-    const names = missing
-      .slice(0, 5)
-      .map((dependency) => dependency.name)
-      .join(', ');
-    const more = missing.length > 5 ? `, and ${missing.length - 5} more` : '';
     return [
-      hit(
-        { ...first, manifest },
-        `unknown:${manifest}`,
-        `${missing.length} of ${all.length} runtime dependencies of ${manifest} have no license information available offline (${names}${more}): install them, or commit a lockfile that records licenses, so they can be checked.`,
-        'info',
-      ),
+      {
+        path: manifest,
+        startLine: 1,
+        endLine: 1,
+        message: `${missing.length} of ${all.length} runtime dependencies of ${manifest} have no license information available offline (${subject(
+          missing,
+        )
+          .replace(/^\d+ dependencies \(/, '')
+          .replace(
+            /\)$/,
+            '',
+          )}): install them, or commit a lockfile that records licenses, so they can be checked. ${NOT_LEGAL_ADVICE}`,
+        key: `unknown:${manifest}`,
+        severity: 'info',
+      },
     ];
   });
 }
@@ -172,19 +222,10 @@ export const unknownDependencyLicenses = defineRepoRule({
       loadCatalog(),
       collectDependencyLicenses(repo),
     ]);
-    const unclear = dependencies.flatMap((dependency): RepoHit[] => {
-      const reason = unusableReason(dependency, catalog);
-      return reason
-        ? [
-            hit(
-              dependency,
-              `unclear:${dependency.ecosystem}:${dependency.name}`,
-              `${reason.text}.`,
-              reason.severity,
-            ),
-          ]
-        : [];
+    const issues = dependencies.flatMap((dependency) => {
+      const issue = unclearIssue(dependency, catalog);
+      return issue ? [issue] : [];
     });
-    return [...unclear, ...missingInformation(dependencies)];
+    return [...toHits(issues, 'unclear'), ...missingInformation(dependencies)];
   },
 });

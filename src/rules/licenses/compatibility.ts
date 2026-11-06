@@ -129,6 +129,26 @@ const PERMISSIVE = [
   'HPND',
   'JSON',
   'Beerware',
+  'MIT-CMU',
+  'MIT-Modern-Variant',
+  'BSD-2-Clause-Patent',
+  'BSD-3-Clause-Attribution',
+  'BSD-3-Clause-LBNL',
+  'BSD-Source-Code',
+  'CNRI-Python',
+  'Python-2.0.1',
+  'W3C',
+  'W3C-20150513',
+  'ImageMagick',
+  'IJG',
+  'Info-ZIP',
+  'Ruby',
+  'TCL',
+  'ICU',
+  'Apache-1.0',
+  'OpenSSL',
+  'CC-BY-2.0',
+  'CC-BY-2.5',
 ];
 const PUBLIC_DOMAIN = ['Unlicense', 'CC0-1.0'];
 const WEAK_COPYLEFT = [
@@ -169,7 +189,9 @@ const NON_COMMERCIAL =
 /** Licenses the FSF lists as incompatible with the GNU GPL, whatever the version. */
 const GPL_INCOMPATIBLE = new Set([
   'BSD-4-Clause',
+  'Apache-1.0',
   'Apache-1.1',
+  'OpenSSL',
   'CDDL-1.0',
   'CDDL-1.1',
   'EPL-1.0',
@@ -352,13 +374,17 @@ function otherAgainstGnu(project: Leaf, dependency: Leaf): Assessment | undefine
 
 /** A weak-copyleft dependency in a project that is not itself copyleft. */
 function weakInOtherProject(project: Leaf, dependency: Leaf): Assessment {
-  const library = dependency.id.startsWith('LGPL')
-    ? 'and, for the LGPL, that users can replace the library with their own version'
-    : 'and that the source of those files is available';
+  const extra = dependency.id.startsWith('LGPL')
+    ? 'users must be able to replace the library with their own version'
+    : 'the source of those files must be available to recipients';
+  const target =
+    project.traits.family === 'proprietary'
+      ? 'a proprietary project'
+      : `the project’s ${project.id}`;
   return {
     kind: 'obligation',
     severity: 'info',
-    reason: `${dependency.id} is weak copyleft: changes to the library itself have to stay under ${dependency.id} ${library}; using it unchanged in ${project.id} is normally fine`,
+    reason: `${dependency.id} is weak copyleft: changes to the library itself have to stay under ${dependency.id}, and ${extra}; using it unchanged in ${target} is normally fine`,
     sources: [dependency.id.startsWith('LGPL') ? LGPL_3 : MPL_FAQ, GNU_LICENSE_LIST],
   };
 }

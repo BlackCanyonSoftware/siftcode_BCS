@@ -201,3 +201,19 @@ function catalog_ids(): string[] {
     'BUSL-1.1',
   ];
 }
+
+describe('license files that hold more than one thing (US-035)', () => {
+  it('reports a standard license followed by extra terms as multiple, naming the standard one', () => {
+    const brandTerms = [
+      'The logos, wordmarks and artwork in the brand folder are not covered by the license above.',
+      'They may be shown to refer to the project but may not be modified, sold, or used to suggest that a product or a service is endorsed by the authors.',
+      'Every use of a mark requires the written permission of its owner, and permission for one use is not permission for another.',
+      'Anyone who receives a copy of the project receives these marks only for the purpose of using the project itself and for no other purpose at all.',
+      'The owners may withdraw permission at any time by writing to the address in the repository, after which every further use must stop at once.',
+      'Nothing in these terms transfers ownership of a mark, and nothing in them limits the rights the law gives the owners of the marks.',
+    ].join(' ');
+    const mixed = `${text('MIT')}\n\nBRAND ASSETS\n\n${brandTerms}`;
+
+    expect(identifyLicenseText(mixed, catalog)).toEqual({ kind: 'multiple', ids: ['MIT'] });
+  });
+});

@@ -333,3 +333,39 @@ describe('SC-LIC-006 SPDX headers (US-036)', () => {
     expect(findings[0]?.message).toContain('1 of 3 source files');
   });
 });
+
+describe('proprietary license files (US-035)', () => {
+  const proprietary =
+    'Copyright (c) 2026 Black Canyon Software. All rights reserved.\n\nThis software is proprietary. No licence is granted to use, copy, modify, merge, publish, distribute, sublicense or sell the Work, or to create derivative works from it, except with the prior written permission of the owner. The source is visible so that it can be read; visibility is not permission.';
+
+  it('does not call an all-rights-reserved notice unrecognized, and does not ask for a license', async () => {
+    const unrecognized = await findingsFor('SC-LIC-002', { LICENSE: proprietary });
+    const none = await findingsFor('SC-LIC-001', { LICENSE: proprietary });
+
+    expect([unrecognized, none]).toEqual([[], []]);
+  });
+
+  it('agrees with a manifest that says UNLICENSED, and disagrees with one that says MIT', async () => {
+    const agrees = await findingsFor('SC-LIC-003', {
+      LICENSE: proprietary,
+      ...manifest({ license: 'UNLICENSED' }),
+    });
+    const disagrees = await findingsFor('SC-LIC-003', {
+      LICENSE: proprietary,
+      ...manifest({ license: 'MIT' }),
+    });
+
+    expect(agrees).toEqual([]);
+    expect(disagrees).toHaveLength(1);
+    expect(disagrees[0]?.message).toContain('all-rights-reserved notice');
+  });
+
+  it('does not read a pyproject license = { file = "LICENSE" } as a license name', async () => {
+    const findings = await findingsFor('SC-LIC-003', {
+      LICENSE: licenseText('MIT'),
+      'pyproject.toml': '[project]\nname = "demo"\nlicense = { file = "LICENSE" }\n',
+    });
+
+    expect(findings).toEqual([]);
+  });
+});

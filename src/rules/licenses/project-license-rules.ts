@@ -26,9 +26,16 @@ const hit = (
   ...(severity ? { severity } : {}),
 });
 
+/** Stands for a license that reserves all rights, when comparing what files and manifests say. */
+const PROPRIETARY = 'proprietary';
+
 /** The licenses (as families) a project's license files contain. */
 const familiesInFiles = (files: readonly LicenseFile[]): Set<string> =>
-  new Set(files.flatMap((file) => identificationIds(file.identification).map(licenseFamily)));
+  new Set(
+    files.flatMap((file) =>
+      file.proprietary ? [PROPRIETARY] : identificationIds(file.identification).map(licenseFamily),
+    ),
+  );
 
 export const noLicense = defineRepoRule({
   meta: {
@@ -90,6 +97,9 @@ export const unrecognizedLicenseFile = defineRepoRule({
     const { files } = await detectProjectLicense(repo);
     return files.flatMap((file): RepoHit[] => {
       const { identification } = file;
+      if (file.proprietary) {
+        return [];
+      }
       if (identification.kind === 'modified') {
         return [
           hit(
@@ -152,15 +162,21 @@ function mismatches(license: ProjectLicense): RepoHit[] {
     return [];
   }
   return license.declared.flatMap((declared): RepoHit[] => {
-    const filesSay = [...inFiles].join(', ');
+    const shown = (families: readonly string[]): string =>
+      families
+        .map((family) => (family === PROPRIETARY ? 'an all-rights-reserved notice' : family))
+        .join(', ');
     if (declared.kind === 'proprietary') {
-      return [
-        hit(
-          declared.path,
-          `mismatch:${declared.path}`,
-          `${describeDeclared(declared)}, but the license files contain ${filesSay}: one of them is wrong.`,
-        ),
-      ];
+      const open = [...inFiles].filter((family) => family !== PROPRIETARY);
+      return open.length === 0
+        ? []
+        : [
+            hit(
+              declared.path,
+              `mismatch:${declared.path}`,
+              `${describeDeclared(declared)}, but the license files contain ${shown(open)}: one of them is wrong.`,
+            ),
+          ];
     }
     if (declared.kind !== 'expression') {
       return [];
@@ -174,8 +190,8 @@ function mismatches(license: ProjectLicense): RepoHit[] {
       return [];
     }
     const parts = [
-      ...(missing.length > 0 ? [`no license file contains ${missing.join(', ')}`] : []),
-      ...(extra.length > 0 ? [`the license files also contain ${extra.join(', ')}`] : []),
+      ...(missing.length > 0 ? [`no license file contains ${shown(missing)}`] : []),
+      ...(extra.length > 0 ? [`the license files also contain ${shown(extra)}`] : []),
     ];
     return [
       hit(
