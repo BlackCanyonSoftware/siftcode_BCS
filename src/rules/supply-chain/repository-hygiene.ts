@@ -3,6 +3,7 @@ import { defineRepoRule } from '../define.js';
 import { cheatSheet, cwe, nistSsdf, owaspTop10, scorecardCheck } from '../standards.js';
 import type { Severity } from '../../core/severity.js';
 import type { RepoHit, RepoView } from '../types.js';
+import { anchorPath, isProject } from '../anchor.js';
 import { readManifests } from './manifests.js';
 
 const CI_FILE =
@@ -36,14 +37,6 @@ async function automationText(repo: RepoView): Promise<string> {
   const texts = await Promise.all(paths.map((path) => repo.read(path)));
   return texts.filter((text) => text !== undefined).join('\n');
 }
-
-/** A README gives the finding a natural home; otherwise the finding is about the folder as a whole. */
-function anchorPath(repo: RepoView): string {
-  return repo.files.find((path) => /^readme(?:\.\w+)?$/i.test(path)) ?? '.';
-}
-
-/** These checks look at a whole project, so they only apply to the top of a Git repository with code. */
-const isProject = (repo: RepoView): boolean => repo.isRepositoryRoot && repo.sourceFileCount > 0;
 
 async function hasDependencies(repo: RepoView): Promise<boolean> {
   const manifests = await readManifests(repo);

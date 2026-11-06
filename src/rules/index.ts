@@ -8,6 +8,14 @@ import { classCohesion, classSize } from './design/class-rules.js';
 import { lawOfDemeter } from './design/law-of-demeter.js';
 import { moduleFanOut } from './design/module-fan-out.js';
 import { serviceLocator } from './design/service-locator.js';
+import {
+  licenseDeclarationMismatch,
+  licenseNotices,
+  noLicense,
+  spdxHeaders,
+  undocumentedThirdPartyLicenses,
+  unrecognizedLicenseFile,
+} from './licenses/project-license-rules.js';
 import { cyclomaticComplexity } from './metrics/cyclomatic-complexity.js';
 import { functionLength } from './metrics/function-length.js';
 import { unitMaintainabilityIndex } from './metrics/maintainability-index.js';
@@ -44,6 +52,12 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   documentationWithoutDiagrams,
   diagramsWithoutDecisionRecords,
   unreferencedDiagrams,
+  noLicense,
+  unrecognizedLicenseFile,
+  licenseDeclarationMismatch,
+  licenseNotices,
+  undocumentedThirdPartyLicenses,
+  spdxHeaders,
   functionLength,
   cyclomaticComplexity,
   parameterCount,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { anchorPath } from '../anchor.js';
 import { defineRepoRule } from '../define.js';
 import type { StandardRef } from '../types.js';
 import {
@@ -67,7 +68,7 @@ export const noDesignDocumentation = defineRepoRule({
     const sizeable = repo.sourceFileCount >= options.minSourceFiles;
     return [
       {
-        path: repo.files.find((path) => /^readme(?:\.\w+)?$/i.test(path)) ?? '.',
+        path: anchorPath(repo),
         startLine: 1,
         endLine: 1,
         message: `No design or architecture documentation was found (no architecture or design document, decision records, or diagrams) for ${repo.sourceFileCount} source files.`,

@@ -32,6 +32,24 @@ export const slsa: StandardRef = {
   url: 'https://slsa.dev/spec/v1.0/',
 };
 
+export const spdxLicenses: StandardRef = {
+  standard: 'SPDX License List and license expressions (ISO/IEC 5962:2021)',
+  url: 'https://spdx.org/licenses/',
+};
+
+export const reuseSpecification: StandardRef = {
+  standard: 'REUSE Specification',
+  url: 'https://reuse.software/spec/',
+};
+
+export const osiLicenses: StandardRef = {
+  standard: 'Open Source Initiative: OSI Approved Licenses',
+  url: 'https://opensource.org/licenses',
+};
+
+/** A license's own published text or the FSF/ASF/MPL statement that a compatibility rule rests on. */
+export const licenseSource = (standard: string, url: string): StandardRef => ({ standard, url });
+
 export const nistSsdf = (practice: string, title: string): StandardRef => ({
   standard: 'NIST SP 800-218 Secure Software Development Framework (SSDF)',
   id: `${practice}: ${title}`,

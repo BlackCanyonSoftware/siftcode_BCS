@@ -137,6 +137,9 @@ export function parseExpression(text: string, catalog: Catalog): ParseResult {
   }
 }
 
+/** An id without the `-only` / `-or-later` choice: `GPL-3.0-only` and `GPL-3.0-or-later` share a family. */
+export const licenseFamily = (id: string): string => id.replace(/-(?:only|or-later)$/, '');
+
 /** Every license in an expression, left to right. */
 export function licensesIn(
   expression: Expression,

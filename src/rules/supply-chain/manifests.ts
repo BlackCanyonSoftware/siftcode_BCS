@@ -19,6 +19,8 @@ export interface Dependency {
   readonly pinning: Pinning;
   /** 1-based line in the manifest. */
   readonly line: number;
+  /** Only needed to develop or test the project (not shipped with it). */
+  readonly dev?: boolean;
 }
 
 export interface Manifest {
@@ -26,6 +28,8 @@ export interface Manifest {
   readonly path: string;
   readonly ecosystem: Ecosystem;
   readonly dependencies: readonly Dependency[];
+  /** The license the manifest declares for the project itself, as written (not validated). */
+  readonly license?: string;
 }
 
 /** Folder of a repository-relative path; `.` for the top. */
@@ -96,11 +100,32 @@ function parsePackageJson(path: string, text: string): Manifest | undefined {
           spec,
           pinning: classifyNpm(spec),
           line: lineOf(text, `"${name}"`),
+          ...(section === 'devDependencies' ? { dev: true } : {}),
         });
       }
     }
   }
-  return { path, ecosystem: 'npm', dependencies };
+  const license = npmLicense(json);
+  return { path, ecosystem: 'npm', dependencies, ...(license === undefined ? {} : { license }) };
+}
+
+/** `"license": "MIT"`, the old `{ "type": "MIT" }`, or the old `"licenses": [{ "type": … }]`. */
+function npmLicense(json: Record<string, unknown>): string | undefined {
+  const { license, licenses } = json;
+  const typeOf = (value: unknown): string | undefined =>
+    typeof value === 'string'
+      ? value
+      : isObject(value) && typeof value.type === 'string'
+        ? value.type
+        : undefined;
+  if (license !== undefined) {
+    return typeOf(license);
+  }
+  if (Array.isArray(licenses)) {
+    const types = licenses.map(typeOf).filter((type) => type !== undefined);
+    return types.length > 0 ? types.join(' OR ') : undefined;
+  }
+  return undefined;
 }
 
 // ---------- Python: requirements*.txt, pyproject.toml, Pipfile
@@ -165,9 +190,11 @@ export function parseRequirement(raw: string, line: number): Dependency | undefi
 }
 
 function parseRequirementsTxt(path: string, text: string): Manifest {
+  // requirements-dev.txt, requirements_test.txt, dev-requirements.txt: not shipped with the project.
+  const dev = /(?:^|[-_.])(?:dev|test|tests|lint|docs|ci)(?:[-_.]|$)/i.test(posix.basename(path));
   const dependencies = text.split(/\r\n|\r|\n/).flatMap((raw, index) => {
     const dependency = parseRequirement(raw, index + 1);
-    return dependency ? [dependency] : [];
+    return dependency ? [dev ? { ...dependency, dev } : dependency] : [];
   });
   return { path, ecosystem: 'python', dependencies };
 }
@@ -224,6 +251,18 @@ function tableEntry(line: string, lineNumber: number): Dependency | undefined {
   return entry?.[1] && entry[2] ? tableDependency(entry[1], entry[2], lineNumber) : undefined;
 }
 
+/** Tables whose dependencies are shipped with the project; all others are development or optional. */
+const TOML_RUNTIME_TABLES = new Set(['project', 'tool.poetry.dependencies', 'packages']);
+
+/** The license a pyproject.toml declares: `license = "MIT"` or `license = { text = "MIT" }`. */
+function tomlLicense(table: string, line: string): string | undefined {
+  if (table !== 'project' && table !== 'tool.poetry') {
+    return undefined;
+  }
+  const value = /^license\s*=\s*(.+)$/.exec(line)?.[1];
+  return value === undefined ? undefined : /["']([^"']+)["']\s*\}?\s*$/.exec(value)?.[1];
+}
+
 /**
  * Reads the dependency lists of a pyproject.toml or Pipfile without a TOML parser: the arrays of
  * requirement strings (`[project]`, optional dependencies, dependency groups) and the
@@ -233,24 +272,32 @@ function parseToml(path: string, text: string): Manifest {
   const dependencies: Dependency[] = [];
   let table = '';
   let inArray = false;
+  let license: string | undefined;
   for (const [index, raw] of text.split(/\r\n|\r|\n/).entries()) {
     const line = raw.replace(/\s+#.*$/, '').trim();
+    license ??= tomlLicense(table, line);
     const header = /^\[\[?([^\]]+)\]\]?$/.exec(line)?.[1];
     if (!inArray && header !== undefined) {
       table = header.trim();
     } else if (inArray || opensRequirementArray(table, line)) {
       const content: string = inArray ? line : line.slice(line.indexOf('[') + 1);
-      dependencies.push(...quotedRequirements(content, index + 1));
+      dependencies.push(...markDev(quotedRequirements(content, index + 1), table));
       // A `]` inside a quoted extra such as "requests[socks]" does not close the array.
       inArray = !content.replace(/"[^"]*"|'[^']*'/g, '').includes(']');
     } else if (TOML_DEPENDENCY_TABLES.test(table)) {
-      const dependency = tableEntry(line, index + 1);
-      if (dependency) {
-        dependencies.push(dependency);
-      }
+      dependencies.push(...markDev(optional(tableEntry(line, index + 1)), table));
     }
   }
-  return { path, ecosystem: 'python', dependencies };
+  return { path, ecosystem: 'python', dependencies, ...(license === undefined ? {} : { license }) };
+}
+
+const optional = <T>(value: T | undefined): T[] => (value === undefined ? [] : [value]);
+
+/** Marks the dependencies read from a table that is not shipped with the project. */
+function markDev(dependencies: readonly Dependency[], table: string): Dependency[] {
+  return TOML_RUNTIME_TABLES.has(table)
+    ? [...dependencies]
+    : dependencies.map((d) => ({ ...d, dev: true }));
 }
 
 // ---------- NuGet: *.csproj
@@ -287,7 +334,10 @@ function parseCsproj(path: string, text: string): Manifest {
       });
     }
   }
-  return { path, ecosystem: 'nuget', dependencies };
+  const license = /<PackageLicenseExpression>\s*([^<]*?)\s*<\/PackageLicenseExpression>/.exec(
+    text,
+  )?.[1];
+  return { path, ecosystem: 'nuget', dependencies, ...(license ? { license } : {}) };
 }
 
 // ---------- discovery of manifests

@@ -8,7 +8,8 @@ export type Category =
   | 'security'
   | 'performance'
   | 'documentation'
-  | 'supply-chain';
+  | 'supply-chain'
+  | 'licensing';
 
 export type Confidence = 'high' | 'medium' | 'low';
 
