@@ -46,6 +46,32 @@ describe('repository view (US-031)', () => {
     expect(await view.read('missing.txt')).toBeUndefined();
   });
 
+  it('reads and lists ignored folders such as node_modules (US-037)', async () => {
+    const root = await projects.create({
+      'node_modules/left-pad/package.json': '{"license":"MIT"}',
+      'src/a.ts': 'export const a = 1;\n',
+    });
+    const view = createRepoView(await discoverFiles(root, { ignore: [] }));
+
+    expect(view.has('node_modules/left-pad/package.json')).toBe(false);
+    expect(await view.read('node_modules/left-pad/package.json')).toBe('{"license":"MIT"}');
+    expect(await view.list('node_modules')).toEqual(['left-pad']);
+    expect(await view.list('nowhere')).toEqual([]);
+  });
+
+  it('never reads or lists outside the scan root', async () => {
+    const outer = await projects.create({
+      'secret.txt': 'outside',
+      'project/inside.txt': 'inside',
+    });
+    const view = createRepoView(await discoverFiles(`${outer}/project`, { ignore: [] }));
+
+    expect(await view.read('inside.txt')).toBe('inside');
+    expect(await view.read('../secret.txt')).toBeUndefined();
+    expect(await view.read(`${outer}/secret.txt`)).toBeUndefined();
+    expect(await view.list('..')).toEqual([]);
+  });
+
   it('binds a repository rule with validated options and no per-file check', async () => {
     const rule = defineRepoRule({
       meta: {

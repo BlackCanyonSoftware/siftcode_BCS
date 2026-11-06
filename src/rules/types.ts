@@ -73,8 +73,13 @@ export interface RepoView {
   readonly sourceFileCount: number;
   /** Whether `path` (relative to the scan root, forward slashes) is one of the files. */
   has(path: string): boolean;
-  /** The text of a file, or undefined if it is missing, unreadable, or larger than 1 MiB. */
+  /**
+   * The text of a file, or undefined if it is missing, unreadable, larger than 1 MiB, or outside the
+   * scan root. Unlike `files`, this also reaches ignored folders such as `node_modules`.
+   */
   read(path: string): Promise<string | undefined>;
+  /** The names in a folder (ignored folders included), sorted; empty if it is missing or outside the scan root. */
+  list(directory: string): Promise<readonly string[]>;
 }
 
 /** A hit from a repository-level rule: it names the file (or `.`) it is about. */
