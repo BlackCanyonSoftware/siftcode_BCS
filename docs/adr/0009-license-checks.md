@@ -1,11 +1,11 @@
 # ADR 0009: License detection and compliance (Milestone 4b)
 
-- Status: accepted (Milestone 4b), compatibility table awaiting owner review
+- Status: accepted (Milestone 4b)
 - Date: 2026-11-05
 
 ## Context
 
-PRD US-035 to US-037 ask SiftCode to tell a maintainer whether the project has a license and which one, whether it follows that license, and whether a dependency's license conflicts with it. Risk R8 applies throughout: a license finding must not read as legal assurance, the compatibility rules must be data with sources, and "unknown" must be reported as unknown. Everything works offline from files on disk.
+PRD US-035 to US-037 ask SiftCode to tell a maintainer whether the project has a license and which one, whether it follows that license, and whether a dependency's license conflicts with it. The checks are a tool for finding gaps, not a verdict (risk R8): the compatibility rules must be data with sources, and "unknown" must be reported as unknown. Everything works offline from files on disk.
 
 ## Decisions
 
@@ -39,7 +39,7 @@ Order of evidence: license files at the top of the project (`LICENSE*`, `COPYING
 | SC-LIC-007 | A runtime dependency's license conflicts with the project's, per the compatibility table | warning; info for weak-copyleft obligations |
 | SC-LIC-008 | Dependency with no license, an unclear one (`BSD`, `SEE LICENSE IN …`), one outside the table, or no license information offline | info; warning when no license is granted |
 
-Every license finding ends with "This is a check against published license data, not legal advice." Dependencies that share a manifest and an issue are reported as one finding that names the first five.
+Dependencies that share a manifest and an issue are reported as one finding that names the first five.
 
 ### Dependency licenses, offline
 npm: `package-lock.json` (version 2 or 3 records `license`; development packages are skipped), falling back to the installed `node_modules/<pkg>/package.json`, or to the installed copy of each direct dependency when there is no lockfile. Python: the `*.dist-info/METADATA` of a virtual environment at the project (`.venv`, `venv`, `env`), following `Requires-Dist` (optional `extra ==` requirements skipped). NuGet: `.nuspec` files of restored packages inside the project. This needs `RepoView.read` and `list` to reach ignored folders; they cannot leave the scan root. A dependency whose license cannot be found is **unknown**, never guessed; it is reported once per manifest. Not read: the NuGet global package cache and Python environments outside the project (they are outside the scan root), and yarn or pnpm lockfiles (they do not record licenses).
@@ -54,7 +54,7 @@ npm: `package-lock.json` (version 2 or 3 records `license`; development packages
 - `OR` in a dependency's license lets the user pick the easier side; `AND` asks for both; a dual-licensed project can choose the alternative that fits; a GPL license `WITH` a classpath-style exception counts as weak copyleft.
 - A license not in the table is reported as outside it (info), not judged.
 
-**The table is for the owner to review before release** (HANDOFF, PRD R8). It does not know whether a dependency is linked, bundled, or only run, so the wording is conditional ("if it is bundled or linked").
+The table can be read as a sheet (`docs/license-table-review.md`, generated). It does not know whether a dependency is linked, bundled, or only run, so the wording is conditional ("if it is bundled or linked").
 
 ## Evidence
 
@@ -64,7 +64,7 @@ npm: `package-lock.json` (version 2 or 3 records `license`; development packages
 
 ## Consequences
 
-- A license finding is a prompt to look, not a verdict; the not-legal-advice sentence is part of each message and tested.
+- A license finding is a prompt to look, not a verdict; the messages are conditional ("if it is bundled or linked").
 - Adding a license to the matcher is one line in `scripts/build-licenses.mjs` plus a row in the table; refreshing the SPDX list is `npm run build:licenses`.
 - Package size grows by about 0.7 MB.
 - Whole-project license checks (001 to 006) only run at the top of a Git repository, like the other whole-project checks (ADR 0008); 007 and 008 run on any folder.

@@ -4,7 +4,7 @@ import { licenseFamily, type Expression } from './spdx.js';
 /**
  * The compatibility table: how SiftCode sorts licenses, and which combinations of a project
  * license and a dependency license it reports. It is data with a version and a source for every
- * claim, meant to be reviewed by a person (PRD risk R8). It is a screening aid, not legal advice:
+ * claim, so a person can check it. It is a screening aid that points out likely problems:
  * it does not know whether a dependency is linked, bundled, or only run as a separate program.
  */
 export const COMPATIBILITY_TABLE_VERSION = '1 (2026-11-05)';

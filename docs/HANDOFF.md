@@ -41,9 +41,8 @@ None.
 
 ## Next steps
 
-1. Owner reviews M2, M3, M4, M4a, and M4b, **reviews the license compatibility table**
-   (`src/rules/licenses/compatibility.ts`, version 1; PRD R8, TD-17), pushes, and confirms CI is
-   green. (No CI step was added; attaching `npm run sbom` output to releases belongs to M7.)
+1. Owner reviews M2, M3, M4, M4a, and M4b, pushes, and confirms CI is green. (No CI step was
+   added; attaching `npm run sbom` output to releases belongs to M7.)
 2. **Start M5: Git hotspots and design-doc freshness** (US-013, US-034; scope in
    `docs/ROADMAP.md`). `detectDesignArtifacts` in `src/rules/documentation/detect.ts` already lists the
    design documents to date-check; a read-only Git history reader is new (`src/git/`).
@@ -56,12 +55,10 @@ None.
 - Should a plain "file is too long" rule be added? File-level Maintainability Index was dropped
   because it only tracks file length (ADR 0005).
 - The brand has no tagline or domain; the README has none until one is set.
-- **Review the license compatibility table** (version 1) before release, using the generated sheet
-  `docs/license-table-review.md` (families, a project-by-dependency matrix, every reason with its
-  source; regenerate with `npm run build && npm run review:license-table`). A first read found and
-  fixed one error (the non-free `JSON` license was listed as permissive). Review: PRD R8, ADR 0009, TD-17.
-  It is a screening aid built from the FSF, ASF, and MPL statements and the license texts; it was
-  not reviewed by a lawyer.
+- Optional: skim the license compatibility table as a sheet, `docs/license-table-review.md`
+  (families, a project-by-dependency matrix, every reason with its source; regenerate with
+  `npm run build && npm run review:license-table`). It is a gap-finder, not a compliance gate; fix a
+  row if one looks wrong (TD-17).
 
 ## Gotchas
 

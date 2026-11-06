@@ -10,7 +10,6 @@ import {
   traitsOf,
 } from './compatibility.js';
 import { collectDependencyLicenses, type DependencyLicense } from './dependencies.js';
-import { NOT_LEGAL_ADVICE } from './messages.js';
 import { classifyLicenseText, detectProjectLicense } from './project.js';
 import { formatExpression, licensesIn } from './spdx.js';
 
@@ -58,7 +57,7 @@ function toHits(issues: readonly Issue[], keyPrefix: string): RepoHit[] {
         path: first.dependency.manifest,
         startLine: 1,
         endLine: 1,
-        message: `${first.say(subject(members.map((member) => member.dependency)), plural)} ${NOT_LEGAL_ADVICE}`,
+        message: first.say(subject(members.map((member) => member.dependency)), plural),
         key: `${keyPrefix}:${first.group}`,
         severity: first.severity,
       },
@@ -78,7 +77,7 @@ export const dependencyLicenseConflicts = defineRepoRule({
     rationale: `A dependency under strong copyleft (GPL, AGPL) can force the whole program that includes it to be offered under that license; some licenses cannot be combined at all (Apache-2.0 with GPL version 2 only); and source-available or non-commercial licenses (SSPL, BUSL, CC-BY-NC) restrict how the software may be used. The rule reads each dependency’s license from what is installed or recorded in the lockfile and compares it with the project’s license using a cited table (version ${COMPATIBILITY_TABLE_VERSION}). It cannot tell whether the dependency is linked, bundled, or only run as a separate program, which changes the answer.`,
     suggestion: {
       summary:
-        'Look for an alternative under a license that fits the project, ask the author for a different license, keep the dependency out of what you distribute (a separate program, a build tool), or change the project’s license if that is acceptable. Ask a lawyer before shipping if it matters.',
+        'Look for an alternative under a license that fits the project, ask the author for a different license, keep the dependency out of what you distribute (a separate program, a build tool), or change the project’s license if that is acceptable. If the conflict is real and you distribute the software, a lawyer can say what applies in your case.',
     },
   },
   options: z.strictObject({}),
@@ -192,7 +191,7 @@ function missingInformation(dependencies: readonly DependencyLicense[]): RepoHit
           .replace(
             /\)$/,
             '',
-          )}): install them, or commit a lockfile that records licenses, so they can be checked. ${NOT_LEGAL_ADVICE}`,
+          )}): install them, or commit a lockfile that records licenses, so they can be checked.`,
         key: `unknown:${manifest}`,
         severity: 'info',
       },

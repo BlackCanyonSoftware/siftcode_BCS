@@ -31,8 +31,6 @@ async function findingsFor(id: string, files: Record<string, string>, git = true
   return (await scan(folder, { config: onlyRule(id) })).findings;
 }
 
-const NOT_ADVICE = 'not legal advice';
-
 describe('SC-LIC-001 no license (US-035)', () => {
   it('flags a project with code and no license file or declaration, anchored on the README', async () => {
     const findings = await findingsFor('SC-LIC-001', { 'README.md': '# Demo\n' });
@@ -40,7 +38,6 @@ describe('SC-LIC-001 no license (US-035)', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({ path: 'README.md', severity: 'warning' });
     expect(findings[0]?.message).toContain('no permission');
-    expect(findings[0]?.message).toContain(NOT_ADVICE);
   });
 
   it.each([

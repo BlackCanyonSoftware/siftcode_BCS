@@ -135,8 +135,8 @@ ones) and from `package.json`, `pyproject.toml`, and `.csproj` declarations, and
 They read each dependency's license offline, from the npm lockfile, installed `node_modules`, a
 Python virtual environment, or restored NuGet packages, and compare it with the project's using a
 cited, versioned compatibility table. A dependency whose license cannot be found is reported as
-unknown, never guessed. **Every license finding is a check against published license data, not legal
-advice.** `SC-LIC-001` to `006` only run at the top of a Git repository; see
+unknown, never guessed. These are heuristic checks that point out gaps you may not have thought of.
+`SC-LIC-001` to `006` only run at the top of a Git repository; see
 [ADR 0009](docs/adr/0009-license-checks.md) for how licenses are matched, what the table covers, and
 its limits.
 

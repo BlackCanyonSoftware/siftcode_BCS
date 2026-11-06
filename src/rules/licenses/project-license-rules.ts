@@ -3,7 +3,7 @@ import { anchorPath, isProject } from '../anchor.js';
 import { defineRepoRule } from '../define.js';
 import { osiLicenses, reuseSpecification, scorecardCheck, spdxLicenses } from '../standards.js';
 import type { RepoHit, RepoView } from '../types.js';
-import { identificationIds, NOT_LEGAL_ADVICE } from './messages.js';
+import { identificationIds } from './messages.js';
 import {
   detectProjectLicense,
   type DeclaredLicense,
@@ -21,7 +21,7 @@ const hit = (
   path,
   startLine: 1,
   endLine: 1,
-  message: `${message} ${NOT_LEGAL_ADVICE}`,
+  message,
   key,
   ...(severity ? { severity } : {}),
 });
@@ -83,7 +83,7 @@ export const unrecognizedLicenseFile = defineRepoRule({
     heuristic: true,
     standards: [spdxLicenses, osiLicenses, reuseSpecification],
     rationale:
-      'A license that is edited or custom cannot be identified by tools, so users, scanners, and package registries cannot tell what they may do; a changed standard license can also lose the legal reading that lawyers and courts have already given the original.',
+      'A license that is edited or custom cannot be identified by tools, so users, scanners, and package registries cannot tell what they may do; a changed standard license also no longer means what the well-known original means.',
     suggestion: {
       summary:
         'Use the unmodified text of an SPDX-listed license. If custom terms are really intended, keep them in a file with a clear name and say so in the README.',

@@ -29,12 +29,12 @@ Vision: someone runs `npx siftcode scan .` on any repo and gets a short, ranked 
 - G5. Output formats usable by people and by CI: terminal, Markdown, JSON, SARIF 2.1.0, and a self-contained HTML report.
 - G6. Run fully offline, deterministically, and never execute the scanned code.
 - G7. Pass its own rules (dogfooding) in CI.
-- G9. Check that the project has a license, identify it, check the project follows it, and catch dependencies whose licenses conflict with it (US-035 to US-037). This is a safety net that finds likely problems early, not legal advice.
+- G9. Check that the project has a license, identify it, check the project follows it, and catch dependencies whose licenses conflict with it (US-035 to US-037). This is a safety net that finds likely problems early.
 - G8. Check that the project documents its design and architecture (written docs, decision records, diagrams such as UML, C4, Mermaid, PlantUML) and suggest what is missing. Checking the *content* of designs against the code is a stated later goal (see Non-goals).
 
 **Non-goals (v1)**
 - Verifying that design documents and diagrams match the code (design-vs-code drift, architecture conformance): later. v1 detects presence, kind, linkage, and freshness only (US-033, US-034). Doing more depends on which diagram formats can be parsed; text-based formats (Mermaid, PlantUML, Structurizr DSL) are the realistic first targets, binary/editor formats (Visio, draw.io images) are not.
-- Legal advice or certification of license compliance. License findings are deterministic checks against published license data and a documented compatibility table; every one carries a confidence level and a "consult a lawyer for anything that matters" note. v1 does not resolve dual-licensing choices, patent questions, or contract terms.
+- Certification of license compliance. License findings are deterministic checks against published license data and a documented compatibility table, each with a confidence level: a tool that points out gaps, not a verdict. v1 does not resolve dual-licensing choices, patent questions, or contract terms.
 - Real-time IDE integration (LSP / VS Code extension): later.
 - Taint analysis / data-flow tracking: later (requires a per-language data-flow engine).
 - Whole-program type resolution (Roslyn, TypeScript checker). v1 is syntax-level; see risk R2.
@@ -147,7 +147,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 | 4 NIST SSDF supply chain | C/R | Yes | M4: lockfile, pinning, SBOM, signed-commit signal (R). |
 | 4 Taint analysis | D | No | Later milestone with its own design. |
 | (added by owner) Design and architecture documentation: UML, C4, ADRs, diagrams | C (presence, kind, linkage); R (freshness); D (content vs. code) | Presence and freshness yes; content-vs-code later | M4a (US-033), M5 (US-034). Drift/conformance checks are a later track and depend on parsing text-based diagram formats. |
-| (added by owner) License presence, identification, adherence, and dependency license compatibility | C (files, manifests, lockfiles, installed packages) | Yes, as its own milestone | M4b (US-035 to US-037). Related to NIST SSDF supply-chain checks (US-031). Not legal advice. |
+| (added by owner) License presence, identification, adherence, and dependency license compatibility | C (files, manifests, lockfiles, installed packages) | Yes, as its own milestone | M4b (US-035 to US-037). Related to NIST SSDF supply-chain checks (US-031). |
 | 5.1 SOLID / GRASP | S | Partial | SRP and ISP heuristics, DIP via IoC; others need type info. |
 | 5.2 Law of Demeter | S | Yes | M3 |
 | 5.3 IoC / Service Locator | S | Yes | M3 |
@@ -194,7 +194,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 | R5 | Tool itself becomes a supply-chain risk (reads all of a user's code) | High | Offline, minimal deps, pinned, provenance, no execution of scanned code |
 | R6 | Performance on large repos | Medium | Per-file streaming, worker threads (M2+), benchmark in CI |
 | R7 | Heuristic rules (Demeter, SRP) are subjective | Medium | Mark as `heuristic`, default `info`/`warning`, explain trade-offs in the suggestion |
-| R8 | License findings read as legal assurance, or the compatibility table is wrong or out of date | High | Say "not legal advice" in output; confidence levels; table is data, versioned, cited to license texts, and covered by tests; unknown is reported as unknown, never guessed; owner reviews the table before release |
+| R8 | The compatibility table is wrong or out of date, so a finding misleads | Low | Table is data, versioned, cited to license texts, and covered by tests; confidence levels; unknown is reported as unknown, never guessed; fix a wrong row when someone reports it |
 
 ## 11. Open questions
 

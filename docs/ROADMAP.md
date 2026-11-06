@@ -4,7 +4,7 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M4b is built; the owner reviews the compatibility table and pushes. (M0 and M1 are pushed and CI is green; M2, M3, M4, M4a, and M4b await push.)
+- **Now:** M4b is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2, M3, M4, M4a, and M4b await push.)
 - **Next:** M5 Git hotspots and design-doc freshness.
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
@@ -53,7 +53,7 @@ Exit: manifest checks work for npm, pip, and NuGet; design-artifact detection re
 Stories: US-031 to US-033.
 Result: a repository-level rule type (`defineRepoRule`, `RepoView`); rules `SC-SUP-001` lockfile, `SC-SUP-002` floating versions, `SC-SUP-003` git or URL dependencies, `SC-SUP-004` CI, `SC-SUP-005` dependency updates, `SC-SUP-006` SBOM, `SC-SUP-007` secret scanning; `SC-DOC-001` to `SC-DOC-004` design documentation (none, no diagrams, no decision records, unreferenced diagrams). Manifests for npm, Python, and NuGet are read without new dependencies. Calibrated on 19 local repositories. Definitions and evidence in [ADR 0008](adr/0008-repository-hygiene.md). `npm run sbom` added; `SC-SUP-007` is switched off for this repository (GitHub push protection).
 
-### M4b: Licenses and compliance (M, done: awaiting owner review of the compatibility table, then push)
+### M4b: Licenses and compliance (M, done: awaiting owner review and push)
 Goal: detect whether a project has a license and which one, check it follows that license, and flag dependency licenses that conflict with it or are unknown.
 Scope:
 - Bundle the SPDX license list (license texts and metadata) as data; verify its license and the exact source before adding.
@@ -61,7 +61,7 @@ Scope:
 - Adherence checks: declared vs. file license, copyright holder and year, required notices (`NOTICE`, third-party attribution).
 - Dependency license reading offline (lockfiles, installed packages for npm, Python, NuGet); "unknown" when unavailable.
 - Compatibility table as versioned data with citations, plus the rules that apply it.
-Exit: identifies the standard licenses in a fixture set (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0, GPL-2.0/3.0, LGPL, AGPL-3.0, Unlicense, CC0) and a modified variant; reports "no license"; conflict cases covered by positive and negative fixtures; every finding includes the not-legal-advice note; the owner reviews the compatibility table.
+Exit: identifies the standard licenses in a fixture set (MIT, Apache-2.0, BSD-2/3, ISC, MPL-2.0, GPL-2.0/3.0, LGPL, AGPL-3.0, Unlicense, CC0) and a modified variant; reports "no license"; conflict cases covered by positive and negative fixtures; the compatibility table is data with a source for every row.
 Stories: US-035 to US-037.
 Result: rules `SC-LIC-001` to `SC-LIC-008` (no license, modified or unrecognized license file, declaration vs file, placeholders and copyright holder, undocumented bundled licenses, SPDX headers, dependency conflicts, dependency licenses unknown or not granted). Bundled SPDX data (727 ids, 56 recognizable texts) from the dev-only `spdx-license-list`; SPDX expression parser; text matcher calibrated on 130 real license files; offline dependency licenses from npm lockfiles and installed packages, Python virtual environments, and NuGet `.nuspec` files; a cited, versioned compatibility table (version 1). `RepoView.read` and `list` reach ignored folders without leaving the scan root. Definitions and evidence in [ADR 0009](adr/0009-license-checks.md).
 
@@ -115,6 +115,6 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | TD-14 | `pyproject.toml` and `Pipfile` are read with a narrow line reader, not a TOML parser: dependency arrays and Poetry/Pipenv tables only. An unusual layout shows fewer dependencies, never invented ones. | Low | Add a TOML parser if real misses are found |
 | TD-15 | Whole-project repository checks (CI, updates, SBOM, secret scanning, design documentation) run only at the top of a Git repository. A folder that is not a repository gets none, and agent working copies inside a project (such as `.claude/worktrees/`) are scanned like any other folder. SiftCode also cannot see platform settings (GitHub secret scanning, branch protection). | Low | Revisit with per-path overrides (TD-5) |
 | TD-16 | License text matching uses word-pair similarity: a real change of terms shorter than 14 words in a license of about 100 words or more can still score as a match (0.90 or more). A modified license is only caught when it adds or removes a longer stretch. | Medium | Per-license templates with replaceable text (SPDX matching guidelines), or a diff of key sentences |
-| TD-17 | The license compatibility table (version 1) is a screening aid built from the FSF, ASF, MPL, and license texts; it has not been reviewed by the owner or a lawyer, and does not know whether a dependency is linked, bundled, or run separately. | High | Owner review before release (PRD R8), using `docs/license-table-review.md` |
+| TD-17 | The license compatibility table (version 1) is built from the FSF, ASF, and MPL statements and the license texts. It does not know whether a dependency is linked, bundled, or run separately, so its wording is conditional. | Low | Fix a row if someone finds it wrong; the generated `docs/license-table-review.md` makes that easy to check |
 | TD-18 | Dependency licenses are read only from the project folder: not the NuGet global cache, Python environments elsewhere, or yarn/pnpm lockfiles (no license field). A `SEE LICENSE IN` pointer is reported, not followed. Cargo, Go, and Maven are not covered. | Low | Extend by ecosystem when requested |
 | TD-11 | Design rules skip test code by path (`test` folders, `*.test.*`, `test_*`, ...); a scan started inside a tests folder cannot see the folder name. | Low | Revisit with per-path rule overrides (TD-5) |

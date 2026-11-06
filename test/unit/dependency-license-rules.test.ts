@@ -62,7 +62,6 @@ describe('SC-LIC-007 npm dependencies (US-037)', () => {
     expect(findings[0]).toMatchObject({ path: 'package.json', severity: 'warning' });
     expect(findings[0]?.message).toContain('b 2.1.0 is licensed GPL-3.0-only');
     expect(findings[0]?.message).toContain('strong copyleft');
-    expect(findings[0]?.message).toContain('not legal advice');
     expect(findings[0]?.message).toContain('https://www.gnu.org/licenses/');
   });
 
@@ -241,7 +240,6 @@ describe('SC-LIC-008 unclear or missing dependency licenses (US-037)', () => {
     expect(findings[0]).toMatchObject({ path: 'package.json', severity: 'info' });
     expect(findings[0]?.message).toContain('3 of 3 runtime dependencies');
     expect(findings[0]?.message).toContain('a, b, c');
-    expect(findings[0]?.message).toContain('not legal advice');
   });
 
   it('does not list development dependencies', async () => {
