@@ -55,6 +55,53 @@ describe('SC-DES-001 Law of Demeter (US-020)', () => {
     expect(messages(result)).toEqual([`The chain "${chain}" follows 4 members (limit 3).`]);
   });
 
+  describe('fluent configuration is not reaching through objects', () => {
+    const run = async (file: string, code: string) =>
+      messages(await scan(await projects.create({ [file]: code }), { config: only('SC-DES-001') }));
+
+    it.each([
+      // EF Core, Autofac, FluentValidation: a statement made of calls that configures one object
+      [
+        'A.cs',
+        'class A { void M(B b) { b.Property().IsRequired().HasMaxLength(5).HasColumnType("x"); } }',
+      ],
+      [
+        'A.cs',
+        'class A { void M(B builder) { builder.Services.AddOne().AddTwo().AddThree().AddFour(); } }',
+      ],
+      [
+        'A.cs',
+        'class A { void M() { RuleFor(x => x.Name).NotEmpty().WithMessage("a").MaximumLength(5); } }',
+      ],
+      ['A.cs', 'class A { async void M(B b) { await b.Open().Then().Wait().Done(); } }'],
+      // a builder that ends in Build, or starts from something named ...Builder
+      [
+        'A.cs',
+        'class A { void M() { var t = TriggerBuilder.Create().StartNow().WithX().Build(); } }',
+      ],
+      ['A.cs', 'class A { void M(B b) { var x = b.One().Two().Three().Four().Build(); } }'],
+      [
+        'A.cs',
+        'class A { void M(B modelBuilder) { var x = modelBuilder.One().Two().Three().Four(); } }',
+      ],
+      ['a.js', 'app.use(a).use(b).use(c).listen(3000);'],
+      ['a.py', 'parser.add(a).add(b).add(c).add(d)'],
+    ])('leaves it alone in %s: %s', async (file, code) => {
+      expect(await run(file, code)).toEqual([]);
+    });
+
+    it.each([
+      // the value is used: it navigates to something
+      ['A.cs', 'class A { void M(B a) { var x = a.One().Two().Three().Four(); } }'],
+      ['a.js', 'const x = a.one().two().three().four();'],
+      // it reaches through properties, even as a statement
+      ['A.cs', 'class A { void M(B user) { user.Account.Subscription.Plan.Cancel(); } }'],
+      ['a.js', 'user.account.subscription.plan.cancel();'],
+    ])('still reports a chain that navigates, in %s: %s', async (file, code) => {
+      expect(await run(file, code)).toHaveLength(1);
+    });
+  });
+
   it('uses a configurable limit', async () => {
     const stricter = await scan(join(negative, 'tidy.js'), {
       config: only('SC-DES-001', { maxChain: 2 }),
@@ -138,6 +185,50 @@ describe('SC-DES-002 Service Locator (US-021)', () => {
       expect((await scan(folder, { config: only('SC-DES-002') })).findings).toEqual([]);
     },
   );
+
+  it.each([
+    'src/Web/Configurations/MiddlewareConfig.cs',
+    'src/Infrastructure/InfrastructureServiceExtensions.cs',
+    'src/Modules/Payments/PaymentsStartup.cs',
+    'src/Modules/Payments/PaymentsModule.cs',
+    'src/App/AppConfiguration.cs',
+  ])('skips %s: a file named for wiring the application together', async (file) => {
+    const folder = await projects.create({
+      [file]: 'class A { void Run() { var x = container.Resolve(Thing); } }\n',
+    });
+
+    expect((await scan(folder, { config: only('SC-DES-002') })).findings).toEqual([]);
+  });
+
+  it.each(['SeedDatabase', 'MigrateDatabaseAsync', 'InitializeStore', 'AddInfrastructureServices'])(
+    'skips the wiring function %s in any file',
+    async (name) => {
+      const folder = await projects.create({
+        'src/Web/Thing.cs': `class A { void ${name}() { var x = services.GetRequiredService<Db>(); } }\n`,
+      });
+
+      expect((await scan(folder, { config: only('SC-DES-002') })).findings).toEqual([]);
+    },
+  );
+
+  it('still flags a locator in business code, even in a method that starts with Add', async () => {
+    const folder = await projects.create({
+      'src/Billing/Cart.cs':
+        'class Cart { void AddItem() { var x = _provider.GetRequiredService<Tax>(); } }\n',
+    });
+
+    expect(messages(await scan(folder, { config: only('SC-DES-002') }))).toEqual([
+      '"AddItem" fetches a dependency with _provider.GetRequiredService() instead of receiving it.',
+    ]);
+  });
+
+  it('does not take a dependency resolver or a DNS resolver for a container', async () => {
+    const folder = await projects.create({
+      'src/pip/run.py': 'def run(resolver):\n    return resolver.resolve(requirements)\n',
+    });
+
+    expect((await scan(folder, { config: only('SC-DES-002') })).findings).toEqual([]);
+  });
 
   it('flags a locator in a file that is not one of those', async () => {
     const folder = await projects.create({

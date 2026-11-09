@@ -135,6 +135,11 @@ export interface MemberChain {
   readonly rootKind: 'name' | 'self' | 'other';
   /** In reading order, nearest the root first. Never empty. */
   readonly hops: readonly MemberHop[];
+  /**
+   * The chain is a whole statement and its value is thrown away (`builder.Property().IsRequired();`):
+   * it does something, rather than navigating to a value that is then used.
+   */
+  readonly discarded: boolean;
   readonly startLine: number;
   readonly endLine: number;
 }

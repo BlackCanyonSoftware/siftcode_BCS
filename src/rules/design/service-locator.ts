@@ -22,8 +22,11 @@ const LOCATOR_METHODS = new Set([
 /** `get` is too common to mean "locate" unless the receiver is clearly a container. */
 const AMBIGUOUS_METHODS = new Set(['get']);
 
-/** A receiver whose name says it hands out services. */
-const CONTAINER_NAME = /container|locator|injector|kernel|serviceprovider|resolver|ioc|moduleref/;
+/**
+ * A receiver whose name says it hands out services. `resolver` is left out: it is as likely a
+ * dependency resolver (pip), a DNS resolver, or a module resolver as a container.
+ */
+const CONTAINER_NAME = /container|locator|injector|kernel|serviceprovider|ioc|moduleref/;
 const PROVIDER_NAME = /provider|^services$|requestservices/;
 
 /** Files where wiring dependencies together is the job, so locating them is expected. */
@@ -46,15 +49,36 @@ const COMPOSITION_FILES = new Set([
   'registration',
   'registrations',
 ]);
+/** File names that end like this are wiring too: `PaymentsStartup`, `MiddlewareConfig`, `InfrastructureServiceExtensions`. */
+const COMPOSITION_SUFFIXES = [
+  'startup',
+  'bootstrap',
+  'composition',
+  'compositionroot',
+  'config',
+  'configuration',
+  'configurations',
+  'serviceextensions',
+  'servicecollectionextensions',
+  'module',
+  'modules',
+  'registrations',
+];
 const COMPOSITION_FOLDERS = new Set(['composition', 'di', 'ioc', 'container', 'bootstrap']);
+/**
+ * Functions whose job is to wire the application or prepare it to start: registering services,
+ * seeding and migrating a database, initializing. `Add...Services` is the .NET registration idiom;
+ * a plain `AddItem` is business code and is not exempt.
+ */
 const COMPOSITION_FUNCTION =
-  /^(main|configure\w*|register\w*|bootstrap\w*|compose\w*|setup\w*|buildservice\w*|createhostbuilder)$/i;
+  /^(main|configure\w*|register\w*|bootstrap\w*|compose\w*|setup\w*|seed\w*|migrate\w*|initialize\w*|buildservice\w*|createhostbuilder|add\w*(services|infrastructure|dependencies))$/i;
 
 export function isCompositionRoot(path: string): boolean {
   const segments = path.toLowerCase().split('/');
-  const file = (segments.pop() ?? '').split('.')[0] ?? '';
+  const file = ((segments.pop() ?? '').split('.')[0] ?? '').replace(/[-_]/g, '');
   return (
-    COMPOSITION_FILES.has(file.replace(/[-_]/g, '')) ||
+    COMPOSITION_FILES.has(file) ||
+    COMPOSITION_SUFFIXES.some((suffix) => file.endsWith(suffix)) ||
     segments.some((s) => COMPOSITION_FOLDERS.has(s))
   );
 }

@@ -120,9 +120,22 @@ function followChain(syntax: ChainSyntax, outermost: Node): MemberChain | undefi
   return {
     ...describeRoot(walk),
     hops: walk.hops.reverse(),
+    discarded: isDiscarded(outermost),
     startLine: outermost.startPosition.row + 1,
     endLine: outermost.endPosition.row + 1,
   };
+}
+
+/** Nodes that wrap an expression without using its value as anything but the statement's. */
+const STATEMENT_WRAPPERS = new Set(['await_expression', 'await', 'parenthesized_expression']);
+
+/** True when the chain is an entire expression statement, whose value nobody reads. */
+function isDiscarded(outermost: Node): boolean {
+  let parent = outermost.parent;
+  while (parent && STATEMENT_WRAPPERS.has(parent.type)) {
+    parent = parent.parent;
+  }
+  return parent?.type === 'expression_statement';
 }
 
 /** Takes one step toward the root and returns the next node, or null once the root is reached. */

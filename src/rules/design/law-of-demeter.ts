@@ -40,6 +40,27 @@ const FLUENT_ROOTS = new Set([
   'sinon',
 ]);
 
+/** A root named `builder`, `modelBuilder`, `TriggerBuilder`, and the like. */
+const BUILDER_SUFFIX = 'builder';
+
+/**
+ * A fluent interface configures one object by chaining calls on it: `b.Property().IsRequired()`,
+ * `services.AddA().AddB()`, `TriggerBuilder.Create().WithX().Build()`. Each call hands back the same
+ * thing to configure further, so this is not reaching through other objects. It is told by what the
+ * chain does with its value: it is thrown away (a statement made of calls, after at most one leading
+ * property such as `builder.Services`), or it ends in `Build`, or it starts from a builder.
+ */
+export function isFluentConfiguration(chain: MemberChain): boolean {
+  const last = chain.hops[chain.hops.length - 1];
+  if (last?.call === true && normalizeName(last.name) === 'build') {
+    return true;
+  }
+  if (chain.rootKind === 'name' && normalizeName(chain.root).endsWith(BUILDER_SUFFIX)) {
+    return true;
+  }
+  return chain.discarded && chain.hops.slice(1).every((hop) => hop.call);
+}
+
 /** The longest part of a chain worth showing in a message. */
 const MAX_SHOWN = 60;
 
@@ -105,7 +126,7 @@ export const lawOfDemeter = defineRule({
     return file.facts.chains.flatMap((chain) => {
       // Modules, namespaces, and imported objects are reached by name, not through another object.
       const isReference = chain.rootKind === 'name' && imported.has(chain.root);
-      if (isReference || FLUENT_ROOTS.has(chain.root)) {
+      if (isReference || FLUENT_ROOTS.has(chain.root) || isFluentConfiguration(chain)) {
         return [];
       }
       const reached = reachedMembers(chain);
