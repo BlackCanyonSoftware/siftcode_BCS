@@ -11,7 +11,7 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
-- 38 rules. Metrics `SC-MET-001` to `005`; design `SC-DES-001` to `005`; security
+- 39 rules. Metrics `SC-MET-001` to `006`; design `SC-DES-001` to `005`; security
   `SC-SEC-001` to `007` (each mapped to a CWE entry); supply chain `SC-SUP-001` to `007`;
   design documentation `SC-DOC-001` to `004` (ADR 0008); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
   (stale design documents; ADR 0010).
@@ -36,7 +36,7 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - Brand last checked: 2026-11-05 · brandkit 1.56.0 · Brand Logos commit c51448c1 (dirty, only `requests/` changed) · set: readme · result: in sync (design-standard rollout: IBM Carbon recorded in DESIGN.md; no screen to rebuild until M6)
 - Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0010. License Apache-2.0. Brand
   re-synced 2026-11-01 (typeface JetBrains Mono).
-- Dogfood: `node dist/cli/main.js scan .` is clean (124 files, all 38 rules; `SC-HOT-001` reports `manifests.ts` as an informational hotspot, so the contract is "nothing at warning or above": run `scan . --fail-on warning`; `SC-SUP-007` is switched
+- Dogfood: `node dist/cli/main.js scan .` is clean (127 files, all 39 rules; `SC-HOT-001` reports `manifests.ts` as an informational hotspot, so the contract is "nothing at warning or above": run `scan . --fail-on warning`; `SC-SUP-007` is switched
   off in `siftcode.config.json` because GitHub push protection is on, and `npm run sbom` satisfies
   `SC-SUP-006`). Keep it so.
 
@@ -56,10 +56,10 @@ None.
 
 ## Open questions for the owner
 
-- A real C# project (or permission to read one from GitHub) for the false-positive review of the
-  design and security rules: only 26 small C# files were available locally (TD-8).
-- Should a plain "file is too long" rule be added? File-level Maintainability Index was dropped
-  because it only tracks file length (ADR 0005).
+- A C# project with a database or process calls (TD-8): the two reviewed on 2026-11-08 had no
+  security-relevant code. The design and metric rules are now reviewed on real C#.
+- An older repository with a design document that was written early and left untouched while the
+  code changed (a year or more of history), to tune `SC-DOC-005` (TD-19).
 - The brand has no tagline or domain; the README has none until one is set.
 - Optional: skim the license compatibility table as a sheet, `docs/license-table-review.md`
   (families, a project-by-dependency matrix, every reason with its source; regenerate with
@@ -93,6 +93,8 @@ None.
 - Git tests commit to real temporary repositories (about 15 s together); the `describe` blocks set
   a 60 s timeout. Never launch `git` by name from the scanned folder: use `locateGit` (a project can
   carry its own `git.exe` on Windows).
+- `isTestFile` (`src/rules/shared.ts`) is case-sensitive on purpose for .NET names (`BillingTests.cs`, `App.UnitTests/`) and must not match `Contest.cs` or `protest.py`; `test/unit/test-files.test.ts` pins both directions.
+- Calibration corpora also include FluentValidation (C#, cloned to a temp folder; `git clone` it again to reuse) and the owner's school assignment under `Desktop/GCC School Stuff` (35 C# files, no design docs). `docs/adr/0005` has the file-size distribution.
 - Test files that build tables with `it.each` run before `beforeAll`: load the license catalog with
   a top-level `await loadCatalog()` (see `test/unit/license-rules.test.ts`).
 - `data/licenses/*.json` are generated and excluded from Prettier. Do not edit them by hand; add a
@@ -139,6 +141,7 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-08, session 1 (continued):** Owner review of M5 answers: added `SC-MET-006` (file length, 500 lines, calibrated on 1,931 files). Cloned FluentValidation (C#) and scanned it plus a school project: fixed .NET test projects counting as production code, `Contest.cs`/`protest.py` matching the test-file pattern, and NuGet test or `PrivateAssets` packages counted as runtime dependencies. 894 unit tests.
 - **2026-11-08, session 1 (continued):** Milestone 5 (Git hotspots and design-document freshness,
   ADR 0010): the Git reader, `RepoView.git()/codeFiles/note()`, notes in the reports, `SC-HOT-001`,
   `SC-DOC-005`. Calibrated on 19 local repositories (vendored code removed from the ranking); found
