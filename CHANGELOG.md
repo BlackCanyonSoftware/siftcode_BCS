@@ -22,6 +22,14 @@ All notable user-visible changes are recorded here. The format follows
 - Code metrics for JavaScript, TypeScript, Python, and C#, measured the same way in every
   language: cyclomatic complexity, Halstead measures, Maintainability Index, lines of code,
   nesting depth, and parameter count. The JSON report lists them for every file and function.
+- `siftcode scan --format html`: a self-contained HTML report on the brand's IBM Carbon styles with
+  a summary, the top hotspots, filters and search, findings grouped by file with why and what to try,
+  copyable before and after examples, a light and dark theme, (i) buttons that explain the terms, a
+  table of accepted findings, and a strict content policy (nothing is fetched). Measured against WCAG 2.2
+  AA contrast in both themes and checked at 375, 768, and 1280 px.
+- `siftcode explain` with no rule id lists every rule by category. A rule id may be written loosely
+  (`met-1`), a mistyped one names the closest rule, and an explanation now shows the rule's default
+  settings, how to change or switch it off, and how to accept a finding.
 - Baseline and inline suppressions. `siftcode baseline <path>` writes `siftcode-baseline.json`;
   `siftcode scan --baseline <file>` (or `"baseline"` in the config) accepts the findings it lists, so a
   scan reports and fails on new findings only. A comment such as

@@ -2,10 +2,10 @@
 
 Pick-up-here file. Read this first, update it at the end of every session.
 
-## Current state (2026-11-05)
+## Current state (2026-11-08)
 
 - **Milestones 0 and 1: done, pushed, CI green** (Node 24 and 26, Ubuntu and Windows).
-- **Milestones 2, 3, 4, 4a, 4b, and 5: built and verified locally; awaiting owner review and push**
+- **Milestones 2, 3, 4, 4a, 4b, 5, and 6: built and verified locally; awaiting owner review and push**
   (M2's and M3's commits are not pushed yet; the rest sit on top of them). CI has not run on any
   of them.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
@@ -30,13 +30,15 @@ Pick-up-here file. Read this first, update it at the end of every session.
   `RepoView.git()` / `codeFiles` / `note()`; `ScanResult.notes`. Rules: `src/rules/git/` (`churn`,
   `hotspots`) and `src/rules/documentation/design-doc-freshness.ts`. Tests build real repositories
   with chosen dates (`test/helpers/git.ts`).
+- **Accepting findings (M6, ADR 0011):** `ScanResult.accepted` (findings set aside by a `siftcode-ignore` comment or by a baseline; never counted toward `--fail-on`), `src/core/{suppressions,baseline,accept}.ts`, directive comments extracted as a fact (`src/languages/facts/directives.ts`), `siftcode baseline`, `--baseline`, config `baseline`.
+- **HTML report (M6, ADR 0012):** `src/reporters/html/` (escape, assets, components, findings, summary, controls, page), `assets/brand/` (generated), `assets/report/{report.css,report.js}`. `explain` lists rules, takes loose ids, shows settings (`RuleDefinition.defaultOptions`) and how to accept a finding.
 - A rule hit can set its own severity; a severity in the config file overrides it.
 - SARIF tags each rule with its CWE; the JSON report has a `metrics` section.
 - TypeScript declaration files (`.d.ts`) are skipped.
-- Brand last checked: 2026-11-05 · brandkit 1.56.0 · Brand Logos commit c51448c1 (dirty, only `requests/` changed) · set: readme · result: in sync (design-standard rollout: IBM Carbon recorded in DESIGN.md; no screen to rebuild until M6)
+- Brand last checked: 2026-11-08 · brandkit 1.56.1 · Brand Logos commit eef776be (dirty: `requests/` and the rollout tracker) · sets: readme (`docs/brand`) and app (`assets/brand`) · result: both in sync (`brandkit check`); the HTML report is built on the app set
 - Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0010. License Apache-2.0. Brand
   re-synced 2026-11-01 (typeface JetBrains Mono).
-- Dogfood: `node dist/cli/main.js scan .` is clean (127 files, all 39 rules; `SC-HOT-001` reports `manifests.ts` as an informational hotspot, so the contract is "nothing at warning or above": run `scan . --fail-on warning`; `SC-SUP-007` is switched
+- Dogfood: `node dist/cli/main.js scan .` is clean (149 files, all 39 rules; `SC-HOT-001` reports `manifests.ts` as an informational hotspot, so the contract is "nothing at warning or above": run `scan . --fail-on warning`; `SC-SUP-007` is switched
   off in `siftcode.config.json` because GitHub push protection is on, and `npm run sbom` satisfies
   `SC-SUP-006`). Keep it so.
 
@@ -48,11 +50,11 @@ None.
 
 1. Owner reviews M2, M3, M4, M4a, and M4b, pushes, and confirms CI is green. (No CI step was
    added; attaching `npm run sbom` output to releases belongs to M7.)
-2. **Start M6: HTML report, explain polish, baseline and suppressions** (US-005, US-070; scope in
-   `docs/ROADMAP.md`). The report is built on the IBM Carbon standard (`docs/DESIGN.md`): bundle the
-   brand application set first (`brandkit bundle siftcode <dir>`, then `brandkit check`). Show the
-   hotspot ranking and the `notes`; add SARIF notifications for notes (TD-20).
-3. Then M7 (readiness hints, dogfood gate, release prep).
+2. **Start M7: testing-readiness hints, dogfood gate, and 0.1.0 release prep** (US-050 to US-052,
+   US-072; scope in `docs/ROADMAP.md`). Release prep includes the SBOM and provenance, `npm pack`
+   review (the HTML report needs `assets/` in the package; `npm pack --dry-run` was checked in M6), a
+   dry-run publish, and the owner publishes. Consider TD-21 (a browser test with an accessibility
+   engine) before the first release.
 
 ## Open questions for the owner
 
@@ -95,6 +97,9 @@ None.
   carry its own `git.exe` on Windows).
 - `isTestFile` (`src/rules/shared.ts`) is case-sensitive on purpose for .NET names (`BillingTests.cs`, `App.UnitTests/`) and must not match `Contest.cs` or `protest.py`; `test/unit/test-files.test.ts` pins both directions.
 - Calibration corpora also include FluentValidation (C#, cloned to a temp folder; `git clone` it again to reuse) and the owner's school assignment under `Desktop/GCC School Stuff` (35 C# files, no design docs). `docs/adr/0005` has the file-size distribution.
+- **`assets/brand/` is generated.** Never edit it; run `brandkit bundle siftcode assets/brand` and `brandkit check siftcode assets/brand` after a brand rebuild, then regenerate a sample report and re-run the contrast audit (the report's two color overrides depend on the brand's token values, TD-23). Prettier and ESLint skip it.
+- **Checking the HTML report in a browser:** the built-in browser cannot open `file://`; serve the report over localhost (a tiny static `node:http` server) and open the URL. A hidden browser pane freezes CSS transitions, so a contrast script that flips the theme must disable transitions first or it measures half-animated colors (this produced two false findings in M6).
+- **The `siftcode-ignore` directive must start its comment line** (after one comment opener). Documentation comments that mention or quote it, including this repository's own, are ignored on purpose.
 - Test files that build tables with `it.each` run before `beforeAll`: load the license catalog with
   a top-level `await loadCatalog()` (see `test/unit/license-rules.test.ts`).
 - `data/licenses/*.json` are generated and excluded from Prettier. Do not edit them by hand; add a
@@ -141,6 +146,7 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-08, session 1 (continued):** Milestone 6 (HTML report, baseline and suppressions, `explain` polish; ADR 0011 and 0012): accepted findings (comments and baseline) in every report, the Carbon HTML report built on the brand's app set with a strict content policy, SARIF suppressions and notifications, `explain` list, loose ids, typo suggestions, settings and acceptance help. Checked in a browser at 375/768/1280 px (contrast in both themes, structure, keyboard, behavior). 961 unit and 8 end-to-end tests.
 - **2026-11-08, session 1 (continued):** Owner review of M5 answers: added `SC-MET-006` (file length, 500 lines, calibrated on 1,931 files). Cloned FluentValidation (C#) and scanned it plus a school project: fixed .NET test projects counting as production code, `Contest.cs`/`protest.py` matching the test-file pattern, and NuGet test or `PrivateAssets` packages counted as runtime dependencies. 894 unit tests.
 - **2026-11-08, session 1 (continued):** Milestone 5 (Git hotspots and design-document freshness,
   ADR 0010): the Git reader, `RepoView.git()/codeFiles/note()`, notes in the reports, `SC-HOT-001`,

@@ -40,7 +40,8 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
   named functions), `measure.ts` (complexity, Halstead, nesting, lines: ADR 0005), `facts/` (imports, member
   chains, classes, calls, named values, strings: ADR 0006, 0007)
 - `src/rules/` one file per rule (metadata, suggestion, check) + `index.ts` registry
-- `src/reporters/` text, JSON, Markdown, SARIF, `explain`
+- `src/reporters/` text, JSON, Markdown, SARIF, `explain`, and `html/` (the self-contained report, ADR 0012)
+- `assets/brand/` the brand's application set (`brandkit bundle siftcode assets/brand`, then `brandkit check`; never edit); `assets/report/` the report's own CSS and browser script
 - `src/git/` read-only Git history (runs the `git` program; ADR 0010); rules get it through `RepoView.git()`
 - `data/licenses/` generated SPDX ids and license texts (committed, shipped; ADR 0009)
 - `scripts/` build helpers; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored

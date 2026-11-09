@@ -12,8 +12,8 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 5).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with 39 rules for JavaScript/TypeScript, Python, and C#:
+> **Status: early development (Milestone 6).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF, HTML) work, with 39 rules for JavaScript/TypeScript, Python, and C#:
 > six code metrics, five design heuristics, seven security checks, seven supply-chain checks,
 > five design-documentation checks, eight license checks, and a hotspot ranking. More rules arrive in the next milestones; see the
 > [roadmap](docs/ROADMAP.md).
@@ -54,9 +54,9 @@ Skipped: 3 unsupported, 0 too large, 0 symbolic links
 ```text
 siftcode scan <path> [options]     scan a folder or file
 siftcode baseline <path>           accept the current findings, so later scans report only new ones
-siftcode explain <rule-id>         why a rule exists, the standards behind it, how to fix it
+siftcode explain [rule-id]         why a rule exists, the standards behind it, how to fix it (no id: list the rules)
 
-  -f, --format <name>     text (default), json, markdown, or sarif
+  -f, --format <name>     text (default), json, markdown, sarif, or html
   -o, --output <file>     write the report to a file instead of printing it
   -c, --config <file>     config file (default: siftcode.config.json in the scanned folder)
       --baseline <file>   accept the findings listed in this baseline file
@@ -64,6 +64,12 @@ siftcode explain <rule-id>         why a rule exists, the standards behind it, h
 ```
 
 Exit codes: `0` success, `1` a finding at or above `--fail-on`, `2` usage or configuration error.
+
+`--format html` writes one self-contained file you can open in a browser or send to a colleague: a
+summary, the top hotspots, filters (severity, category, language, rule, and a search), findings grouped
+by file with why each matters and what to try, copyable before and after examples, a light and dark
+theme, and (i) buttons that explain the terms. It loads nothing from the network, and it carries no
+timestamps or absolute paths ([ADR 0012](docs/adr/0012-html-report.md)).
 
 Upload results to GitHub code scanning with `--format sarif`. `--format json` also includes the
 measurements of every file and function: cyclomatic complexity, Halstead measures, Maintainability
@@ -245,8 +251,9 @@ src/
   core/        scan pipeline, findings, severity, errors
   discovery/   finding supported files; .gitignore and ignore patterns
   languages/   language registry, tree-sitter parser, Code Model, function extraction
-  reporters/   text, JSON, Markdown, SARIF, and `explain` output
+  reporters/   text, JSON, Markdown, SARIF, HTML (html/), and `explain` output
   rules/       one file per rule, plus the registry
+assets/        the HTML report: brand/ (from `brandkit bundle`, never edited by hand) and report/ (its own styles and script)
 scripts/       build helpers, SARIF schema download, benchmark
 test/          unit tests, end-to-end tests, fixtures
 docs/          product and engineering documentation

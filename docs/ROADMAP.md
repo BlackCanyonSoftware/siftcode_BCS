@@ -4,8 +4,8 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M5 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2 to M5 await push.)
-- **Next:** M6 HTML report, explain, baseline.
+- **Now:** M6 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2 to M6 await push.)
+- **Next:** M7 testing-readiness hints, dogfood gate, release prep.
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
@@ -71,11 +71,12 @@ Exit: works on a repo with history; non-Git folders skip with a note; performanc
 Stories: US-013, US-034.
 Result: a read-only Git history reader (`src/git/`, runs the `git` program safely, bounded, reports why when there is no history); `RepoView` gains `git()`, `codeFiles`, and `note()`, and scan results gain `notes` (shown in the text, Markdown, and JSON reports); rules `SC-HOT-001` (hotspots: commits × complexity, top 10 over 12 months) and `SC-DOC-005` (a design document that predates a large rewrite of the code it covers). Definitions and evidence in [ADR 0010](adr/0010-git-history-rules.md).
 
-### M6: HTML report, explain, baseline (M, planned)
+### M6: HTML report, explain, baseline (M, done: awaiting owner review and push)
 Goal: shareable self-contained HTML report per DESIGN.md; `explain` command polish; baseline and inline suppressions.
 Depends on: the SiftCode brand (available in `Brand Logos` as of 2026-10-31); bundle the application set into the report inputs at the start of this milestone (`brandkit bundle siftcode <dir>`, then `brandkit check`). Take the typeface from `template/fonts.css` and embed the font file; never write a `font-family` by hand (it changed when the brand was rebuilt on 2026-11-01).
 Exit: WCAG 2.2 AA checks pass (automated plus a keyboard pass); light/dark toggle and info buttons work; checked at 375/768/1280 px with no console errors.
 Stories: US-005, US-070.
+Result: `--format html` (a self-contained report on the brand's Carbon styles: summary, hotspots, filters and search, light and dark theme, (i) buttons, copyable examples, accepted findings, a strict content policy), `siftcode baseline` with `--baseline` and a `baseline` config key, `siftcode-ignore` comments that need a rule id and a reason, SARIF suppressions and notifications, and `explain` that lists the rules, accepts loose ids, suggests the nearest on a typo, and shows settings and how to accept a finding. Decisions and evidence: [ADR 0011](adr/0011-baseline-and-suppressions.md) and [ADR 0012](adr/0012-html-report.md).
 
 ### M7: Testing-readiness, dogfood gate, and 0.1.0 release prep (M, planned)
 Goal: readiness hints (US-050 to US-052), CI dogfood gate (US-072), release pipeline with SBOM and provenance, GitHub Action wrapper (Could), npm publish dry run.
@@ -119,5 +120,8 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | TD-17 | The license compatibility table (version 1) is built from the FSF, ASF, and MPL statements and the license texts. It does not know whether a dependency is linked, bundled, or run separately, so its wording is conditional. | Low | Fix a row if someone finds it wrong; the generated `docs/license-table-review.md` makes that easy to check |
 | TD-18 | Dependency licenses are read only from the project folder: not the NuGet global cache, Python environments elsewhere, or yarn/pnpm lockfiles (no license field). A `SEE LICENSE IN` pointer is reported, not followed. Cargo, Go, and Maven are not covered. | Low | Extend by ecosystem when requested |
 | TD-19 | `SC-DOC-005` thresholds (90 days, 500 lines, 50% of the covered code) are untuned: none of the local projects had a document old enough to trigger them, and the relaxed-threshold probe only showed the mechanism works. FluentValidation (2009, 2,513 commits) has only user guides in `docs/`, and `marketpredictor` (28 commits since 2026-09-30) has no document older than 39 days, so neither tests the rule; `marketpredictor` reaches 90 days on 2026-12-29. A good corpus is a repository of at least a year with an `ARCHITECTURE.md` or `docs/design` folder that was written early and not touched while the code was rewritten. Renames are not followed, so a renamed file's history starts again; hotspots count commits, not authors. | Medium | Tune on older repositories; follow renames if hotspots go missing |
-| TD-20 | Git rules need the `git` program and give results that change with the date of the scan. SARIF output does not carry the notes that say a rule was skipped. | Low | Add SARIF notifications in M6 |
+| TD-20 | Git rules need the `git` program and give results that change with the date of the scan. (The notes that say a rule was skipped now reach SARIF as notifications, added in M6.) | Low | None: a property of the rules |
+| TD-21 | The HTML report's browser script (`assets/report/report.js`) has no automated tests, and no accessibility engine (axe-core) was run: the contrast, structure, and keyboard audit was a script and a manual pass in a browser (ADR 0012). No screen reader was used. | Medium | Add a browser test (Playwright) with an axe run, when a test browser is acceptable as a dev dependency |
+| TD-22 | A baseline can hide a finding forever and has no review date; a `siftcode-ignore` comment has no expiry either. Renaming a file makes its baselined findings reappear. | Low | Add optional expiry dates if teams ask (ADR 0011) |
+| TD-23 | Two brand color pairs measured below 4.5:1 (the muted label on a dark card, and a ghost button on its hover wash in the light theme); the report overrides them with the ink color. The brand itself is unchanged. | Low | Tell the brand owner; drop the overrides if the brand fixes them |
 | TD-11 | Design rules skip test code by path (`test` folders, `*.test.*`, `test_*`, ...); a scan started inside a tests folder cannot see the folder name. | Low | Revisit with per-path rule overrides (TD-5) |
