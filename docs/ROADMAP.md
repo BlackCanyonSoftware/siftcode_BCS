@@ -4,8 +4,8 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M4b is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2, M3, M4, M4a, and M4b await push.)
-- **Next:** M5 Git hotspots and design-doc freshness.
+- **Now:** M5 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2 to M5 await push.)
+- **Next:** M6 HTML report, explain, baseline.
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
@@ -65,10 +65,11 @@ Exit: identifies the standard licenses in a fixture set (MIT, Apache-2.0, BSD-2/
 Stories: US-035 to US-037.
 Result: rules `SC-LIC-001` to `SC-LIC-008` (no license, modified or unrecognized license file, declaration vs file, placeholders and copyright holder, undocumented bundled licenses, SPDX headers, dependency conflicts, dependency licenses unknown or not granted). Bundled SPDX data (727 ids, 56 recognizable texts) from the dev-only `spdx-license-list`; SPDX expression parser; text matcher calibrated on 130 real license files; offline dependency licenses from npm lockfiles and installed packages, Python virtual environments, and NuGet `.nuspec` files; a cited, versioned compatibility table (version 1). `RepoView.read` and `list` reach ignored folders without leaving the scan root. Definitions and evidence in [ADR 0009](adr/0009-license-checks.md).
 
-### M5: Git hotspots and design-doc freshness (S, planned)
+### M5: Git hotspots and design-doc freshness (S, done: awaiting owner review and push)
 Goal: churn × complexity ranking from read-only Git history, and a low-confidence "design docs may be stale" check using the same history reader.
 Exit: works on a repo with history; non-Git folders skip with a note; performance on a large history is bounded (configurable window, default last 12 months).
 Stories: US-013, US-034.
+Result: a read-only Git history reader (`src/git/`, runs the `git` program safely, bounded, reports why when there is no history); `RepoView` gains `git()`, `codeFiles`, and `note()`, and scan results gain `notes` (shown in the text, Markdown, and JSON reports); rules `SC-HOT-001` (hotspots: commits × complexity, top 10 over 12 months) and `SC-DOC-005` (a design document that predates a large rewrite of the code it covers). Definitions and evidence in [ADR 0010](adr/0010-git-history-rules.md).
 
 ### M6: HTML report, explain, baseline (M, planned)
 Goal: shareable self-contained HTML report per DESIGN.md; `explain` command polish; baseline and inline suppressions.
@@ -117,4 +118,6 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | TD-16 | License text matching uses word-pair similarity: a real change of terms shorter than 14 words in a license of about 100 words or more can still score as a match (0.90 or more). A modified license is only caught when it adds or removes a longer stretch. | Medium | Per-license templates with replaceable text (SPDX matching guidelines), or a diff of key sentences |
 | TD-17 | The license compatibility table (version 1) is built from the FSF, ASF, and MPL statements and the license texts. It does not know whether a dependency is linked, bundled, or run separately, so its wording is conditional. | Low | Fix a row if someone finds it wrong; the generated `docs/license-table-review.md` makes that easy to check |
 | TD-18 | Dependency licenses are read only from the project folder: not the NuGet global cache, Python environments elsewhere, or yarn/pnpm lockfiles (no license field). A `SEE LICENSE IN` pointer is reported, not followed. Cargo, Go, and Maven are not covered. | Low | Extend by ecosystem when requested |
+| TD-19 | `SC-DOC-005` thresholds (90 days, 500 lines, 50% of the covered code) are untuned: none of the local projects had a document old enough to trigger them, and the relaxed-threshold probe only showed the mechanism works. Renames are not followed, so a renamed file's history starts again; hotspots count commits, not authors. | Medium | Tune on older repositories; follow renames if hotspots go missing |
+| TD-20 | Git rules need the `git` program and give results that change with the date of the scan. SARIF output does not carry the notes that say a rule was skipped. | Low | Add SARIF notifications in M6 |
 | TD-11 | Design rules skip test code by path (`test` folders, `*.test.*`, `test_*`, ...); a scan started inside a tests folder cannot see the folder name. | Low | Revisit with per-path rule overrides (TD-5) |

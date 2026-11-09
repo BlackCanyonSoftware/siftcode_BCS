@@ -41,7 +41,7 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
   chains, classes, calls, named values, strings: ADR 0006, 0007)
 - `src/rules/` one file per rule (metadata, suggestion, check) + `index.ts` registry
 - `src/reporters/` text, JSON, Markdown, SARIF, `explain`
-- `src/git/` planned (M5): see `docs/ARCHITECTURE.md`
+- `src/git/` read-only Git history (runs the `git` program; ADR 0010); rules get it through `RepoView.git()`
 - `data/licenses/` generated SPDX ids and license texts (committed, shipped; ADR 0009)
 - `scripts/` build helpers; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored
 - `test/unit`, `test/e2e`, `test/helpers`, `test/fixtures/rules/<rule-id>/{positive,negative}`
@@ -51,8 +51,8 @@ list in id order), add positive and negative fixtures for every language it cove
 CONTRIBUTING.md. A rule about the project rather than one file (manifests, CI, documentation) uses
 `defineRepoRule` and the `RepoView` it receives (ADR 0008).
 
-Dependency direction: `cli → core → {discovery, languages, rules, git, reporters}`; `languages`
-and `reporters` never import `rules`. A folder exposes a small public surface; do not import
+Dependency direction: `cli → core → {discovery, languages, rules, git, reporters}`; `rules` import
+only the types of `languages/model` and `git`; `languages` and `reporters` never import `rules`. A folder exposes a small public surface; do not import
 another module's internals.
 
 ## Conventions

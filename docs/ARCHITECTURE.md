@@ -81,7 +81,8 @@ src/
                     dependency licenses, versioned compatibility table)
     readiness/      testing-readiness hints
     (each rule is one file holding its metadata, suggestion text, and check: ADR 0004)
-  git/              read-only history access (churn)
+  git/              read-only history access: runs the git program safely, parses commits and
+                    per-file line changes (ADR 0010)
   reporters/        terminal, markdown, json, sarif, html (+ html/ assets)
   index.ts          public library API
 test/

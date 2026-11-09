@@ -5,15 +5,16 @@ Pick-up-here file. Read this first, update it at the end of every session.
 ## Current state (2026-11-05)
 
 - **Milestones 0 and 1: done, pushed, CI green** (Node 24 and 26, Ubuntu and Windows).
-- **Milestones 2, 3, 4, 4a, and 4b: built and verified locally; awaiting owner review and push**
+- **Milestones 2, 3, 4, 4a, 4b, and 5: built and verified locally; awaiting owner review and push**
   (M2's and M3's commits are not pushed yet; the rest sit on top of them). CI has not run on any
   of them.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
-- 36 rules. Metrics `SC-MET-001` to `005`; design `SC-DES-001` to `005`; security
+- 38 rules. Metrics `SC-MET-001` to `005`; design `SC-DES-001` to `005`; security
   `SC-SEC-001` to `007` (each mapped to a CWE entry); supply chain `SC-SUP-001` to `007`;
-  design documentation `SC-DOC-001` to `004` (ADR 0008); licenses `SC-LIC-001` to `008` (ADR 0009).
+  design documentation `SC-DOC-001` to `004` (ADR 0008); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
+  (stale design documents; ADR 0010).
   All limits are rule options. Design and
   security rules skip test code; a recognizable credential format is reported even in tests.
 - **Repository-level rules (M4a):** `defineRepoRule` gives a rule a `RepoView` (every non-ignored
@@ -25,13 +26,17 @@ Pick-up-here file. Read this first, update it at the end of every session.
   `spdx` expression parser, `identify` text matcher, `project` license files and declarations,
   `dependencies` offline dependency licenses, `compatibility` the versioned table). `RepoView.read` /
   `list` reach ignored folders (node_modules, virtual environments) but never leave the scan root.
+- **Git history (M5):** `src/git/` (`run` finds and runs `git` safely, `parse`, `history`);
+  `RepoView.git()` / `codeFiles` / `note()`; `ScanResult.notes`. Rules: `src/rules/git/` (`churn`,
+  `hotspots`) and `src/rules/documentation/design-doc-freshness.ts`. Tests build real repositories
+  with chosen dates (`test/helpers/git.ts`).
 - A rule hit can set its own severity; a severity in the config file overrides it.
 - SARIF tags each rule with its CWE; the JSON report has a `metrics` section.
 - TypeScript declaration files (`.d.ts`) are skipped.
 - Brand last checked: 2026-11-05 · brandkit 1.56.0 · Brand Logos commit c51448c1 (dirty, only `requests/` changed) · set: readme · result: in sync (design-standard rollout: IBM Carbon recorded in DESIGN.md; no screen to rebuild until M6)
-- Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0009. License Apache-2.0. Brand
+- Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0010. License Apache-2.0. Brand
   re-synced 2026-11-01 (typeface JetBrains Mono).
-- Dogfood: `node dist/cli/main.js scan .` is clean (113 files, all 36 rules; `SC-SUP-007` is switched
+- Dogfood: `node dist/cli/main.js scan .` is clean (124 files, all 38 rules; `SC-HOT-001` reports `manifests.ts` as an informational hotspot, so the contract is "nothing at warning or above": run `scan . --fail-on warning`; `SC-SUP-007` is switched
   off in `siftcode.config.json` because GitHub push protection is on, and `npm run sbom` satisfies
   `SC-SUP-006`). Keep it so.
 
@@ -43,10 +48,11 @@ None.
 
 1. Owner reviews M2, M3, M4, M4a, and M4b, pushes, and confirms CI is green. (No CI step was
    added; attaching `npm run sbom` output to releases belongs to M7.)
-2. **Start M5: Git hotspots and design-doc freshness** (US-013, US-034; scope in
-   `docs/ROADMAP.md`). `detectDesignArtifacts` in `src/rules/documentation/detect.ts` already lists the
-   design documents to date-check; a read-only Git history reader is new (`src/git/`).
-3. Then M6 (HTML report on the Carbon design standard, see `docs/DESIGN.md`).
+2. **Start M6: HTML report, explain polish, baseline and suppressions** (US-005, US-070; scope in
+   `docs/ROADMAP.md`). The report is built on the IBM Carbon standard (`docs/DESIGN.md`): bundle the
+   brand application set first (`brandkit bundle siftcode <dir>`, then `brandkit check`). Show the
+   hotspot ranking and the `notes`; add SARIF notifications for notes (TD-20).
+3. Then M7 (readiness hints, dogfood gate, release prep).
 
 ## Open questions for the owner
 
@@ -84,6 +90,9 @@ None.
   order once and fixed it in the next commit).
 - **Keep `ALL_RULES` in id order** (a test checks it); tests derive the rule list from it, so
   adding a rule needs no test edit for the list.
+- Git tests commit to real temporary repositories (about 15 s together); the `describe` blocks set
+  a 60 s timeout. Never launch `git` by name from the scanned folder: use `locateGit` (a project can
+  carry its own `git.exe` on Windows).
 - Test files that build tables with `it.each` run before `beforeAll`: load the license catalog with
   a top-level `await loadCatalog()` (see `test/unit/license-rules.test.ts`).
 - `data/licenses/*.json` are generated and excluded from Prettier. Do not edit them by hand; add a
@@ -130,6 +139,10 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-08, session 1 (continued):** Milestone 5 (Git hotspots and design-document freshness,
+  ADR 0010): the Git reader, `RepoView.git()/codeFiles/note()`, notes in the reports, `SC-HOT-001`,
+  `SC-DOC-005`. Calibrated on 19 local repositories (vendored code removed from the ranking); found
+  and fixed a Windows risk (a project's own `git.exe` could have been launched). 857 unit tests.
 - **2026-11-05, session 1 (continued):** Milestone 4b (licenses and compliance, ADR 0009): SPDX
   data, expression parser, text matcher (calibrated on 130 real license files), project license
   and dependency license rules, cited compatibility table; calibrated on 19 local repositories,

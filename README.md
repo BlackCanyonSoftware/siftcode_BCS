@@ -12,10 +12,10 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 4b).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with 36 rules for JavaScript/TypeScript, Python, and C#:
+> **Status: early development (Milestone 5).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF) work, with 38 rules for JavaScript/TypeScript, Python, and C#:
 > five code metrics, five design heuristics, seven security checks, seven supply-chain checks,
-> four design-documentation checks, and eight license checks. More rules arrive in the next milestones; see the
+> five design-documentation checks, eight license checks, and a hotspot ranking. More rules arrive in the next milestones; see the
 > [roadmap](docs/ROADMAP.md).
 
 ## Quick start
@@ -84,6 +84,8 @@ rationale, the standards behind it, and an example.
 | `SC-DOC-002` | Design documents but no diagram | `minSourceFiles` (20) | info |
 | `SC-DOC-003` | Diagrams but no architecture decision records | `minSourceFiles` (20) | note |
 | `SC-DOC-004` | A diagram file that no document mentions | none | note |
+| `SC-DOC-005` | A design document may be out of date (Git history) | `minAgeDays` (90), `minChangedLines` (500), `minChangedShare` (0.5) | info |
+| `SC-HOT-001` | A complex file that changes often (hotspot, Git history) | `windowMonths` (12), `top` (10), `minChanges` (5), `minComplexity` (30) | info |
 | `SC-LIC-001` | The project has no license | none | warning |
 | `SC-LIC-002` | The license file is a modified or unrecognized text | none | info |
 | `SC-LIC-003` | The declared license is not valid SPDX, or differs from the license file | none | warning; info if not valid |
@@ -128,6 +130,14 @@ and fenced diagram blocks (Mermaid, PlantUML, D2, draw.io, ADRs, C4, OpenAPI, an
 [ADR 0008](docs/adr/0008-repository-hygiene.md). `SC-SUP-006` and `SC-SUP-007` cannot see settings
 kept on the hosting platform (such as GitHub secret scanning); switch a rule off with
 `"SC-SUP-007": { "enabled": false }`.
+
+The Git rules (`SC-HOT-001` hotspots, `SC-DOC-005` stale design documents) read the project's history
+by running your `git` program, read-only and without running anything the project configures (see
+[ADR 0010](docs/adr/0010-git-history-rules.md)). A hotspot is a file that is both complex (total
+cyclomatic complexity) and changed in many commits in the last 12 months, ranked by the two multiplied.
+In a folder that is not in a Git repository, or without `git` installed, both rules are skipped and the
+report says so under **Notes**; nothing fails. Findings from these rules depend on the date of the scan
+as well as the code.
 
 The license rules (`SC-LIC-*`) identify the project's license from its `LICENSE` file (by comparing
 the text with the bundled SPDX list; modified and custom licenses are told apart from standard
