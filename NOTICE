@@ -6,3 +6,6 @@ This product includes software developed at Black Canyon Software.
 This product includes data from the SPDX License List (https://spdx.org/licenses/, CC0-1.0),
 as packaged in spdx-license-list 6.12.0 by Sindre Sorhus (CC0-1.0): the license identifiers and
 the texts of common licenses used to recognize a project's license.
+
+The HTML report embeds the fonts JetBrains Mono and Public Sans, both under the SIL Open Font
+License 1.1 (the license texts are in assets/brand/font/).

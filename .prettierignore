@@ -8,6 +8,7 @@ NOTICE
 # hand-written docs keep their own table layout; generated brand files are not ours to format
 *.md
 docs/brand
+assets/brand
 # fixtures are sample code in other languages, some deliberately malformed
 test/fixtures
 # generated from spdx-license-list by `npm run build:licenses`
