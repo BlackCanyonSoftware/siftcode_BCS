@@ -237,6 +237,39 @@ describe(
       expect(result.findings).toEqual([]);
     });
 
+    it('covers the whole project for a document deep inside a documentation tree', async () => {
+      // pip keeps its architecture documents at docs/html/development/architecture
+      const result = await scanRepository('SC-DOC-005', [
+        {
+          date: daysAgo(200),
+          files: {
+            'docs/html/development/architecture/index.rst': 'Architecture\n',
+            'src/a.ts': code(200, 0),
+          },
+        },
+        rewrite('src/a.ts', 100, 700, 1),
+      ]);
+
+      expect(result.findings).toHaveLength(1);
+      expect(result.findings[0]?.path).toBe('docs/html/development/architecture/index.rst');
+    });
+
+    it('counts production code only: a rewrite of the tests does not make a document stale', async () => {
+      const result = await scanRepository('SC-DOC-005', [
+        {
+          date: daysAgo(200),
+          files: {
+            'docs/architecture.md': '# A\n',
+            'src/a.ts': code(1000, 0),
+            'tests/a.test.ts': code(100, 0),
+          },
+        },
+        rewrite('tests/a.test.ts', 100, 1500, 1),
+      ]);
+
+      expect(result.findings).toEqual([]);
+    });
+
     it('does not treat decision records as design documents that go stale', async () => {
       const result = await scanRepository('SC-DOC-005', [
         {
@@ -267,6 +300,9 @@ describe(
       expect(coveredFolder('docs/design/overview.md')).toBe('');
       expect(coveredFolder('src/auth/docs/design.md')).toBe('src/auth');
       expect(coveredFolder('src/auth/README.md')).toBe('src/auth');
+      expect(coveredFolder('docs/html/development/architecture/index.rst')).toBe('');
+      expect(coveredFolder('docs/source/design.md')).toBe('');
+      expect(coveredFolder('src/auth/docs/guide/design.md')).toBe('src/auth');
     });
 
     it('writes nothing to the repository it reads', async () => {

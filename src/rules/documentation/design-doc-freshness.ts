@@ -4,6 +4,7 @@ import type { Commit } from '../../git/types.js';
 import type { CodeFile } from '../../languages/model/types.js';
 import { defineRepoRule } from '../define.js';
 import { MAX_COMMITS, SECONDS_PER_DAY } from '../git/churn.js';
+import { isTestFile, isVendored } from '../shared.js';
 import { arc42, iso42010 } from '../standards.js';
 import type { RepoHit } from '../types.js';
 import { detectDesignArtifacts } from './detect.js';
@@ -24,21 +25,21 @@ const DOCUMENTATION_FOLDERS = new Set([
 ]);
 
 /**
- * The folder a design document covers: where it sits, minus documentation folders on the way up
- * (`src/auth/docs` covers `src/auth`; `docs/architecture` covers the whole project).
+ * The folder a design document covers: the folder above its documentation tree (`src/auth/docs`
+ * covers `src/auth`; `docs/architecture` and `docs/html/development/architecture` cover the whole
+ * project, however deep the document sits inside the tree).
  */
 export function coveredFolder(documentPath: string): string {
   const parts = posix
     .dirname(documentPath)
     .split('/')
     .filter((part) => part !== '.');
-  while (
-    parts.length > 0 &&
-    DOCUMENTATION_FOLDERS.has((parts[parts.length - 1] ?? '').toLowerCase())
-  ) {
-    parts.pop();
-  }
-  return parts.join('/');
+  const firstDocumentationFolder = parts.findIndex((part) =>
+    DOCUMENTATION_FOLDERS.has(part.toLowerCase()),
+  );
+  return (firstDocumentationFolder < 0 ? parts : parts.slice(0, firstDocumentationFolder)).join(
+    '/',
+  );
 }
 
 interface Limits {
@@ -61,7 +62,14 @@ function codeChangedSince(
   maxFilesPerCommit: number,
 ) {
   const folder = coveredFolder(document.path);
-  const area = codeFiles.filter((file) => folder === '' || file.path.startsWith(`${folder}/`));
+  // A design document describes the production code: tests and vendored code are not counted, in
+  // what changed or in how big the area is (Click: 51% with its tests, 41% without).
+  const area = codeFiles.filter(
+    (file) =>
+      (folder === '' || file.path.startsWith(`${folder}/`)) &&
+      !isTestFile(file.path) &&
+      !isVendored(file.path),
+  );
   const inArea = new Set(area.map((file) => file.path));
   let commitCount = 0;
   let lines = 0;
