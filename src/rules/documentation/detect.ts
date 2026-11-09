@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { isVendored } from '../shared.js';
 import type { RepoView } from '../types.js';
 
 /** What a project has to show how it is designed, found by file names and a few fenced blocks. */
@@ -29,8 +30,6 @@ export const hasAnyDesignArtifact = (artifacts: DesignArtifacts): boolean =>
     artifacts.apiSpecs.length +
     Number(hasDiagrams(artifacts)) >
   0;
-
-const THIRD_PARTY = new Set(['vendor', 'third_party', 'third-party', 'external', 'site-packages']);
 
 const TEXT_DOCUMENT = /\.(?:md|mdx|markdown|rst|adoc|asciidoc|txt)$/i;
 const BINARY_DOCUMENT = /\.(?:docx?|odt|pdf)$/i;
@@ -84,10 +83,6 @@ const MAX_PROSE_FILES = 300;
 
 const segments = (path: string): string[] => path.toLowerCase().split('/');
 
-function isThirdParty(path: string): boolean {
-  return segments(path).some((segment) => THIRD_PARTY.has(segment));
-}
-
 function isDecisionRecord(path: string): boolean {
   return (
     TEXT_AND_BINARY(path) &&
@@ -132,7 +127,7 @@ export function detectDesignArtifacts(repo: RepoView): Promise<DesignArtifacts> 
 }
 
 async function detect(repo: RepoView): Promise<DesignArtifacts> {
-  const files = repo.files.filter((path) => !isThirdParty(path));
+  const files = repo.files.filter((path) => !isVendored(path));
   const documents = files.filter(isDesignDocument);
   const prose = files.filter(isProse).slice(0, MAX_PROSE_FILES);
 
@@ -177,7 +172,7 @@ export async function unreferencedDiagramSources(
     return [];
   }
   const prose = repo.files
-    .filter((path) => !isThirdParty(path) && isProse(path))
+    .filter((path) => !isVendored(path) && isProse(path))
     .slice(0, MAX_PROSE_FILES);
   const texts = (await Promise.all(prose.map((path) => repo.read(path)))).filter(
     (text): text is string => text !== undefined,

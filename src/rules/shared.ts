@@ -17,6 +17,25 @@ export function enclosingUnit(file: AnalyzedFile, line: number): CodeUnit | unde
   return best;
 }
 
+/** Folders that hold other people's code copied into the project. */
+const VENDORED_FOLDERS = new Set([
+  'vendor',
+  'vendors',
+  'vendored',
+  'third_party',
+  'third-party',
+  'external',
+  'site-packages',
+]);
+
+/** True for code under a vendored folder: not worked on here, so not worth ranking or documenting. */
+export function isVendored(path: string): boolean {
+  return path
+    .toLowerCase()
+    .split('/')
+    .some((segment) => VENDORED_FOLDERS.has(segment));
+}
+
 /** Test code is written differently (many small test methods, mocks, fixtures); most rules skip it. */
 const TEST_FOLDERS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', '__mocks__']);
 const TEST_FILE = /(^test_)|(_tests?\.)|(\.(test|spec)\.)|(tests?\.[a-z]+$)/;

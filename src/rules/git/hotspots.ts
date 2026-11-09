@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineRepoRule } from '../define.js';
-import { isTestFile } from '../shared.js';
+import { isTestFile, isVendored } from '../shared.js';
 import type { RepoHit, StandardRef } from '../types.js';
 import { churnByFile, MAX_COMMITS, monthsAgo } from './churn.js';
 
@@ -63,7 +63,7 @@ export const hotspots = defineRepoRule({
     }
     const churn = churnByFile(log.commits, options.maxFilesPerCommit);
     const ranked = repo.codeFiles
-      .filter((file) => !isTestFile(file.path))
+      .filter((file) => !isTestFile(file.path) && !isVendored(file.path))
       .flatMap((file) => {
         const changes = churn.get(file.path)?.commits ?? 0;
         const complexity = file.metrics.cyclomatic;

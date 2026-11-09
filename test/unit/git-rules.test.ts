@@ -93,6 +93,16 @@ describe('SC-HOT-001 hotspots (US-013)', { timeout: 60_000 }, () => {
     expect(result.findings).toEqual([]);
   });
 
+  it('skips vendored code, which nobody works on here', async () => {
+    const result = await scanRepository(
+      'SC-HOT-001',
+      [...edits('vendored/lib.ts', 8), ...edits('third_party/x/y.ts', 8)],
+      small,
+    );
+
+    expect(result.findings).toEqual([]);
+  });
+
   it('is skipped with a note, not an error, in a folder that is not a Git repository', async () => {
     const folder = await projects.create({ 'src/a.ts': complexSource(12) });
 
