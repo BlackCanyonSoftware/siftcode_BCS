@@ -219,7 +219,8 @@ Optional `siftcode.config.json` in the scanned folder. Unknown keys are rejected
 ```
 
 - `ignore`: gitignore-style patterns, added to the built-in ignores (`node_modules`, `bin`, `obj`,
-  `dist`, `build`, ...) and the project's `.gitignore`. A pattern like `!bin/` re-includes a folder.
+  `dist`, `build`, minified files such as `*.min.js`, ...) and the project's `.gitignore`. A pattern like
+  `!bin/` or `!*.min.js` brings one back.
 - `rules`: per rule id, `enabled` (default `true`), `severity`, and rule-specific `options`.
 - `failOn`: same as `--fail-on`; the flag wins.
 - `baseline`: path of a baseline file, relative to the scanned folder; the `--baseline` flag wins.

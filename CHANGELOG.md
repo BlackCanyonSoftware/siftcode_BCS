@@ -22,6 +22,20 @@ All notable user-visible changes are recorded here. The format follows
 - Code metrics for JavaScript, TypeScript, Python, and C#, measured the same way in every
   language: cyclomatic complexity, Halstead measures, Maintainability Index, lines of code,
   nesting depth, and parameter count. The JSON report lists them for every file and function.
+- C# files that do not parse only because of `#if` blocks (one that splits the modifiers of a member, for
+  example) are read as the first branch of each block instead of being skipped, and the report says how
+  many files were read that way.
+- `SC-SEC-003` also flags `new ProcessStartInfo { Arguments = "-c " + user }` and
+  `info.FileName = $"{user}.exe"` (a built string set through an initializer or an assignment) in C#.
+- Minified JavaScript (`*.min.js`, `*.min.mjs`, `*.min.cjs`, `*-min.js`) is skipped by default; `!*.min.js` in the
+  config's `ignore` brings it back.
+- Fewer false positives, found by reading the results on OWASP WebGoat.NET, CliWrap, CleanArchitecture,
+  modular-monolith-with-ddd, Flask, Click, and pip ([ADR 0013](docs/adr/0013-real-world-calibration.md)):
+  `SC-DES-001` leaves fluent builder chains alone; `SC-DES-002` knows startup, configuration, and seeding
+  code, no longer takes `resolver` for a container, and judges `get` by the object it is called on; the
+  metric and design rules skip vendored code (`_vendor`, `_vendored`, `externals` too); `SC-DOC-005` covers
+  the whole project for a document deep in a docs tree and no longer counts test code; decision logs in
+  folders such as `architecture-decision-log` are recognized as decision records.
 - `siftcode scan --format html`: a self-contained HTML report on the brand's IBM Carbon styles with
   a summary, the top hotspots, filters and search, findings grouped by file with why and what to try,
   copyable before and after examples, a light and dark theme, (i) buttons that explain the terms, a
