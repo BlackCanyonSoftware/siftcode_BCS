@@ -38,10 +38,26 @@ export function isVendored(path: string): boolean {
 
 /** Test code is written differently (many small test methods, mocks, fixtures); most rules skip it. */
 const TEST_FOLDERS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', '__mocks__']);
-const TEST_FILE = /(^test_)|(_tests?\.)|(\.(test|spec)\.)|(tests?\.[a-z]+$)/;
+/** Dot-separated parts of a .NET project folder: `App.Tests`, `App.UnitTests`, `App.Tests.Benchmarks`. */
+const TEST_PROJECT_PART = /^(?:(?:unit|integration|functional|acceptance|e2e)?tests?|benchmarks?)$/;
+/** Names in any case style: `test_x.py`, `x_test.go`, `x.test.ts`, `test.py`. */
+const TEST_FILE = /(^test_)|(_tests?\.)|(\.(test|spec)\.)|(^tests?\.[a-z]+$)/;
+/** .NET names, which keep their capitals: `BillingTests.cs`, `BillingTester.cs` (but not `Contest.cs`). */
+const TEST_CLASS_FILE = /[a-z0-9]Test(?:s|er)?\.[A-Za-z]+$/;
+/** A project folder named like `AppTests`. */
+const TEST_CLASS_FOLDER = /[a-z0-9]Tests?$/;
 
 export function isTestFile(path: string): boolean {
-  const segments = path.toLowerCase().split('/');
+  const segments = path.split('/');
   const file = segments.pop() ?? '';
-  return segments.some((segment) => TEST_FOLDERS.has(segment)) || TEST_FILE.test(file);
+  const inTestFolder = segments.some(
+    (segment) =>
+      TEST_FOLDERS.has(segment.toLowerCase()) ||
+      TEST_CLASS_FOLDER.test(segment) ||
+      segment
+        .toLowerCase()
+        .split('.')
+        .some((part) => TEST_PROJECT_PART.test(part)),
+  );
+  return inTestFolder || TEST_FILE.test(file.toLowerCase()) || TEST_CLASS_FILE.test(file);
 }
