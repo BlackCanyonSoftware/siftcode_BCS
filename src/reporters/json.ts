@@ -17,6 +17,10 @@ export function renderJson(result: ScanResult, context: ReportContext): string {
       filesScanned: result.filesScanned,
       languages: Object.fromEntries(result.byLanguage),
       findings: countBySeverity(result.findings),
+      accepted: {
+        baseline: result.accepted.filter((item) => item.via.kind === 'baseline').length,
+        suppression: result.accepted.filter((item) => item.via.kind === 'suppression').length,
+      },
       skipped: result.skipped,
     },
     rules: result.rules,
@@ -26,6 +30,8 @@ export function renderJson(result: ScanResult, context: ReportContext): string {
       standards: rule.standards,
       suggestion: rule.suggestion,
     })),
+    // Findings the team has accepted. They are not in `findings` and never fail a scan.
+    accepted: result.accepted.map(({ finding, via }) => ({ ...finding, acceptedBy: via })),
     problems: result.problems,
     notes: result.notes,
     metrics: { files: result.files.map(describeFile) },

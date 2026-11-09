@@ -36,6 +36,15 @@ export interface FileFacts {
   readonly namedValues: readonly NamedValueFact[];
   /** String literals of at least 16 characters (shorter ones cannot hold what rules look for). */
   readonly strings: readonly StringFact[];
+  /** Comments that contain `siftcode-ignore`: the only comments any rule or the scan itself reads. */
+  readonly directives: readonly DirectiveComment[];
+}
+
+export interface DirectiveComment {
+  readonly startLine: number;
+  readonly endLine: number;
+  /** The comment as written, with its delimiters: a line comment, a hash comment, or a block comment. */
+  readonly text: string;
 }
 
 export type ValueKind =

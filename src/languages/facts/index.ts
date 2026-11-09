@@ -4,6 +4,7 @@ import type { GrammarId } from '../registry.js';
 import { extractCalls } from './calls.js';
 import { extractChains } from './chains.js';
 import { extractClasses } from './classes.js';
+import { extractDirectives } from './directives.js';
 import { extractImports } from './imports.js';
 import { extractNamedValues, extractStrings } from './named.js';
 
@@ -25,6 +26,7 @@ export function extractFacts(grammar: GrammarId, root: Node): ExtractedFacts {
       calls: extractCalls(grammar, root),
       namedValues: extractNamedValues(grammar, root),
       strings: extractStrings(grammar, root),
+      directives: extractDirectives(root),
     },
   };
 }

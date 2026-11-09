@@ -21,6 +21,17 @@ export interface Finding {
   readonly fingerprint: string;
 }
 
+/** How a finding came to be accepted: a comment in the code (with its reason), or the baseline file. */
+export type AcceptedVia =
+  | { readonly kind: 'suppression'; readonly reason: string; readonly line: number }
+  | { readonly kind: 'baseline' };
+
+/** A finding the team has already accepted. It is kept for the reports but never fails a scan. */
+export interface AcceptedFinding {
+  readonly finding: Finding;
+  readonly via: AcceptedVia;
+}
+
 /**
  * `occurrence` is 1 for the first hit with this key in the file, 2 for the next, and so on, so two
  * overloads with the same name still get different fingerprints.

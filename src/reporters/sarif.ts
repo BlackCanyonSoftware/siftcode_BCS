@@ -1,3 +1,4 @@
+import type { AcceptedVia, Finding } from '../core/finding.js';
 import type { ScanResult } from '../core/result.js';
 import type { Severity } from '../core/severity.js';
 import type { RuleMeta } from '../rules/types.js';
@@ -6,7 +7,6 @@ import {
   TOOL_URL,
   describeProblem,
   formatStandard,
-  withRules,
   type ReportContext,
 } from './shared.js';
 
@@ -40,35 +40,59 @@ export function renderSarif(result: ScanResult, context: ReportContext): string 
             rules: result.rules.map(describeRule),
           },
         },
-        results: withRules(result).map(({ finding }) => ({
-          ruleId: finding.ruleId,
-          ruleIndex: ruleIndex.get(finding.ruleId),
-          level: LEVELS[finding.severity],
-          message: { text: finding.message },
-          locations: [
-            {
-              physicalLocation: {
-                artifactLocation: { uri: finding.path },
-                region: { startLine: finding.startLine, endLine: finding.endLine },
-              },
-            },
-          ],
-          partialFingerprints: { 'siftcodeFingerprint/v1': finding.fingerprint },
-        })),
+        results: [
+          ...result.findings.map((finding) => describeResult(finding, ruleIndex)),
+          // Accepted findings carry `suppressions`, which code scanning shows as dismissed.
+          ...result.accepted.map(({ finding, via }) =>
+            describeResult(finding, ruleIndex, [suppression(via)]),
+          ),
+        ],
         invocations: [
           {
             executionSuccessful: true,
-            toolExecutionNotifications: result.problems.map((problem) => ({
-              level: 'warning',
-              message: { text: `${problem.path} ${describeProblem(problem.reason)}.` },
-              locations: [{ physicalLocation: { artifactLocation: { uri: problem.path } } }],
-            })),
+            toolExecutionNotifications: [
+              ...result.problems.map((problem) => ({
+                level: 'warning',
+                message: { text: `${problem.path} ${describeProblem(problem.reason)}.` },
+                locations: [{ physicalLocation: { artifactLocation: { uri: problem.path } } }],
+              })),
+              ...result.notes.map((note) => ({ level: 'note', message: { text: note } })),
+            ],
           },
         ],
       },
     ],
   };
   return `${JSON.stringify(log, null, 2)}\n`;
+}
+
+function describeResult(
+  finding: Finding,
+  ruleIndex: ReadonlyMap<string, number>,
+  suppressions: readonly object[] = [],
+) {
+  return {
+    ruleId: finding.ruleId,
+    ruleIndex: ruleIndex.get(finding.ruleId),
+    level: LEVELS[finding.severity],
+    message: { text: finding.message },
+    locations: [
+      {
+        physicalLocation: {
+          artifactLocation: { uri: finding.path },
+          region: { startLine: finding.startLine, endLine: finding.endLine },
+        },
+      },
+    ],
+    partialFingerprints: { 'siftcodeFingerprint/v1': finding.fingerprint },
+    ...(suppressions.length > 0 ? { suppressions } : {}),
+  };
+}
+
+function suppression(via: AcceptedVia) {
+  return via.kind === 'suppression'
+    ? { kind: 'inSource', justification: via.reason }
+    : { kind: 'external', justification: 'Accepted in the SiftCode baseline.' };
 }
 
 /** `external/cwe/cwe-798` for each CWE entry a rule cites: the tag GitHub code scanning shows as a CWE. */

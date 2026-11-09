@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { parseConfig } from '../../src/config/load.js';
+import { createBaseline } from '../../src/core/baseline.js';
 import type { ScanResult } from '../../src/core/result.js';
 import { scan } from '../../src/core/scan.js';
 import { REPORT_FORMATS, renderReport } from '../../src/reporters/index.js';
@@ -273,11 +274,57 @@ describe('SARIF report (US-003)', () => {
     expect(sarifErrors(sarif)).toEqual([]);
     const notifications = (
       sarif as {
-        runs: { invocations: { toolExecutionNotifications: { message: { text: string } }[] }[] }[];
+        runs: {
+          invocations: {
+            toolExecutionNotifications: { level: string; message: { text: string } }[];
+          }[];
+        }[];
       }
     ).runs[0]?.invocations[0]?.toolExecutionNotifications;
-    expect(notifications?.map((n) => n.message.text)).toEqual([
+    expect(notifications?.filter((n) => n.level === 'warning').map((n) => n.message.text)).toEqual([
       'broken.py has syntax errors, so it was not checked.',
+    ]);
+  });
+
+  it('carries the notes of the scan as note-level notifications (TD-20)', async () => {
+    const folder = await projects.create({ 'good.js': 'export const a = 1;\n' });
+    const result = await scan(folder);
+
+    const sarif: unknown = JSON.parse(renderReport('sarif', result, context));
+
+    expect(sarifErrors(sarif)).toEqual([]);
+    const notifications = (
+      sarif as {
+        runs: {
+          invocations: {
+            toolExecutionNotifications: { level: string; message: { text: string } }[];
+          }[];
+        }[];
+      }
+    ).runs[0]?.invocations[0]?.toolExecutionNotifications;
+    expect(result.notes.length).toBeGreaterThan(0);
+    expect(notifications?.filter((n) => n.level === 'note').map((n) => n.message.text)).toEqual(
+      result.notes,
+    );
+  });
+
+  it('lists accepted findings with suppressions that say how they were accepted (US-070)', async () => {
+    const folder = await projects.create({
+      'a.js': `// siftcode-ignore SC-MET-001: legacy parser\n${longJsFunction('one', 6)}${longJsFunction('two', 6)}`,
+    });
+    const config = parseConfig('{"rules":{"SC-MET-001":{"options":{"maxLines":3}}}}', 'test');
+    const first = await scan(folder, { config });
+    const baseline = createBaseline(first.findings);
+    const result = await scan(folder, { config, baseline });
+
+    const sarif: unknown = JSON.parse(renderReport('sarif', result, context));
+
+    expect(sarifErrors(sarif)).toEqual([]);
+    const results = (sarif as { runs: { results: { suppressions?: object[] }[] }[] }).runs[0]
+      ?.results;
+    expect(results?.map((r) => r.suppressions)).toEqual([
+      [{ kind: 'inSource', justification: 'legacy parser' }],
+      [{ kind: 'external', justification: 'Accepted in the SiftCode baseline.' }],
     ]);
   });
 });

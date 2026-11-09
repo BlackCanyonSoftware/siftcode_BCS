@@ -1,4 +1,4 @@
-import type { Finding } from '../core/finding.js';
+import type { AcceptedFinding, Finding } from '../core/finding.js';
 import type { FileProblem, ScanResult } from '../core/result.js';
 import { SEVERITIES, type Severity } from '../core/severity.js';
 import type { RuleMeta, StandardRef } from '../rules/types.js';
@@ -50,6 +50,20 @@ export function countBySeverity(findings: readonly Finding[]): Record<Severity, 
 export function describeCounts(findings: readonly Finding[]): string {
   const counts = countBySeverity(findings);
   return SEVERITIES.map((severity) => `${counts[severity]} ${severity}`).join(', ');
+}
+
+/** How many findings were accepted and how, or `undefined` when none were. */
+export function describeAccepted(accepted: readonly AcceptedFinding[]): string | undefined {
+  if (accepted.length === 0) {
+    return undefined;
+  }
+  const baselined = accepted.filter((item) => item.via.kind === 'baseline').length;
+  const commented = accepted.length - baselined;
+  const parts = [
+    ...(baselined > 0 ? [`${baselined} by the baseline`] : []),
+    ...(commented > 0 ? [`${commented} by comments in the code`] : []),
+  ];
+  return `${accepted.length} (${parts.join(', ')})`;
 }
 
 export function describeProblem(reason: FileProblem['reason']): string {

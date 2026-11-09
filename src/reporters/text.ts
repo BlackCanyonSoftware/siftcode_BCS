@@ -2,6 +2,7 @@ import { compareStrings } from '../core/compare.js';
 import type { ScanResult } from '../core/result.js';
 import { compareSeverity, type Severity } from '../core/severity.js';
 import {
+  describeAccepted,
   describeCounts,
   describeProblem,
   formatStandard,
@@ -20,6 +21,10 @@ export function renderText(result: ScanResult): string {
     '',
     ...findingLines(result),
   ];
+  const accepted = describeAccepted(result.accepted);
+  if (accepted !== undefined) {
+    lines.push('', `Accepted findings (not shown): ${accepted}`);
+  }
   if (result.problems.length > 0) {
     lines.push('', `Files not checked: ${result.problems.length}`);
     for (const problem of result.problems) {

@@ -1,7 +1,7 @@
 import type { SkippedCounts } from '../discovery/discover.js';
 import type { CodeFile } from '../languages/model/types.js';
 import type { RuleMeta } from '../rules/types.js';
-import type { Finding } from './finding.js';
+import type { AcceptedFinding, Finding } from './finding.js';
 
 export interface FileProblem {
   readonly path: string;
@@ -15,8 +15,13 @@ export interface ScanResult {
   readonly filesScanned: number;
   /** Files per language display name, sorted by name. */
   readonly byLanguage: readonly (readonly [language: string, count: number])[];
-  /** Findings in deterministic order (file, line, rule). */
+  /**
+   * Findings to act on, in deterministic order (file, line, rule). Findings accepted by a comment in
+   * the code or by the baseline are not here: they are in `accepted`.
+   */
   readonly findings: readonly Finding[];
+  /** Findings the team has already accepted, with how. Never counted toward `--fail-on`. */
+  readonly accepted: readonly AcceptedFinding[];
   /**
    * Every file that was parsed cleanly, in scan order, with its measurements and the measured
    * functions and methods in it.

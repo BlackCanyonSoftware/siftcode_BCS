@@ -1,5 +1,6 @@
 import type { ScanResult } from '../core/result.js';
 import {
+  describeAccepted,
   describeCounts,
   describeProblem,
   formatStandard,
@@ -28,6 +29,7 @@ export function renderMarkdown(result: ScanResult): string {
     '',
     `- **Scanned:** ${plural(result.filesScanned, 'file')}${languages === '' ? '' : ` (${escapeMarkdown(languages)})`}`,
     `- **Findings:** ${result.findings.length} (${describeCounts(result.findings)})`,
+    ...acceptedBullet(result),
     '',
     '## Findings',
     '',
@@ -58,6 +60,11 @@ export function renderMarkdown(result: ScanResult): string {
     `_Skipped: ${unsupported} unsupported, ${tooLarge} too large, ${symlinks} symbolic links._`,
   );
   return `${lines.join('\n')}\n`;
+}
+
+function acceptedBullet(result: ScanResult): string[] {
+  const accepted = describeAccepted(result.accepted);
+  return accepted === undefined ? [] : [`- **Accepted (not shown):** ${escapeMarkdown(accepted)}`];
 }
 
 function findingSection({ finding, rule }: FindingDetail): string[] {
