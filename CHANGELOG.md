@@ -22,6 +22,9 @@ All notable user-visible changes are recorded here. The format follows
 - Code metrics for JavaScript, TypeScript, Python, and C#, measured the same way in every
   language: cyclomatic complexity, Halstead measures, Maintainability Index, lines of code,
   nesting depth, and parameter count. The JSON report lists them for every file and function.
+- `SC-DOC-006`: a design document that names at least two source files that are not in the project (in
+  inline code or relative links; code blocks, placeholders, and patterns are left out). It reads files only
+  and found the one verifiably out-of-date architecture document in pip.
 - C# files that do not parse only because of `#if` blocks (one that splits the modifiers of a member, for
   example) are read as the first branch of each block instead of being skipped, and the report says how
   many files were read that way.

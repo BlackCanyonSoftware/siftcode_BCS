@@ -60,15 +60,27 @@ Found: SQL built from variables (67 places, `SqliteMembershipProvider` and other
 
 After the fixes `SC-DOC-005` flags four of pip's architecture documents (55%, 107%, 137%, and 168% of the code changed since they were last edited). Each document's names were then checked against the code (identifiers and file paths in backticks or roles):
 - `package-finding.rst` names 17 identifiers and 1 file, all still present; `upgrade-options.rst` names 1, present; `index.rst` names none. These are probably still accurate.
-- `anatomy.rst` names 6 files that no longer exist (`pep425tags.py`, `Freeze.py`, `build_env.py`, and others). It is verifiably stale, and with vendored code excluded it falls under the 50% line and is not flagged.
+- `anatomy.rst` names 16 source files, and 2 of them no longer exist: `pep425tags.py` (removed) and `build_env.py` (now a package). It is verifiably stale, and with vendored code excluded it falls under the 50% line and is not flagged by `SC-DOC-005`. (A first hand check counted 6 missing files. That was wrong: it looked only under `src/` and was case-sensitive, so it missed `noxfile.py`, `docs/pip_sphinxext.py`, `tests/conftest.py`, and `freeze.py`, which all exist. The new rule below, which looks everywhere in the project and ignores case, found the 2 real ones.)
 
-So the share of code changed is a weak predictor: a document at the level of ideas does not go stale from churn, and one that names files does when they move. A rule that reports the names a design document uses that no longer exist in the project would be verifiable and much more reliable. It is recorded as a follow-up, not built here.
+So the share of code changed is a weak predictor: a document at the level of ideas does not go stale from churn, and one that names files does when they move. That led to `SC-DOC-006`, below.
+
+## `SC-DOC-006`: design documents that name files that are not in the project
+
+Built as the follow-up to the finding above. It reads files only (no Git history), at the top of a Git repository, and checks each design document or README design section (decision records are excluded: they name files as they were when the decision was made).
+
+- **What it extracts** (`referencedPaths`): source file paths (`.py .pyi .js .jsx .mjs .cjs .ts .tsx .cs`) in inline code, each word of it (`python tools/release.py` gives `tools/release.py`), and in the targets of relative links, with a line number or anchor stripped (`src/a.ts:42`). Fenced code blocks are left out, because examples in them are not claims.
+- **What it leaves out, so a finding is something a reader can verify:** placeholders (`foo.py`, `my_module.py`, `path/to/file.py`), patterns and variables (`*`, `{a,b}`, `$HOME`, `<name>`), absolute and home paths, web addresses, module names (`pip._internal.build_env`), files that are not source, and names inside build-output folders or folders SiftCode does not scan (`dist`, `build`, `bin`, `obj`, `node_modules`, ...), which are not in the project's file list and so cannot be checked. A first version treated `bin/` as checkable and reported `bin/tool.js` as missing, because discovery ignores `bin/`; a test caught it.
+- **What counts as present:** the path from the top of the project, relative to the document, ending like a file in the project (`auth/session.py`), or a bare file name found in any folder; letter case is ignored.
+- **When it reports:** a document that names at least `minMissing` (default 2) missing files. One finding per document, at the line of the first missing name, listing up to `listed` (5) of them. `info`, confidence medium, heuristic.
+
+**Evidence.** On pip it reports `anatomy.rst` (16 files named, `build_env.py` and `pep425tags.py` missing), the one document that the freshness rule missed and that is verifiably stale. On the other eight repositories reviewed (Flask, Click, scrapy, ESLint, CleanArchitecture, modular-monolith-with-ddd, FluentValidation, and this project's own documents) it reports nothing, also with `minMissing` at 1, so the default of 2 costs nothing on this corpus. The extraction was checked on the documents that name files: pip (19 paths), ESLint (3: `lib/api.js`, `lib/cli.js`, `eslint.config.js`, all present), and CleanArchitecture (`Program.cs`). Flask, Click, and scrapy name no source files, so the rule has nothing to say about them. The corpus has only one genuinely stale document, so precision is shown by the tests and by silence on current documents, not by a count of true positives.
 
 ## Not fixed
 
 - **Fluent chains that use their value and pass through sub-configurators.** The 9 `SC-DES-001` findings left on the C# repos are all still fluent APIs, not reaching through objects: Serilog's `new LoggerConfiguration().ReadFrom.Configuration().Enrich.FromLogContext().WriteTo.Console().CreateLogger()` (5), CliWrap's own `command.WithStandardOutputPipe().WithStandardErrorPipe().Execute...()` (3), and one chain in a bundled jQuery plugin. They are reported because the value is used and the chain has property hops. The rule is `info` at low confidence (TD-25).
 - **C# 14 `extension(...)` blocks** (CliWrap's `ProcessExtensions.cs`): `tree-sitter-c-sharp` 0.23.5, the latest published, cannot parse them. Such files are "not checked" (TD-24).
 - `SC-SEC-007` (certificate checks) and `SC-SEC-001` on pip were not reviewed against its code.
+- `SC-DOC-006` has been seen to find one stale document. It does not know that a name was deliberately kept for history (`Freeze.py used to be in there`), or a file generated at run time and not committed.
 
 ## Consequences
 

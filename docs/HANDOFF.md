@@ -11,9 +11,9 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
-- 39 rules. Metrics `SC-MET-001` to `006`; design `SC-DES-001` to `005`; security
+- 40 rules. Metrics `SC-MET-001` to `006`; design `SC-DES-001` to `005`; security
   `SC-SEC-001` to `007` (each mapped to a CWE entry); supply chain `SC-SUP-001` to `007`;
-  design documentation `SC-DOC-001` to `004` (ADR 0008); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
+  design documentation `SC-DOC-001` to `004` (ADR 0008) and `SC-DOC-006` (files a document names that are gone; ADR 0013); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
   (stale design documents; ADR 0010).
   All limits are rule options. Design and
   security rules skip test code; a recognizable credential format is reported even in tests.
@@ -38,7 +38,7 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - Brand last checked: 2026-11-08 · brandkit 1.56.1 · Brand Logos commit eef776be (dirty: `requests/` and the rollout tracker) · sets: readme (`docs/brand`) and app (`assets/brand`) · result: both in sync (`brandkit check`); the HTML report is built on the app set
 - Plan documents: PRD, ARCHITECTURE, DESIGN, ROADMAP, ADR 0001 to 0010. License Apache-2.0. Brand
   re-synced 2026-11-01 (typeface JetBrains Mono).
-- Dogfood: `node dist/cli/main.js scan .` is clean (151 files, all 39 rules; `SC-HOT-001` reports `manifests.ts` as an informational hotspot, so the contract is "nothing at warning or above": run `scan . --fail-on warning`; `SC-SUP-007` is switched
+- Dogfood: `node dist/cli/main.js scan .` is clean (153 files, all 40 rules; `SC-HOT-001` reports `manifests.ts` as an informational hotspot, so the contract is "nothing at warning or above": run `scan . --fail-on warning`; `SC-SUP-007` is switched
   off in `siftcode.config.json` because GitHub push protection is on, and `npm run sbom` satisfies
   `SC-SUP-006`). Keep it so.
 
@@ -58,9 +58,6 @@ None.
 
 ## Open questions for the owner
 
-- Build the rule that the 2026-11-08 review of pip pointed to (ADR 0013, TD-19): a design document
-  that names files or code that no longer exist in the project. Verifiable and much more reliable than
-  the share of code changed. Not started; say if you want it.
 - The brand has no tagline or domain; the README has none until one is set.
 - Optional: skim the license compatibility table as a sheet, `docs/license-table-review.md`
   (families, a project-by-dependency matrix, every reason with its source; regenerate with
@@ -147,6 +144,7 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-08, session 1 (continued):** Built `SC-DOC-006` (design documents that name source files that are not in the project) from the pip finding in ADR 0013; checked it on nine repositories (one real stale document found, no other findings) and corrected an overcount in the ADR (2 missing files in pip's `anatomy.rst`, not 6).
 - **2026-11-08, session 1 (continued):** Owner supplied no repositories and asked me to find trustworthy ones. Cloned WebGoat.NET, CliWrap, CleanArchitecture, modular-monolith-with-ddd, Flask, Click, and pip, and read their findings against the code (ADR 0013). Fixed: fluent chains and composition roots in the design rules, vendored code in metric and design rules, `SC-DOC-005` coverage of nested docs and its counting of tests, decision-log folders, C# files with `#if`, `ProcessStartInfo` initializers, minified files. Filed the contrast request with the brand library. 1023 unit tests.
 - **2026-11-08, session 1 (continued):** Milestone 6 (HTML report, baseline and suppressions, `explain` polish; ADR 0011 and 0012): accepted findings (comments and baseline) in every report, the Carbon HTML report built on the brand's app set with a strict content policy, SARIF suppressions and notifications, `explain` list, loose ids, typo suggestions, settings and acceptance help. Checked in a browser at 375/768/1280 px (contrast in both themes, structure, keyboard, behavior). 961 unit and 8 end-to-end tests.
 - **2026-11-08, session 1 (continued):** Owner review of M5 answers: added `SC-MET-006` (file length, 500 lines, calibrated on 1,931 files). Cloned FluentValidation (C#) and scanned it plus a school project: fixed .NET test projects counting as production code, `Contest.cs`/`protest.py` matching the test-file pattern, and NuGet test or `PrivateAssets` packages counted as runtime dependencies. 894 unit tests.
