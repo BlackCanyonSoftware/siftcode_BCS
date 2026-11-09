@@ -84,6 +84,44 @@ describe('discoverFiles (US-001, US-002)', () => {
   });
 });
 
+describe('minified files (US-002)', () => {
+  it('are skipped by default: they are generated, and every rule reads them as noise', async () => {
+    await put('src/app.js');
+    await put('src/jquery-1.6.2.min.js');
+    await put('src/lib.min.mjs');
+    await put('src/lib.min.cjs');
+    await put('src/jquery.autocomplete-min.js');
+    await put('src/admin.js');
+
+    expect(await found()).toEqual(['src/admin.js', 'src/app.js']);
+  });
+
+  it('can be brought back by name, like any built-in ignore', async () => {
+    await put('src/app.js');
+    await put('src/lib.min.js');
+
+    const files = await discoverFiles(dir, { ignore: ['!*.min.js'] });
+
+    expect(files.files.map((file) => file.relativePath)).toEqual(['src/app.js', 'src/lib.min.js']);
+  });
+
+  it('are still scanned when named directly', async () => {
+    await put('lib.min.js');
+
+    const files = await discoverFiles(join(dir, 'lib.min.js'));
+
+    expect(files.files.map((file) => file.relativePath)).toEqual(['lib.min.js']);
+  });
+
+  it('does not take a file that merely has min in its name for a minified one', async () => {
+    await put('src/admin.js');
+    await put('src/min.js');
+    await put('src/domain.min.service.js');
+
+    expect(await found()).toEqual(['src/admin.js', 'src/domain.min.service.js', 'src/min.js']);
+  });
+});
+
 describe('ignore rules (US-002)', () => {
   it('honors the .gitignore in the scanned folder', async () => {
     await put('.gitignore', 'generated/\n*.min.js\n');

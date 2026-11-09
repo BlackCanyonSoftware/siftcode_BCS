@@ -19,6 +19,17 @@ export const DEFAULT_IGNORED_DIRECTORIES: readonly string[] = [
   'venv',
 ];
 
+/**
+ * Minified JavaScript: generated, one line, and a source of noise for every rule (a bundled jQuery
+ * has `eval` and `.get()`). Brought back with `!*.min.js` in the config's `ignore`.
+ */
+export const DEFAULT_IGNORED_FILES: readonly string[] = [
+  '*.min.js',
+  '*.min.mjs',
+  '*.min.cjs',
+  '*-min.js',
+];
+
 /** Files larger than this are skipped: they are almost always generated or minified. */
 export const MAX_FILE_BYTES = 1024 * 1024;
 
@@ -74,7 +85,7 @@ export async function discoverFiles(
   const isDirectory = rootStat.isDirectory();
   if (isDirectory) {
     const ignores = IgnoreStack.create(
-      DEFAULT_IGNORED_DIRECTORIES.map((name) => `${name}/`),
+      [...DEFAULT_IGNORED_DIRECTORIES.map((name) => `${name}/`), ...DEFAULT_IGNORED_FILES],
       options.ignore ?? [],
     );
     await walk.directory(root, '', ignores);
