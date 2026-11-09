@@ -1,4 +1,5 @@
 import { staleDesignDocuments } from './documentation/design-doc-freshness.js';
+import { designDocumentsNamingMissingFiles } from './documentation/stale-references.js';
 import {
   diagramsWithoutDecisionRecords,
   documentationWithoutDiagrams,
@@ -60,6 +61,7 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   diagramsWithoutDecisionRecords,
   unreferencedDiagrams,
   staleDesignDocuments,
+  designDocumentsNamingMissingFiles,
   hotspots,
   noLicense,
   unrecognizedLicenseFile,
