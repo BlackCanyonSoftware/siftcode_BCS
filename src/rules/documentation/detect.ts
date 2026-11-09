@@ -70,8 +70,12 @@ const DESIGN_DOCUMENT_FOLDERS = new Set([
   'rfc',
   'rfcs',
 ]);
+/**
+ * A folder of decision records, however it is spelled: `adr`, `decisions`, `decision-log`,
+ * `decision-records`, `architecture-decision-log`, `architecture_decision_records`, `adr-log`.
+ */
 const DECISION_FOLDER =
-  /(?:^|\/)(?:adrs?|decisions?|architecture-decisions?|architecture_decisions?)\//i;
+  /(?:^|\/)(?:adrs?(?:[-_ ]log)?|(?:architecture[-_ ])?decisions?(?:[-_ ](?:log|records?))?|(?:architecture[-_ ])?decision[-_ ]records?)\//i;
 const DECISION_FILE = /^adr[-_ ]?\d+/i;
 const FENCED_DIAGRAM =
   /^[ \t]*(?:```|~~~)[ \t]*\{?\.?(?:mermaid|plantuml|puml|d2|graphviz|dot|structurizr|c4plantuml|nomnoml|ditaa|blockdiag|seqdiag)\b|^\.\. (?:uml|graphviz|mermaid)::|^\[(?:plantuml|mermaid|graphviz|ditaa)[,\]]/im;

@@ -282,6 +282,21 @@ describe(
       expect(result.findings).toEqual([]);
     });
 
+    it('does not treat a decision log as design documents, whatever the folder is called', async () => {
+      const result = await scanRepository('SC-DOC-005', [
+        {
+          date: daysAgo(200),
+          files: {
+            'docs/architecture-decision-log/0001-record-architecture-decisions.md': '# 1\n',
+            'src/a.ts': code(200, 0),
+          },
+        },
+        rewrite('src/a.ts', 100, 700, 1),
+      ]);
+
+      expect(result.findings).toEqual([]);
+    });
+
     it('is skipped with a note in a folder that is not a Git repository', async () => {
       const folder = await projects.create({
         'docs/architecture.md': '# A\n',

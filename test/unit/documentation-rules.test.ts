@@ -137,18 +137,25 @@ describe('SC-DOC-003 diagrams without decision records (US-033)', () => {
     expect(findings[0]).toMatchObject({ path: 'docs/system.puml', severity: 'note' });
   });
 
-  it.each(['docs/adr/0001-first.md', 'docs/decisions/0001-first.md', 'adr-001-first.md'])(
-    'accepts a decision record at %s',
-    async (path) => {
-      const findings = await findingsFor('SC-DOC-003', {
-        ...manyFiles(25),
-        'docs/system.puml': '@startuml\n@enduml\n',
-        [path]: '# 1. First\n',
-      });
+  it.each([
+    'docs/adr/0001-first.md',
+    'docs/decisions/0001-first.md',
+    'adr-001-first.md',
+    // found on kgrzybek/modular-monolith-with-ddd, which keeps 12 records in a decision log
+    'docs/architecture-decision-log/0001-record-architecture-decisions.md',
+    'docs/architecture_decision_log/0001-first.md',
+    'docs/decision-records/0001-first.md',
+    'docs/architecture-decision-records/0001-first.md',
+    'doc/adr-log/0001-first.md',
+  ])('accepts a decision record at %s', async (path) => {
+    const findings = await findingsFor('SC-DOC-003', {
+      ...manyFiles(25),
+      'docs/system.puml': '@startuml\n@enduml\n',
+      [path]: '# 1. First\n',
+    });
 
-      expect(findings).toEqual([]);
-    },
-  );
+    expect(findings).toEqual([]);
+  });
 
   it('stays quiet when there are no diagrams', async () => {
     expect(await findingsFor('SC-DOC-003', manyFiles(25))).toEqual([]);
