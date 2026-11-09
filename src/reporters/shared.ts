@@ -1,6 +1,7 @@
+import { compareStrings } from '../core/compare.js';
 import type { AcceptedFinding, Finding } from '../core/finding.js';
 import type { FileProblem, ScanResult } from '../core/result.js';
-import { SEVERITIES, type Severity } from '../core/severity.js';
+import { SEVERITIES, compareSeverity, type Severity } from '../core/severity.js';
 import type { RuleMeta, StandardRef } from '../rules/types.js';
 
 export const TOOL_NAME = 'SiftCode';
@@ -36,6 +37,21 @@ export function groupByFile(details: readonly FindingDetail[]): [string, Finding
     groups.set(detail.finding.path, group);
   }
   return [...groups];
+}
+
+/** Files with the most severe finding first, then by path; findings keep their line order. */
+export function filesMostSevereFirst(
+  details: readonly FindingDetail[],
+): [string, FindingDetail[]][] {
+  const worst = (group: readonly FindingDetail[]): Severity =>
+    group.reduce<Severity>(
+      (current, { finding }) =>
+        compareSeverity(finding.severity, current) > 0 ? finding.severity : current,
+      'note',
+    );
+  return groupByFile(details).sort(
+    ([pathA, a], [pathB, b]) => compareSeverity(worst(b), worst(a)) || compareStrings(pathA, pathB),
+  );
 }
 
 export function countBySeverity(findings: readonly Finding[]): Record<Severity, number> {

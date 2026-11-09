@@ -22,12 +22,22 @@ function validated<Options>(spec: { meta: RuleMeta; options: z.ZodType<Options> 
   return parsed.data;
 }
 
+/** What the schema gives for an empty `options`: every option with its default. */
+function defaultsOf<Options>(spec: {
+  meta: RuleMeta;
+  options: z.ZodType<Options>;
+}): Readonly<Record<string, unknown>> {
+  const defaults: unknown = validated(spec, {});
+  return typeof defaults === 'object' && defaults !== null ? { ...defaults } : {};
+}
+
 /** Declares a rule that checks one source file at a time, with typed options. */
 export function defineRule<Options>(
   spec: RuleSpec<Options, (file: AnalyzedFile, options: Options) => readonly RuleHit[]>,
 ): RuleDefinition {
   return {
     meta: spec.meta,
+    defaultOptions: defaultsOf(spec),
     configure(rawOptions) {
       const options = validated(spec, rawOptions);
       return (file) => spec.check(file, options);
@@ -44,6 +54,7 @@ export function defineRepoRule<Options>(
 ): RuleDefinition {
   return {
     meta: spec.meta,
+    defaultOptions: defaultsOf(spec),
     configure(rawOptions) {
       validated(spec, rawOptions);
       return () => []; // there is nothing to check in a single source file

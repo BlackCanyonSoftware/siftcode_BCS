@@ -1,15 +1,12 @@
-import { compareStrings } from '../core/compare.js';
 import type { ScanResult } from '../core/result.js';
-import { compareSeverity, type Severity } from '../core/severity.js';
 import {
   describeAccepted,
   describeCounts,
   describeProblem,
+  filesMostSevereFirst,
   formatStandard,
-  groupByFile,
   plural,
   withRules,
-  type FindingDetail,
 } from './shared.js';
 
 /** Terminal output. Color is never used, so severity is always spelled out as a word. */
@@ -64,17 +61,4 @@ function findingLines(result: ScanResult): string[] {
     }
   }
   return lines;
-}
-
-/** Files with the most severe finding first, then by path; findings keep their line order. */
-function filesMostSevereFirst(details: readonly FindingDetail[]): [string, FindingDetail[]][] {
-  const worst = (group: readonly FindingDetail[]): Severity =>
-    group.reduce<Severity>(
-      (current, { finding }) =>
-        compareSeverity(finding.severity, current) > 0 ? finding.severity : current,
-      'note',
-    );
-  return groupByFile(details).sort(
-    ([pathA, a], [pathB, b]) => compareSeverity(worst(b), worst(a)) || compareStrings(pathA, pathB),
-  );
 }

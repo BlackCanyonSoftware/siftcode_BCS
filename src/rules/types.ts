@@ -106,6 +106,8 @@ export type RepoCheck = (repo: RepoView) => Promise<readonly RepoHit[]>;
 /** A rule as registered: its description, and a way to bind it to validated options. */
 export interface RuleDefinition {
   readonly meta: RuleMeta;
+  /** The options the rule runs with when the config sets none, for `siftcode explain`. */
+  readonly defaultOptions: Readonly<Record<string, unknown>>;
   /** Validates `options` against the rule's schema (throws `UsageError`) and returns the check. */
   configure(options: unknown): FileCheck;
   /** Present on a repository-level rule: validates `options` and returns its repository check. */

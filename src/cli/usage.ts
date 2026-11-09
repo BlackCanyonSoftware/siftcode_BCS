@@ -1,15 +1,16 @@
 export const USAGE = `Usage:
   siftcode scan <path> [options]
   siftcode baseline <path> [options]
-  siftcode explain <rule-id>
+  siftcode explain [rule-id]
 
 Commands:
   scan      Scan a folder or file and report findings with suggestions
   baseline  Accept the current findings in a file, so later scans report only new ones
   explain   Show why a rule exists, the standards behind it, and how to fix what it finds
+            (with no rule id: list every rule)
 
 Scan options:
-  -f, --format <name>     Report format: text (default), json, markdown, or sarif
+  -f, --format <name>     Report format: text (default), json, markdown, sarif, or html
   -o, --output <file>     Write the report to a file instead of printing it
   -c, --config <file>     Config file (default: siftcode.config.json in the scanned folder)
       --baseline <file>   Accept the findings listed in this baseline (see "siftcode baseline")

@@ -98,7 +98,7 @@ describe('report formats and output (US-003, US-004)', () => {
 
     expect(code).toBe(EXIT_USAGE);
     expect(stderr).toContain(
-      'Invalid value "xml" for --format. Allowed values: text, json, markdown, sarif.',
+      'Invalid value "xml" for --format. Allowed values: text, json, markdown, sarif, html.',
     );
   });
 
@@ -230,17 +230,87 @@ describe('explain command (US-041)', () => {
     expect((await runCli('explain', 'sc-met-001')).code).toBe(EXIT_OK);
   });
 
-  it('exits 2 and lists the known rules for an unknown id', async () => {
+  it.each(['met-1', 'MET-001', 'sc-met-01', 'sc-met-1', 'SC-MET-001'])(
+    'accepts the shorthand %s for SC-MET-001',
+    async (shorthand) => {
+      const { code, stdout } = await runCli('explain', shorthand);
+
+      expect(code).toBe(EXIT_OK);
+      expect(stdout).toContain('SC-MET-001  Function or method is too long');
+    },
+  );
+
+  it('exits 2 for an unknown id, without listing every rule, and says how to find the right one', async () => {
     const { code, stderr } = await runCli('explain', 'SC-NOPE-1');
 
     expect(code).toBe(EXIT_USAGE);
-    expect(stderr).toContain(`Unknown rule "SC-NOPE-1". Known rules: ${allRuleIds().join(', ')}.`);
+    expect(stderr).toContain('Unknown rule "SC-NOPE-1". Run "siftcode explain" to list the rules.');
+    expect(stderr).not.toContain('SC-MET-002, SC-MET-003');
   });
 
-  it('exits 2 when no id is given', async () => {
-    const { code, stderr } = await runCli('explain');
+  it.each([
+    ['SC-MTE-001', 'SC-MET-001'],
+    ['SC-HOT-002', 'SC-HOT-001'],
+    ['SC-SEC-0010', 'SC-SEC-001'],
+  ])('suggests the closest rule for the mistyped id %s', async (typo, suggestion) => {
+    const { code, stderr } = await runCli('explain', typo);
 
     expect(code).toBe(EXIT_USAGE);
-    expect(stderr).toContain('exactly one rule id');
+    expect(stderr).toContain(`Did you mean ${suggestion}?`);
+  });
+
+  it('lists every rule by category, with its default severity, when no id is given', async () => {
+    const { code, stdout } = await runCli('explain');
+
+    expect(code).toBe(EXIT_OK);
+    expect(stdout).toContain(`Rules (${allRuleIds().length})`);
+    for (const id of allRuleIds()) {
+      expect(stdout).toContain(id);
+    }
+    expect(stdout).toMatch(/^maintainability$/m);
+    expect(stdout).toMatch(/SC-MET-002 {2}warning {2}Function or method is too complex/);
+    expect(stdout).toContain('siftcode explain <rule-id>');
+  });
+
+  it('exits 2 when more than one id is given', async () => {
+    const { code, stderr } = await runCli('explain', 'SC-MET-001', 'SC-MET-002');
+
+    expect(code).toBe(EXIT_USAGE);
+    expect(stderr).toContain('at most one rule id');
+  });
+
+  it('shows the default settings and how to change or switch off a rule', async () => {
+    const { stdout } = await runCli('explain', 'SC-MET-001');
+
+    expect(stdout).toContain('Settings');
+    expect(stdout).toContain('"maxLines": 50');
+    expect(stdout).toContain('siftcode.config.json');
+    expect(stdout).toContain('"severity": "warning"');
+    expect(stdout).toContain('"enabled": false');
+  });
+
+  it('shows how to accept one finding in the code, with the rule id filled in', async () => {
+    const { stdout } = await runCli('explain', 'SC-MET-001');
+
+    expect(stdout).toContain('Accepting a finding');
+    expect(stdout).toContain('// siftcode-ignore SC-MET-001: <your reason>');
+    expect(stdout).toContain('# siftcode-ignore SC-MET-001: <your reason>');
+    expect(stdout).toContain('siftcode baseline <path>');
+  });
+
+  it('says that a whole-project rule has no line to comment on, and points to the baseline', async () => {
+    const { stdout } = await runCli('explain', 'SC-SUP-001');
+
+    expect(stdout).toContain('looks at the project as a whole');
+    expect(stdout).not.toContain('siftcode-ignore SC-SUP-001');
+    expect(stdout).toContain('siftcode baseline <path>');
+  });
+
+  it('shows no settings section for a rule that has no options', async () => {
+    const { stdout } = await runCli('explain', 'SC-SEC-004');
+
+    expect(stdout).toContain('This rule has no options.');
+    expect(stdout).not.toContain('"options"');
+    expect(stdout).toContain('"enabled": false');
   });
 });
