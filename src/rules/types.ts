@@ -1,5 +1,6 @@
 import type { Severity } from '../core/severity.js';
-import type { AnalyzedFile } from '../languages/model/types.js';
+import type { GitAccess } from '../git/types.js';
+import type { AnalyzedFile, CodeFile } from '../languages/model/types.js';
 
 export type Category =
   | 'maintainability'
@@ -81,6 +82,18 @@ export interface RepoView {
   read(path: string): Promise<string | undefined>;
   /** The names in a folder (ignored folders included), sorted; empty if it is missing or outside the scan root. */
   list(directory: string): Promise<readonly string[]>;
+  /** The source files that were parsed cleanly, with their measurements (complexity, lines). */
+  readonly codeFiles: readonly CodeFile[];
+  /**
+   * Read-only access to the Git history of the scanned folder, or the reason there is none. Opened
+   * on first use and shared by every rule in the scan.
+   */
+  git(): Promise<GitAccess>;
+  /**
+   * Adds a line to the notes shown beside the findings: what a rule could not check and why (for
+   * example hotspots, in a folder that is not in a Git repository). A note is not a finding.
+   */
+  note(message: string): void;
 }
 
 /** A hit from a repository-level rule: it names the file (or `.`) it is about. */

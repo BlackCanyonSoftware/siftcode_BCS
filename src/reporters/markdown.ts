@@ -50,6 +50,9 @@ export function renderMarkdown(result: ScanResult): string {
     }
     lines.push('');
   }
+  if (result.notes.length > 0) {
+    lines.push('## Notes', '', ...result.notes.map((note) => `- ${escapeMarkdown(note)}`), '');
+  }
   const { unsupported, tooLarge, symlinks } = result.skipped;
   lines.push(
     `_Skipped: ${unsupported} unsupported, ${tooLarge} too large, ${symlinks} symbolic links._`,

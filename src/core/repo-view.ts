@@ -1,6 +1,9 @@
 import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, join, posix, relative, sep } from 'node:path';
 import type { Discovery } from '../discovery/discover.js';
+import { openGit } from '../git/history.js';
+import type { GitAccess } from '../git/types.js';
+import type { CodeFile } from '../languages/model/types.js';
 import type { RepoView } from '../rules/types.js';
 
 /** Files larger than this are not read by repository-level rules. */
@@ -44,6 +47,13 @@ async function namesIn(real: string | undefined): Promise<readonly string[]> {
   }
 }
 
+export interface RepoViewOptions {
+  /** The files that were parsed cleanly; empty when the rules do not need measurements. */
+  readonly codeFiles?: readonly CodeFile[];
+  /** Called with each note a rule adds. */
+  readonly onNote?: (message: string) => void;
+}
+
 /**
  * Gives repository-level rules a view of the scanned folder: which files exist, and a size-limited,
  * cached way to read them. Nothing is read until a rule asks, and each file is read at most once.
@@ -52,12 +62,13 @@ async function namesIn(real: string | undefined): Promise<readonly string[]> {
  * environment), because installed packages hold the license of each dependency. They never leave
  * the scan root: a path that escapes it, or a link that points outside it, reads as missing.
  */
-export function createRepoView(discovery: Discovery): RepoView {
+export function createRepoView(discovery: Discovery, options: RepoViewOptions = {}): RepoView {
   const known = new Set(discovery.allFiles);
   const reads = new Map<string, Promise<string | undefined>>();
   const realRoot = realpath(discovery.root);
   const inside = async (path: string): Promise<string | undefined> =>
     resolveInside(discovery.root, await realRoot, path);
+  let git: Promise<GitAccess> | undefined;
 
   return {
     isRepositoryRoot: discovery.isRepositoryRoot,
@@ -74,5 +85,11 @@ export function createRepoView(discovery: Discovery): RepoView {
       return pending;
     },
     list: async (directory) => namesIn(await inside(directory)),
+    codeFiles: options.codeFiles ?? [],
+    git() {
+      git ??= openGit(discovery.root);
+      return git;
+    },
+    note: (message) => options.onNote?.(message),
   };
 }

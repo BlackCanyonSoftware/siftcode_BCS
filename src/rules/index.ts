@@ -1,3 +1,4 @@
+import { staleDesignDocuments } from './documentation/design-doc-freshness.js';
 import {
   diagramsWithoutDecisionRecords,
   documentationWithoutDiagrams,
@@ -8,6 +9,7 @@ import { classCohesion, classSize } from './design/class-rules.js';
 import { lawOfDemeter } from './design/law-of-demeter.js';
 import { moduleFanOut } from './design/module-fan-out.js';
 import { serviceLocator } from './design/service-locator.js';
+import { hotspots } from './git/hotspots.js';
 import {
   dependencyLicenseConflicts,
   unknownDependencyLicenses,
@@ -56,6 +58,8 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   documentationWithoutDiagrams,
   diagramsWithoutDecisionRecords,
   unreferencedDiagrams,
+  staleDesignDocuments,
+  hotspots,
   noLicense,
   unrecognizedLicenseFile,
   licenseDeclarationMismatch,

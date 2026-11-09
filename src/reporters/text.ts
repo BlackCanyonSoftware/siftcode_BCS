@@ -26,6 +26,9 @@ export function renderText(result: ScanResult): string {
       lines.push(`  ${problem.path} ${describeProblem(problem.reason)}`);
     }
   }
+  if (result.notes.length > 0) {
+    lines.push('', 'Notes:', ...result.notes.map((note) => `  ${note}`));
+  }
   const { unsupported, tooLarge, symlinks } = result.skipped;
   lines.push(
     '',

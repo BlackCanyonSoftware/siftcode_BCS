@@ -44,8 +44,13 @@ export async function scan(path: string, options: ScanOptions = {}): Promise<Sca
   } finally {
     parser.dispose();
   }
+  const notes = new Set<string>();
   if (discovery.isDirectory) {
-    findings.push(...(await runRepoRules(createRepoView(discovery), rules)));
+    const repo = createRepoView(discovery, {
+      codeFiles: files,
+      onNote: (message) => notes.add(message),
+    });
+    findings.push(...(await runRepoRules(repo, rules)));
   }
 
   return {
@@ -57,6 +62,7 @@ export async function scan(path: string, options: ScanOptions = {}): Promise<Sca
     rules: rules.map((rule) => rule.meta).sort((a, b) => compareStrings(a.id, b.id)),
     problems,
     skipped: discovery.skipped,
+    notes: [...notes].sort(compareStrings),
   };
 }
 

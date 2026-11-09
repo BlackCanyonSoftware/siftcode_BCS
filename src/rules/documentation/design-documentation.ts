@@ -1,35 +1,13 @@
 import { z } from 'zod';
 import { anchorPath } from '../anchor.js';
 import { defineRepoRule } from '../define.js';
-import type { StandardRef } from '../types.js';
+import { adr, arc42, c4, iso42010, uml } from '../standards.js';
 import {
   detectDesignArtifacts,
   hasAnyDesignArtifact,
   hasDiagrams,
   unreferencedDiagramSources,
 } from './detect.js';
-
-const c4: StandardRef = {
-  standard: 'The C4 model for visualising software architecture',
-  url: 'https://c4model.com/',
-};
-const uml: StandardRef = {
-  standard: 'Unified Modeling Language (ISO/IEC 19505-2)',
-  url: 'https://www.omg.org/spec/UML/',
-};
-const iso42010: StandardRef = {
-  standard: 'ISO/IEC/IEEE 42010: Architecture description',
-  url: 'https://www.iso.org/standard/74393.html',
-};
-const arc42: StandardRef = {
-  standard: 'arc42 architecture documentation template',
-  url: 'https://arc42.org/',
-};
-const adr: StandardRef = {
-  standard: 'Architecture Decision Records',
-  id: 'Documenting Architecture Decisions (Michael Nygard)',
-  url: 'https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions',
-};
 
 const SIZE_OPTION = z.strictObject({
   /** Projects with fewer source files than this get a lower-key finding (or none). */

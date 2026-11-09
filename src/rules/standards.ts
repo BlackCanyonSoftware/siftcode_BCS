@@ -55,3 +55,26 @@ export const nistSsdf = (practice: string, title: string): StandardRef => ({
   id: `${practice}: ${title}`,
   url: 'https://csrc.nist.gov/pubs/sp/800/218/final',
 });
+
+/** Standards and practices for documenting a software design. */
+export const c4: StandardRef = {
+  standard: 'The C4 model for visualising software architecture',
+  url: 'https://c4model.com/',
+};
+export const uml: StandardRef = {
+  standard: 'Unified Modeling Language (ISO/IEC 19505-2)',
+  url: 'https://www.omg.org/spec/UML/',
+};
+export const iso42010: StandardRef = {
+  standard: 'ISO/IEC/IEEE 42010: Architecture description',
+  url: 'https://www.iso.org/standard/74393.html',
+};
+export const arc42: StandardRef = {
+  standard: 'arc42 architecture documentation template',
+  url: 'https://arc42.org/',
+};
+export const adr: StandardRef = {
+  standard: 'Architecture Decision Records',
+  id: 'Documenting Architecture Decisions (Michael Nygard)',
+  url: 'https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions',
+};

@@ -30,4 +30,9 @@ export interface ScanResult {
    */
   readonly problems: readonly FileProblem[];
   readonly skipped: SkippedCounts;
+  /**
+   * What the scan could not check and why, for example hotspots in a folder that is not in a Git
+   * repository. Sorted, without duplicates.
+   */
+  readonly notes: readonly string[];
 }

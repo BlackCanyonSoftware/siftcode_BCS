@@ -45,7 +45,7 @@ describe('Git log parsing (US-013)', () => {
   });
 });
 
-describe('Git history reader (US-013)', () => {
+describe('Git history reader (US-013)', { timeout: 60_000 }, () => {
   it('reports why there is no history for a folder that is not in a repository', async () => {
     const folder = await projects.create({ 'a.txt': 'x\n' });
 

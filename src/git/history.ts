@@ -16,6 +16,35 @@ async function emptyIfNoCommits<T>(read: () => Promise<T>, empty: T): Promise<T>
   }
 }
 
+/** The non-merge commits since `since`, newest first, at most `limit` of them. */
+async function readCommits(directory: string, since: Date, limit: number): Promise<CommitLog> {
+  const output = await runGit(directory, [
+    'log',
+    '--no-merges',
+    '--no-renames',
+    '--no-ext-diff',
+    '--no-textconv',
+    '--numstat',
+    `--format=${RECORD_SEPARATOR}%ct`,
+    `--since=${since.toISOString()}`,
+    `--max-count=${limit + 1}`,
+    '--relative',
+    '--',
+    '.',
+  ]);
+  const commits = parseLog(output);
+  return { commits: commits.slice(0, limit), truncated: commits.length > limit };
+}
+
+/** When `path` last changed in a commit, in seconds since 1970. */
+async function readLastChange(directory: string, path: string): Promise<number | undefined> {
+  const output = (
+    await runGit(directory, ['log', '-1', '--no-renames', '--format=%ct', '--', path])
+  ).trim();
+  const time = Number(output);
+  return output === '' || !Number.isFinite(time) ? undefined : time;
+}
+
 /**
  * Opens the Git history of `directory` (which may be a subfolder of the repository; paths are then
  * relative to it). Returns the reason instead when there is none: Git missing, not a repository,
@@ -33,43 +62,13 @@ export async function openGit(directory: string): Promise<GitAccess> {
       reason: error instanceof GitUnavailable ? error.message : 'Git failed',
     };
   }
-
   return {
     available: true,
-    commitsSince: (since, limit): Promise<CommitLog> =>
-      emptyIfNoCommits(
-        async () => {
-          const output = await runGit(directory, [
-            'log',
-            '--no-merges',
-            '--no-renames',
-            '--no-ext-diff',
-            '--no-textconv',
-            '--numstat',
-            `--format=${RECORD_SEPARATOR}%ct`,
-            `--since=${since.toISOString()}`,
-            `--max-count=${limit + 1}`,
-            '--relative',
-            '--',
-            '.',
-          ]);
-          const commits = parseLog(output);
-          return { commits: commits.slice(0, limit), truncated: commits.length > limit };
-        },
-        { commits: [], truncated: false },
-      ),
-    lastChange: (path) =>
-      emptyIfNoCommits(async () => {
-        const output = await runGit(directory, [
-          'log',
-          '-1',
-          '--no-renames',
-          '--format=%ct',
-          '--',
-          path,
-        ]);
-        const time = Number(output.trim());
-        return output.trim() === '' || !Number.isFinite(time) ? undefined : time;
-      }, undefined),
+    commitsSince: (since, limit) =>
+      emptyIfNoCommits(() => readCommits(directory, since, limit), {
+        commits: [],
+        truncated: false,
+      }),
+    lastChange: (path) => emptyIfNoCommits(() => readLastChange(directory, path), undefined),
   };
 }

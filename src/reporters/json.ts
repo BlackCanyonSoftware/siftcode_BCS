@@ -27,6 +27,7 @@ export function renderJson(result: ScanResult, context: ReportContext): string {
       suggestion: rule.suggestion,
     })),
     problems: result.problems,
+    notes: result.notes,
     metrics: { files: result.files.map(describeFile) },
   };
   return `${JSON.stringify(report, null, 2)}\n`;
