@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineRule } from '../define.js';
-import { isBarrelFile, isTestFile } from './context.js';
+import { isBarrelFile, isOutOfScope } from './context.js';
 
 export const moduleFanOut = defineRule({
   meta: {
@@ -33,7 +33,7 @@ export const moduleFanOut = defineRule({
   },
   options: z.strictObject({ maxImports: z.number().int().positive().default(25) }),
   check(file, { maxImports }) {
-    if (isTestFile(file.path) || isBarrelFile(file.path)) {
+    if (isOutOfScope(file.path) || isBarrelFile(file.path)) {
       return [];
     }
     const modules = new Set(file.facts.imports.map((entry) => entry.module));

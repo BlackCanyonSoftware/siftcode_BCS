@@ -25,6 +25,9 @@ const VENDORED_FOLDERS = new Set([
   'third_party',
   'third-party',
   'external',
+  'externals',
+  '_vendor',
+  '_vendored',
   'site-packages',
 ]);
 

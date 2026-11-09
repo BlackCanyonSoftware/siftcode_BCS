@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { RuleMeta, StandardRef } from '../types.js';
 import { defineRule } from '../define.js';
-import { classLabel, isTestFile } from './context.js';
+import { classLabel, isOutOfScope } from './context.js';
 
 const SRP: StandardRef = {
   standard: 'Single Responsibility Principle (Martin)',
@@ -41,7 +41,7 @@ export const classSize = defineRule({
   meta: sizeMeta,
   options: z.strictObject({ maxMethods: z.number().int().positive().default(25) }),
   check(file, { maxMethods }) {
-    if (isTestFile(file.path)) {
+    if (isOutOfScope(file.path)) {
       return [];
     }
     return file.classes.flatMap((c) =>
@@ -92,7 +92,7 @@ export const classCohesion = defineRule({
     minGroups: z.number().int().min(2).default(3),
   }),
   check(file, { minMethods, minGroups }) {
-    if (isTestFile(file.path)) {
+    if (isOutOfScope(file.path)) {
       return [];
     }
     return file.classes.flatMap((c) =>

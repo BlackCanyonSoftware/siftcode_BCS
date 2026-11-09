@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { MemberChain, MemberHop } from '../../languages/model/types.js';
 import { defineRule } from '../define.js';
-import { isTestFile, normalizeName } from './context.js';
+import { isOutOfScope, normalizeName } from './context.js';
 
 /** Turns a space-separated word list into a set of normalized names. */
 const names = (words: string): Set<string> => new Set(words.split(/\s+/).map(normalizeName));
@@ -98,7 +98,7 @@ export const lawOfDemeter = defineRule({
     includeDataChains: z.boolean().default(false),
   }),
   check(file, { maxChain, includeDataChains }) {
-    if (isTestFile(file.path)) {
+    if (isOutOfScope(file.path)) {
       return [];
     }
     const imported = new Set(file.facts.imports.flatMap((entry) => entry.bindings));

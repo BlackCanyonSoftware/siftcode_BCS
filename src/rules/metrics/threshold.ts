@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { CodeUnit } from '../../languages/model/types.js';
 import { defineRule } from '../define.js';
+import { isVendored } from '../shared.js';
 import type { RuleDefinition, RuleMeta } from '../types.js';
 
 interface UnitThresholdSpec {
@@ -27,6 +28,9 @@ export function defineUnitThresholdRule(spec: UnitThresholdSpec): RuleDefinition
     meta: spec.meta,
     options: z.strictObject({ [spec.option]: spec.limit.default(spec.defaultLimit) }),
     check(file, options) {
+      if (isVendored(file.path)) {
+        return []; // someone else's code: its functions are not the project's to shorten
+      }
       const limit = options[spec.option] ?? spec.defaultLimit;
       return file.units.flatMap((unit) => {
         const value = spec.measure(unit);

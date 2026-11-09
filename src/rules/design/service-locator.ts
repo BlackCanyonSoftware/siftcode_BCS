@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { AnalyzedFile, MemberChain } from '../../languages/model/types.js';
 import { defineRule } from '../define.js';
-import { enclosingUnit, isTestFile, normalizeName } from './context.js';
+import { enclosingUnit, isOutOfScope, normalizeName } from './context.js';
 
 /** Methods that hand out a dependency by type or name. Compared with {@link normalizeName}. */
 const LOCATOR_METHODS = new Set([
@@ -136,7 +136,7 @@ export const serviceLocator = defineRule({
   },
   options: z.strictObject({}),
   check(file) {
-    if (isCompositionRoot(file.path) || isTestFile(file.path)) {
+    if (isCompositionRoot(file.path) || isOutOfScope(file.path)) {
       return [];
     }
     return file.facts.chains.flatMap((chain) => {
