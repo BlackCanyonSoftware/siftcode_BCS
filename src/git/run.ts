@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import { accessSync, constants } from 'node:fs';
+import { delimiter, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 /** The most output read from one Git command. */
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
@@ -50,14 +52,56 @@ function explain(error: unknown, stderr: string): GitUnavailable {
   return new GitUnavailable(first ? `Git said: ${first.trim()}` : 'Git could not read the history');
 }
 
+/** True when `path` is `folder` or lies inside it. */
+function isInside(folder: string, path: string): boolean {
+  const from = relative(resolve(folder), resolve(path));
+  return from === '' || (!from.startsWith(`..${sep}`) && from !== '..' && !isAbsolute(from));
+}
+
+function isExecutable(path: string): boolean {
+  try {
+    accessSync(path, process.platform === 'win32' ? constants.F_OK : constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The full path of the `git` program on the search path, or undefined. A program is never taken from
+ * the scanned folder: on Windows a program launched in a folder is looked for in that folder first,
+ * so a project could carry its own `git.exe`. Entries of the search path that are relative, or that
+ * lie inside the scanned folder, are skipped, and the result is launched by its full path.
+ */
+export function locateGit(
+  scannedFolder: string,
+  searchPath: string = process.env.PATH ?? '',
+): string | undefined {
+  const names = process.platform === 'win32' ? ['git.exe'] : ['git'];
+  for (const entry of searchPath.split(delimiter)) {
+    if (!isAbsolute(entry) || isInside(scannedFolder, entry)) {
+      continue;
+    }
+    const found = names.map((name) => join(entry, name)).find(isExecutable);
+    if (found !== undefined) {
+      return found;
+    }
+  }
+  return undefined;
+}
+
 /**
  * Runs `git` in `directory` with `args` and returns its output. The arguments are passed to the
  * program directly, never through a shell.
  */
 export function runGit(directory: string, args: readonly string[]): Promise<string> {
-  return new Promise((resolve, reject) => {
+  const git = locateGit(directory);
+  if (git === undefined) {
+    return Promise.reject(new GitUnavailable('Git is not installed'));
+  }
+  return new Promise((done, reject) => {
     execFile(
-      'git',
+      git,
       [...SAFE_OPTIONS, ...args],
       {
         cwd: directory,
@@ -71,7 +115,7 @@ export function runGit(directory: string, args: readonly string[]): Promise<stri
         if (error) {
           reject(explain(error, stderr));
         } else {
-          resolve(stdout);
+          done(stdout);
         }
       },
     );

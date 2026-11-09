@@ -1,6 +1,9 @@
+import { writeFile } from 'node:fs/promises';
+import { delimiter, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { openGit } from '../../src/git/history.js';
 import { parseLog, RECORD_SEPARATOR } from '../../src/git/parse.js';
+import { locateGit } from '../../src/git/run.js';
 import { daysAgo, initRepository } from '../helpers/git.js';
 import { useProjects } from '../helpers/project.js';
 
@@ -42,6 +45,41 @@ describe('Git log parsing (US-013)', () => {
     const parsed = parseLog(`${RECORD_SEPARATOR}1700000000\r\n\r\n1\t2\tmy docs/a b.md\r\n`);
 
     expect(parsed[0]?.files).toEqual([{ path: 'my docs/a b.md', added: 1, deleted: 2 }]);
+  });
+});
+
+describe('finding the git program (US-013)', () => {
+  const executable = process.platform === 'win32' ? 'git.exe' : 'git';
+
+  it('never takes the program from the folder being scanned', async () => {
+    const folder = await projects.create({});
+    await writeFile(join(folder, executable), '#!/bin/sh\necho planted\n', { mode: 0o755 });
+    const path = [folder, '.', 'relative/bin', process.env.PATH ?? ''].join(delimiter);
+
+    const found = locateGit(folder, path);
+
+    expect(found).toBeDefined();
+    expect(found?.startsWith(folder)).toBe(false);
+  });
+
+  it('finds nothing when the only candidates are in the scanned folder or relative', async () => {
+    const folder = await projects.create({});
+    await writeFile(join(folder, executable), 'x', { mode: 0o755 });
+
+    expect(locateGit(folder, [folder, '.', 'bin'].join(delimiter))).toBeUndefined();
+  });
+
+  it('reports a missing program as a reason, not a crash', async () => {
+    const folder = await projects.create({});
+    const saved = process.env.PATH;
+    process.env.PATH = '';
+    try {
+      const access = await openGit(folder);
+
+      expect(access).toEqual({ available: false, reason: 'Git is not installed' });
+    } finally {
+      process.env.PATH = saved;
+    }
   });
 });
 
