@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Language, Parser } from 'web-tree-sitter';
+import { firstConditionalBranch } from './conditional-compilation.js';
 import { extractUnits, measureFile } from './extract.js';
 import { extractFacts } from './facts/index.js';
 import type { ClassFact, CodeMetrics, CodeUnit, FileFacts } from './model/types.js';
@@ -35,6 +36,11 @@ export type ParseResult =
       readonly classes: readonly ClassFact[];
       /** Imports and member-access chains, for the rules that run on the file. */
       readonly facts: FileFacts;
+      /**
+       * C# only: the file does not parse as written, so it was read as the first branch of its `#if`
+       * blocks. The code under `#else` and `#elif` is not in the units, metrics, or facts.
+       */
+      readonly conditionalCompilation?: true;
     }
   | { readonly outcome: 'syntax-error' | 'timeout' };
 
@@ -59,6 +65,20 @@ export class SyntaxParser {
   }
 
   async parse(grammar: GrammarId, source: string): Promise<ParseResult> {
+    const result = await this.parseOnce(grammar, source);
+    if (result.outcome !== 'syntax-error' || grammar !== 'csharp') {
+      return result;
+    }
+    // A C# file that only fails because of its `#if` blocks is read as their first branch.
+    const firstBranch = firstConditionalBranch(source);
+    if (firstBranch === undefined) {
+      return result;
+    }
+    const retry = await this.parseOnce(grammar, firstBranch);
+    return retry.outcome === 'ok' ? { ...retry, conditionalCompilation: true } : result;
+  }
+
+  private async parseOnce(grammar: GrammarId, source: string): Promise<ParseResult> {
     this.parser.setLanguage(await this.loadLanguage(grammar));
     const deadline = Date.now() + PARSE_TIMEOUT_MS;
     const tree = this.parser.parse(source, null, {

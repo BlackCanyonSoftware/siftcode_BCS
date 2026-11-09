@@ -89,11 +89,13 @@ async function analyzeAll(
     notes: new Set(),
   };
   const parser = await SyntaxParser.create();
+  let firstBranchFiles = 0;
   try {
     for (const file of sourceFiles) {
       const counts = result.languageCounts;
       counts.set(file.displayName, (counts.get(file.displayName) ?? 0) + 1);
       const analysis = await analyzeFile(file, parser, rules);
+      firstBranchFiles += analysis.conditionalCompilation ? 1 : 0;
       result.findings.push(...analysis.findings);
       result.suppressions.push(...analysis.directives.suppressions);
       analysis.directives.notes.forEach((note) => result.notes.add(note));
@@ -107,6 +109,9 @@ async function analyzeAll(
   } finally {
     parser.dispose();
   }
+  if (firstBranchFiles > 0) {
+    result.notes.add(describeConditionalCompilation(firstBranchFiles));
+  }
   return result;
 }
 
@@ -119,6 +124,15 @@ interface FileAnalysis {
   /** The measured file; absent when it could not be read or parsed cleanly. */
   readonly file?: CodeFile;
   readonly problem?: FileProblem['reason'];
+  /** The file was read as the first branch of its `#if` blocks (C#). */
+  readonly conditionalCompilation?: boolean;
+}
+
+/** The note for C# files that only parse when read as the first branch of their `#if` blocks. */
+function describeConditionalCompilation(count: number): string {
+  const files = count === 1 ? '1 C# file was' : `${count} C# files were`;
+  const them = count === 1 ? 'it does' : 'they do';
+  return `${files} read as the first branch of ${count === 1 ? 'its' : 'their'} #if blocks, because ${them} not parse otherwise: the code under #else and #elif was not checked.`;
 }
 
 async function analyzeFile(
@@ -160,6 +174,7 @@ async function analyzeFile(
     findings: runRules({ ...codeFile, facts: parsed.facts }, rules),
     directives,
     file: codeFile,
+    ...(parsed.conditionalCompilation ? { conditionalCompilation: true } : {}),
   };
 }
 
