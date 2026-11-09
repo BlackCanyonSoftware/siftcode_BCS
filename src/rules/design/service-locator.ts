@@ -19,8 +19,12 @@ const LOCATOR_METHODS = new Set([
   'getexportedvalue',
 ]);
 
-/** `get` is too common to mean "locate" unless the receiver is clearly a container. */
+/**
+ * `get` is too common to mean "locate" unless the object it is called on is a container: its name
+ * must end like one (`this.container.get`, not `this.container.children.get` or `containerElement.get`).
+ */
 const AMBIGUOUS_METHODS = new Set(['get']);
+const CONTAINER_ENDING = /(?:container|locator|injector|kernel|ioc|moduleref|serviceprovider)$/;
 
 /**
  * A receiver whose name says it hands out services. `resolver` is left out: it is as likely a
@@ -97,9 +101,10 @@ export function findLocatorCall(chain: MemberChain): string | undefined {
     if (hop.call && names.length > 0) {
       const receivers = names.map(normalizeName);
       const clearContainer = receivers.some((name) => CONTAINER_NAME.test(name));
+      const calledOn = receivers[receivers.length - 1] ?? '';
       const isLocator = LOCATOR_METHODS.has(method)
         ? clearContainer || receivers.some((name) => PROVIDER_NAME.test(name))
-        : AMBIGUOUS_METHODS.has(method) && clearContainer;
+        : AMBIGUOUS_METHODS.has(method) && CONTAINER_ENDING.test(calledOn);
       if (isLocator) {
         return `${[...shown, hop.name].join('.')}()`;
       }

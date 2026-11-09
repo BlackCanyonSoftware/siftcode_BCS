@@ -254,6 +254,20 @@ describe('SC-DES-002 Service Locator (US-021)', () => {
       'moduleRef.get',
     ]);
   });
+
+  it('judges get by the object it is called on, not by an earlier part of the path', async () => {
+    // found in a bundled jQuery plugin: this.container.children.get(i) asks `children`
+    const folder = await projects.create({
+      'src/a.js':
+        'export const f = () => [this.container.children.get(i), this.containerElement.get(0), self.items.container.get(Foo)];\n',
+    });
+
+    const result = await scan(folder, { config: only('SC-DES-002') });
+
+    expect(result.findings.map((f) => /with (\S+)\(\)/.exec(f.message)?.[1])).toEqual([
+      'self.items.container.get',
+    ]);
+  });
 });
 
 describe('SC-DES-003 class with too many methods (US-022)', () => {
