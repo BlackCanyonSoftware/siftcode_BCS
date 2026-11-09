@@ -88,6 +88,23 @@ export function isCompositionRoot(path: string): boolean {
 }
 
 /**
+ * True when `method`, called on the object reached through `receivers` (normalized names, nearest
+ * the root first), hands out a dependency: a locator method on a container or provider, or the
+ * ambiguous `get` on something that is itself named like a container.
+ */
+function isLocatorMethod(method: string, receivers: readonly string[]): boolean {
+  if (LOCATOR_METHODS.has(method)) {
+    return (
+      receivers.some((name) => CONTAINER_NAME.test(name)) ||
+      receivers.some((name) => PROVIDER_NAME.test(name))
+    );
+  }
+  return (
+    AMBIGUOUS_METHODS.has(method) && CONTAINER_ENDING.test(receivers[receivers.length - 1] ?? '')
+  );
+}
+
+/**
  * The call in `chain` that fetches a dependency, written out as `this.container.get()`, if there is
  * one.
  */
@@ -97,17 +114,12 @@ export function findLocatorCall(chain: MemberChain): string | undefined {
   const names = chain.rootKind === 'name' ? [chain.root] : [];
   const shown = chain.rootKind === 'other' ? [] : [chain.root];
   for (const hop of chain.hops) {
-    const method = normalizeName(hop.name);
-    if (hop.call && names.length > 0) {
-      const receivers = names.map(normalizeName);
-      const clearContainer = receivers.some((name) => CONTAINER_NAME.test(name));
-      const calledOn = receivers[receivers.length - 1] ?? '';
-      const isLocator = LOCATOR_METHODS.has(method)
-        ? clearContainer || receivers.some((name) => PROVIDER_NAME.test(name))
-        : AMBIGUOUS_METHODS.has(method) && CONTAINER_ENDING.test(calledOn);
-      if (isLocator) {
-        return `${[...shown, hop.name].join('.')}()`;
-      }
+    if (
+      hop.call &&
+      names.length > 0 &&
+      isLocatorMethod(normalizeName(hop.name), names.map(normalizeName))
+    ) {
+      return `${[...shown, hop.name].join('.')}()`;
     }
     names.push(hop.name);
     shown.push(hop.name);
