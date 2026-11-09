@@ -89,6 +89,32 @@ function csharpHit(file: AnalyzedFile, call: CallFact): boolean {
   return starts && call.args.some((arg) => arg.value.kind === 'dynamic-string');
 }
 
+/**
+ * `new ProcessStartInfo { Arguments = "-c " + user }` and `info.FileName = $"{user}.exe"`: the
+ * properties that name the program and its arguments, set to a string built from a variable. They
+ * appear as named values, not as arguments of the creation, so they are looked for in files that use
+ * `System.Diagnostics`. A plain variable is not flagged (that needs data-flow analysis, TD-12).
+ */
+function processStartInfoHits(file: AnalyzedFile) {
+  if (file.grammar !== 'csharp' || !importsModule(file, 'System.Diagnostics')) {
+    return [];
+  }
+  return file.facts.namedValues
+    .filter(
+      (entry) =>
+        entry.value.kind === 'dynamic-string' && /(?:^|\.)(?:FileName|Arguments)$/.test(entry.name),
+    )
+    .map((entry) => {
+      const property = entry.name.split('.').pop() ?? entry.name;
+      return {
+        startLine: entry.line,
+        endLine: entry.line,
+        message: `ProcessStartInfo.${property} is built from a variable.`,
+        key: `ProcessStartInfo.${property}`,
+      };
+    });
+}
+
 export const commandInjection = defineRule({
   meta: {
     id: 'SC-SEC-003',
@@ -116,7 +142,7 @@ export const commandInjection = defineRule({
     if (isTestFile(file.path)) {
       return [];
     }
-    return file.facts.calls.flatMap((call) => {
+    const callHits = file.facts.calls.flatMap((call) => {
       const hit =
         file.grammar === 'python'
           ? pythonHit(call)
@@ -134,5 +160,6 @@ export const commandInjection = defineRule({
           ]
         : [];
     });
+    return [...callHits, ...processStartInfoHits(file)];
   },
 });

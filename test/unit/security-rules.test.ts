@@ -323,6 +323,44 @@ describe('SC-SEC-003 command injection (US-030, CWE-78)', () => {
   ])('does not flag %s', async (_name, file, source) => {
     expect(await messagesFor('SC-SEC-003', { [file]: source })).toEqual([]);
   });
+
+  // Found on OWASP WebGoat.NET: the object-initializer and property-assignment forms
+  it.each([
+    [
+      'an object initializer with a concatenated argument list',
+      'using System.Diagnostics;\nclass K { void M(string u) { var i = new ProcessStartInfo { FileName = "sh", Arguments = "-c " + u }; } }',
+      ['ProcessStartInfo.Arguments is built from a variable.'],
+    ],
+    [
+      'an interpolated file name in a multi-line initializer',
+      'using System.Diagnostics;\nclass K {\n  void M(string u) {\n    var i = new ProcessStartInfo\n    {\n      FileName = $"{u}.exe",\n      UseShellExecute = false,\n    };\n  }\n}',
+      ['ProcessStartInfo.FileName is built from a variable.'],
+    ],
+    [
+      'a property assignment',
+      'using System.Diagnostics;\nclass K { void M(string u) { var i = new ProcessStartInfo("sh"); i.Arguments = $"-c {u}"; } }',
+      ['ProcessStartInfo.Arguments is built from a variable.'],
+    ],
+  ])('flags %s in C#', async (_name, source, expected) => {
+    expect(await messagesFor('SC-SEC-003', { 'A.cs': source })).toEqual(expected);
+  });
+
+  it.each([
+    [
+      'constant properties',
+      'using System.Diagnostics;\nclass K { void M() { var i = new ProcessStartInfo { FileName = "git", Arguments = "status" }; } }',
+    ],
+    [
+      'a plain variable (that needs data-flow analysis, TD-12)',
+      'using System.Diagnostics;\nclass K { void M(string cmd, string a) { var i = new ProcessStartInfo { FileName = cmd, Arguments = a }; } }',
+    ],
+    [
+      'the same property names in a file that does not use System.Diagnostics',
+      'class K { void M(string u) { var i = new Options { FileName = "a" + u, Arguments = $"{u}" }; } }',
+    ],
+  ])('does not flag %s in C#', async (_name, source) => {
+    expect(await messagesFor('SC-SEC-003', { 'A.cs': source })).toEqual([]);
+  });
 });
 
 describe('SC-SEC-004 dynamic code evaluation (US-030, CWE-95)', () => {
