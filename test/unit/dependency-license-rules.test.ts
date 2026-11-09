@@ -256,6 +256,31 @@ describe('SC-LIC-008 unclear or missing dependency licenses (US-037)', () => {
     expect(findings).toEqual([]);
   });
 
+  it('leaves out NuGet packages that are not shipped: PrivateAssets="all" and test projects', async () => {
+    const reference = (name: string, attributes = '') =>
+      `<PackageReference Include="${name}" Version="1.0.0" ${attributes}/>`;
+    const csproj = (...references: string[]) =>
+      `<Project Sdk="Microsoft.NET.Sdk"><ItemGroup>${references.join('')}</ItemGroup></Project>`;
+    const findings = await findingsFor('SC-LIC-008', {
+      ...CODE,
+      LICENSE: MIT_TEXT,
+      'src/App/App.csproj': csproj(
+        reference('Shipped.Lib'),
+        reference('Analyzer.Lib', 'PrivateAssets="All"'),
+      ),
+      'src/App.Tests/App.Tests.csproj': csproj(reference('Xunit.Lib')),
+      'src/Other/Other.csproj': csproj(
+        reference('Microsoft.NET.Test.Sdk'),
+        reference('Runner.Lib'),
+      ),
+    });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.path).toBe('src/App/App.csproj');
+    expect(findings[0]?.message).toContain('1 of 1 runtime dependencies');
+    expect(findings[0]?.message).toContain('Shipped.Lib');
+  });
+
   it('reports a license that is not an SPDX expression, one that grants nothing, and a file pointer', async () => {
     const findings = await findingsFor(
       'SC-LIC-008',

@@ -62,6 +62,9 @@ The table can be read as a sheet (`docs/license-table-review.md`, generated). It
 - A synthetic scan of this repository's 171-package lockfile as production dependencies: under MIT, one grouped info finding (12 platform builds of `lightningcss`, MPL-2.0); under GPL-2.0-only, the Apache-2.0 packages are flagged as incompatible, which is correct. Before grouping, the first case was 12 findings.
 - Dogfood: this repository (Apache-2.0, MIT and ISC dependencies) is clean.
 
+## Addendum (2026-11-08): NuGet packages that are not shipped
+A `<PackageReference>` with `PrivateAssets="all"` (analyzers, source generators) and every package of a test project (a `*.Tests` folder, `IsTestProject`, or a reference to `Microsoft.NET.Test.Sdk`) are read as development dependencies, as npm `devDependencies` already are. Found on FluentValidation, where 3 of the 5 license findings were test, benchmark, and analyzer packages; after the change 2 remain, both genuine ("no license information offline" for a Python docs file and a package that was not restored).
+
 ## Consequences
 
 - A license finding is a prompt to look, not a verdict; the messages are conditional ("if it is bundled or linked").

@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { isTestFile } from '../shared.js';
 import type { RepoView } from '../types.js';
 
 export type Ecosystem = 'npm' | 'python' | 'nuget';
@@ -317,28 +318,57 @@ export function classifyNuget(raw: string): Pinning {
     : 'ranged';
 }
 
+/** A project that is built to be tested or measured, so none of its packages ship. */
+function isTestProject(path: string, text: string): boolean {
+  return (
+    isTestFile(path) ||
+    /<IsTestProject>\s*true\s*<\/IsTestProject>/i.test(text) ||
+    /<PackageReference\b[^>]*\bInclude\s*=\s*"Microsoft\.NET\.Test\.Sdk"/i.test(text)
+  );
+}
+
+/** `PrivateAssets="all"` keeps a package (an analyzer, a source generator) out of what consumers get. */
+function isPrivateAsset(attributes: string, body: string): boolean {
+  return (
+    /\bPrivateAssets\s*=\s*"all"/i.test(attributes) ||
+    /<PrivateAssets>\s*all\s*<\/PrivateAssets>/i.test(body)
+  );
+}
+
+/** One `<PackageReference>` element, or nothing when it names no package or version. */
+function packageReference(
+  reference: RegExpMatchArray,
+  text: string,
+  inTestProject: boolean,
+): Dependency | undefined {
+  const attributes = reference[1] ?? '';
+  const body = reference[2] ?? '';
+  const name = /\b(?:Include|Update)\s*=\s*"([^"]+)"/.exec(attributes)?.[1];
+  const version =
+    /\bVersion\s*=\s*"([^"]*)"/.exec(attributes)?.[1] ??
+    /<Version>\s*([^<]*?)\s*<\/Version>/.exec(body)?.[1];
+  if (!name || version === undefined) {
+    return undefined;
+  }
+  // A version taken from a property (`$(Version)`) is not visible here: treat it as a range.
+  const pinning = version.includes('$(') ? 'ranged' : classifyNuget(version);
+  return {
+    name,
+    spec: version,
+    pinning,
+    line: text.slice(0, reference.index).split('\n').length,
+    ...(inTestProject || isPrivateAsset(attributes, body) ? { dev: true } : {}),
+  };
+}
+
 function parseCsproj(path: string, text: string): Manifest {
-  const dependencies: Dependency[] = [];
+  const testProject = isTestProject(path, text);
   const references = text.matchAll(
     /<PackageReference\b([^>]*?)(?:\/>|>([\s\S]*?)<\/PackageReference>)/g,
   );
-  for (const reference of references) {
-    const attributes = reference[1] ?? '';
-    const name = /\b(?:Include|Update)\s*=\s*"([^"]+)"/.exec(attributes)?.[1];
-    const version =
-      /\bVersion\s*=\s*"([^"]*)"/.exec(attributes)?.[1] ??
-      /<Version>\s*([^<]*?)\s*<\/Version>/.exec(reference[2] ?? '')?.[1];
-    if (name && version !== undefined) {
-      // A version taken from a property (`$(Version)`) is not visible here: treat it as a range.
-      const pinning = version.includes('$(') ? 'ranged' : classifyNuget(version);
-      dependencies.push({
-        name,
-        spec: version,
-        pinning,
-        line: text.slice(0, reference.index).split('\n').length,
-      });
-    }
-  }
+  const dependencies = [...references].flatMap((reference) =>
+    optional(packageReference(reference, text, testProject)),
+  );
   const license = /<PackageLicenseExpression>\s*([^<]*?)\s*<\/PackageLicenseExpression>/.exec(
     text,
   )?.[1];
