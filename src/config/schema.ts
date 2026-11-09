@@ -19,6 +19,11 @@ export const configSchema = z.strictObject({
   rules: z.record(z.string(), ruleSetting).default({}),
   /** Exit with code 1 when a finding is at least this severe (the `--fail-on` flag overrides it). */
   failOn: severity.optional(),
+  /**
+   * A baseline file (made by `siftcode baseline`), relative to the scanned folder. Findings it lists
+   * are accepted, so a scan reports and fails on new ones only. The `--baseline` flag overrides it.
+   */
+  baseline: z.string().min(1).optional(),
 });
 
 export type Config = z.output<typeof configSchema>;

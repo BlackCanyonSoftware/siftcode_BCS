@@ -1,10 +1,13 @@
 import { writeFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { loadConfig } from '../config/load.js';
+import type { Config } from '../config/schema.js';
+import type { Baseline } from '../core/baseline.js';
 import { UsageError } from '../core/errors.js';
 import { scan } from '../core/scan.js';
 import { SEVERITIES, isAtLeast } from '../core/severity.js';
 import { REPORT_FORMATS, renderReport } from '../reporters/index.js';
+import { configuredBaselinePath, readBaselineFile } from './baseline-file.js';
 import { EXIT_FINDINGS, EXIT_OK, type Output } from './output.js';
 import { USAGE } from './usage.js';
 import { readVersion } from './version.js';
@@ -17,6 +20,7 @@ export async function scanCommand(args: readonly string[], output: Output): Prom
       format: { type: 'string', short: 'f' },
       output: { type: 'string', short: 'o' },
       config: { type: 'string', short: 'c' },
+      baseline: { type: 'string' },
       'fail-on': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
     },
@@ -34,7 +38,8 @@ export async function scanCommand(args: readonly string[], output: Output): Prom
   const flagFailOn = chooseOption('--fail-on', values['fail-on'], SEVERITIES);
 
   const config = await loadConfig({ scanPath: path, configPath: values.config });
-  const result = await scan(path, { config });
+  const baseline = await loadBaseline(path, config, values.baseline);
+  const result = await scan(path, { config, ...(baseline === undefined ? {} : { baseline }) });
   const report = renderReport(format, result, { version: readVersion() });
 
   if (values.output === undefined) {
@@ -47,6 +52,16 @@ export async function scanCommand(args: readonly string[], output: Output): Prom
   const failOn = flagFailOn ?? config.failOn;
   const failed = failOn !== undefined && result.findings.some((f) => isAtLeast(f.severity, failOn));
   return failed ? EXIT_FINDINGS : EXIT_OK;
+}
+
+/** The baseline named by the flag or the config, or `undefined` when the scan has none. */
+async function loadBaseline(
+  scanPath: string,
+  config: Config,
+  flag: string | undefined,
+): Promise<Baseline | undefined> {
+  const file = await configuredBaselinePath(scanPath, config, flag);
+  return file === undefined ? undefined : readBaselineFile(file);
 }
 
 /** Returns the value if it is one of `choices`, undefined if the flag was not given. */

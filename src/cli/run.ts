@@ -1,4 +1,5 @@
 import { UsageError } from '../core/errors.js';
+import { baselineCommand } from './baseline-command.js';
 import { explainCommand } from './explain-command.js';
 import { EXIT_OK, EXIT_USAGE, type Output } from './output.js';
 import { scanCommand } from './scan-command.js';
@@ -35,6 +36,8 @@ async function dispatch(argv: readonly string[], output: Output): Promise<number
       return EXIT_OK;
     case 'scan':
       return scanCommand(args, output);
+    case 'baseline':
+      return baselineCommand(args, output);
     case 'explain':
       return explainCommand(args, output);
     default:
