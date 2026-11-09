@@ -13,8 +13,8 @@ missing design documentation. For each finding it names the standard behind it a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
 > **Status: early development (Milestone 5).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF) work, with 38 rules for JavaScript/TypeScript, Python, and C#:
-> five code metrics, five design heuristics, seven security checks, seven supply-chain checks,
+> (terminal, JSON, Markdown, SARIF) work, with 39 rules for JavaScript/TypeScript, Python, and C#:
+> six code metrics, five design heuristics, seven security checks, seven supply-chain checks,
 > five design-documentation checks, eight license checks, and a hotspot ranking. More rules arrive in the next milestones; see the
 > [roadmap](docs/ROADMAP.md).
 
@@ -106,6 +106,7 @@ rationale, the standards behind it, and an example.
 | `SC-MET-003` | Too many parameters | `maxParameters` (5) | info |
 | `SC-MET-004` | Control structures nested too deeply | `maxDepth` (4) | info |
 | `SC-MET-005` | Low Maintainability Index (0 to 100) | `minIndex` (20) | info |
+| `SC-MET-006` | File is too long (test, vendored, and generated files are left out) | `maxLines` (500) | info |
 | `SC-SUP-001` | Dependencies with no lockfile | none | warning; info for `pyproject.toml` and NuGet |
 | `SC-SUP-002` | A dependency accepts any version (`*`, `latest`, no version) | none | warning |
 | `SC-SUP-003` | A dependency comes from a git repository or web address | none | warning; info if pinned to a commit |

@@ -49,10 +49,25 @@ Absolute values are specific to this definition and are not comparable with othe
 Visual Studio's 0 to 100 form of the Oman and Hagemeister index: `max(0, (171 - 5.2 ln V - 0.23 G - 16.2 ln LOC) * 100 / 171)`, capped at 100, using unrounded V, cyclomatic complexity G, and `codeLines` as LOC. Code with no tokens scores 100. Microsoft's bands: 20 and above good, 10 to 19 moderate, below 10 low. Default rule threshold: **below 20**, on functions and methods.
 
 ### Rules shipped
-`SC-MET-001` function length, `SC-MET-002` cyclomatic complexity (default severity `warning`, high confidence; the others are heuristics at `info`), `SC-MET-003` parameter count, `SC-MET-004` nesting depth, `SC-MET-005` maintainability index of a function. Every limit is a rule option. All measures, for every file and function, are also in the JSON report under `metrics`.
+`SC-MET-001` function length, `SC-MET-002` cyclomatic complexity (default severity `warning`, high confidence; the others are heuristics at `info`), `SC-MET-003` parameter count, `SC-MET-004` nesting depth, `SC-MET-005` maintainability index of a function, `SC-MET-006` file length (added after the milestone; see below). Every limit is a rule option. All measures, for every file and function, are also in the JSON report under `metrics`.
 
-### No file-level maintainability rule
-A file-level rule (`SC-MET-006`) was built and removed. Tested on real code, the index at file level is almost entirely a function of file length: median 15 for files of 300 to 600 lines, 3 for 600 to 1,000, and 0 (clamped) beyond that. At Microsoft's threshold of 20 it flagged 38% of the Python standard library's files (693 of 1,823) and 21% of ESLint's, and below 10 still 24% and 8%, so it cannot separate "long" from "bad". The file-level figure stays in the JSON report. A file-size rule can be added if it is wanted, under its own name.
+### File length, not a file-level maintainability index (`SC-MET-006`)
+A file-level rule on the index was built and removed. Tested on real code, the index at file level is almost entirely a function of file length: median 15 for files of 300 to 600 lines, 3 for 600 to 1,000, and 0 (clamped) beyond that. At Microsoft's threshold of 20 it flagged 38% of the Python standard library's files (693 of 1,823) and 21% of ESLint's, and below 10 still 24% and 8%, so it cannot separate "long" from "bad". The file-level figure stays in the JSON report. The owner asked for the plain file-size rule that this points to, and it is now `SC-MET-006` (the id was free: the index rule never shipped).
+
+**Definition.** Physical lines of the file (the same figure as `lines` in the JSON report; ESLint `max-lines` and Pylint `too-many-lines` count the same way). Default limit **500**, severity `info`, confidence medium. Test code, vendored folders, and generated files are left out: a C# `.g.cs`, `.generated.`, or `.Designer.cs` file, protobuf output (`_pb2.py`), minified bundles, and `migrations` folders. The message adds how many functions and methods the file holds, so the reader can tell a file of one big table from a file doing several jobs.
+
+**Why 500.** Martin (Clean Code, chapter 5) gives about 200 lines as typical and 500 as an upper bound; ESLint defaults to 300, SonarQube to 750, and Pylint to 1,000. On 1,931 non-test source files from 20 corpora (19 local repositories plus ESLint `lib` and FluentValidation, most of them small tools), the median file is 126 lines and the 90th and 95th percentiles are 436 and 601:
+
+| Limit | Files over it |
+|---|---|
+| 300 | 355 (18.4%) |
+| 400 | 221 (11.4%) |
+| **500** | **144 (7.5%)** |
+| 600 | 99 (5.1%) |
+| 750 | 58 (3.0%) |
+| 1,000 | 35 (1.8%) |
+
+At 500 the rule points at about one file in thirteen, where the index flagged a third of the Python standard library. The longest files include data tables (a 10,417-line public-suffix list) that the generated-file exclusions cannot recognize; the suggestion says to exclude such a file in the config.
 
 ## Calibration evidence (2026-11-05, default thresholds)
 | Code scanned | Files | Functions | SC-MET-001 | SC-MET-002 | SC-MET-003 | SC-MET-004 | SC-MET-005 |

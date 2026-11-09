@@ -23,6 +23,7 @@ import {
   unrecognizedLicenseFile,
 } from './licenses/project-license-rules.js';
 import { cyclomaticComplexity } from './metrics/cyclomatic-complexity.js';
+import { fileLength } from './metrics/file-length.js';
 import { functionLength } from './metrics/function-length.js';
 import { unitMaintainabilityIndex } from './metrics/maintainability-index.js';
 import { nestingDepth } from './metrics/nesting-depth.js';
@@ -73,6 +74,7 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   parameterCount,
   nestingDepth,
   unitMaintainabilityIndex,
+  fileLength,
   hardcodedCredentials,
   sqlInjection,
   commandInjection,

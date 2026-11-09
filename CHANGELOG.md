@@ -22,6 +22,14 @@ All notable user-visible changes are recorded here. The format follows
 - Code metrics for JavaScript, TypeScript, Python, and C#, measured the same way in every
   language: cyclomatic complexity, Halstead measures, Maintainability Index, lines of code,
   nesting depth, and parameter count. The JSON report lists them for every file and function.
+- `SC-MET-006`: a file longer than a limit (default 500 lines). Test code, vendored folders, and
+  generated files (C# `.g.cs` and `.Designer.cs`, protobuf output, minified bundles, `migrations`
+  folders) are left out. The message gives the length and how many functions the file holds.
+- .NET test projects (`App.Tests`, `App.UnitTests`, `AppTests`, `*.Benchmarks`) and `*Tester.cs`
+  files now count as test code, so rules that skip tests skip them. A name such as `Contest.cs` or
+  `protest.py` no longer counts as a test file by mistake.
+- NuGet packages marked `PrivateAssets="all"` and every package of a test project are treated as
+  development dependencies, so the dependency license checks leave them out.
 - Rules `SC-MET-002` (cyclomatic complexity, default limit 10), `SC-MET-003` (parameters, 5),
   `SC-MET-004` (nesting depth, 4), and `SC-MET-005` (Maintainability Index below 20), each with
   a configurable limit, the standards behind it, and a suggested fix.
