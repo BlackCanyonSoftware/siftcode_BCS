@@ -22,6 +22,16 @@ All notable user-visible changes are recorded here. The format follows
 - Code metrics for JavaScript, TypeScript, Python, and C#, measured the same way in every
   language: cyclomatic complexity, Halstead measures, Maintainability Index, lines of code,
   nesting depth, and parameter count. The JSON report lists them for every file and function.
+- Baseline and inline suppressions. `siftcode baseline <path>` writes `siftcode-baseline.json`;
+  `siftcode scan --baseline <file>` (or `"baseline"` in the config) accepts the findings it lists, so a
+  scan reports and fails on new findings only. A comment such as
+  `// siftcode-ignore SC-MET-001: reason` accepts one finding in the code (`siftcode-ignore-file` for a
+  whole file); the rule id and a reason are required. Accepted findings are counted in the text and
+  Markdown reports and listed in the JSON report (`accepted`) and the SARIF report (as
+  `suppressions`). Comments that are malformed, that name an unknown rule, or that match nothing, and
+  baseline entries that no longer occur, are reported under Notes.
+- SARIF reports now carry the scan notes (for example "Git history skipped") as note-level
+  notifications.
 - `SC-MET-006`: a file longer than a limit (default 500 lines). Test code, vendored folders, and
   generated files (C# `.g.cs` and `.Designer.cs`, protobuf output, minified bundles, `migrations`
   folders) are left out. The message gives the length and how many functions the file holds.
