@@ -1,0 +1,142 @@
+name: Release
+
+# Builds, verifies, and attests the package for a version tag (v0.1.0) or by hand, and publishes it to
+# npm only after the owner approves the `npm` environment. Nothing is published by running the build
+# job: start with "Run workflow" and publish unticked to see everything except the publish.
+# Setup and the release steps are in docs/RELEASING.md.
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Also publish to npm (waits for approval of the npm environment)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build, verify, and attest the package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # to sign the provenance and SBOM attestations
+      attestations: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Read the version, and check it against the tag
+        id: meta
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::The tag ${GITHUB_REF_NAME} does not match package.json version ${version}. Bump the version, commit, and tag again."
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:e2e
+      - name: Scan this repository with SiftCode
+        run: node dist/cli/main.js scan . --fail-on warning
+      - run: npm audit --omit=dev
+
+      - name: Verify the package as a user would receive it
+        run: npm run release:check
+
+      # make-sbom.mjs, not `npm sbom --omit dev`: that leaves out a production dependency that also
+      # appears at another version in the dev tree. The script fails if the SBOM is incomplete.
+      - name: Pack the tarball and write its SBOM
+        run: |
+          mkdir release
+          npm pack --pack-destination release
+          node scripts/make-sbom.mjs "release/siftcode-${{ steps.meta.outputs.version }}.cdx.json"
+          ls -l release
+
+      - name: Attest the build provenance of the tarball
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/siftcode-*.tgz
+      - name: Attest the SBOM of the tarball
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: release/siftcode-*.tgz
+          sbom-path: release/siftcode-${{ steps.meta.outputs.version }}.cdx.json
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: release
+          if-no-files-found: error
+          retention-days: 30
+
+      # `npm publish` refuses a private package even for a dry run, so the flag is cleared on this
+      # runner's copy only. This shows what a publish would send and that the name and metadata are
+      # accepted, without publishing.
+      - name: Dry-run the publish
+        run: |
+          npm pkg set private=false
+          npm publish --dry-run
+
+  publish:
+    name: Publish to npm
+    needs: build
+    if: github.event_name == 'push' || inputs.publish
+    runs-on: ubuntu-latest
+    # Create this environment in the repository settings and add the owner as a required reviewer:
+    # the publish waits for that approval. See docs/RELEASING.md.
+    environment: npm
+    permissions:
+      contents: write # to create the GitHub release
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: release
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Refuse to publish a package that is still private
+        run: |
+          tar -xzOf release/siftcode-*.tgz package/package.json | node -e '
+            let text = "";
+            process.stdin.on("data", (chunk) => (text += chunk)).on("end", () => {
+              const manifest = JSON.parse(text);
+              if (manifest.private) {
+                console.error("package.json still says \"private\": true. Remove it in the release commit (docs/RELEASING.md) and tag again.");
+                process.exit(1);
+              }
+              console.log(`Publishing ${manifest.name}@${manifest.version}`);
+            });'
+
+      - name: Publish with provenance
+        run: npm publish release/siftcode-*.tgz --provenance --access public
+        env:
+          # Leave NPM_TOKEN unset if the package uses npm trusted publishing (OIDC).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create the GitHub release with the tarball and the SBOM
+        if: github.ref_type == 'tag'
+        run: gh release create "${GITHUB_REF_NAME}" release/* --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
