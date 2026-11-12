@@ -4,7 +4,7 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M7 (testing-readiness hints, dogfood gate, release prep) is in progress. M0 to M6 are pushed and CI is green on all four jobs (Node 24 and 26 on Ubuntu and Windows), checked at commit 6ca6bcf on 2026-11-12.
+- **Now:** M7 is built and committed; the owner reviews, pushes, and publishes. M0 to M6 are pushed and CI is green on all four jobs (Node 24 and 26 on Ubuntu and Windows), checked at commit 6ca6bcf on 2026-11-12.
 - **Next:** the owner publishes 0.1.0 (see docs/RELEASING.md).
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
@@ -78,10 +78,11 @@ Exit: WCAG 2.2 AA checks pass (automated plus a keyboard pass); light/dark toggl
 Stories: US-005, US-070.
 Result: `--format html` (a self-contained report on the brand's Carbon styles: summary, hotspots, filters and search, light and dark theme, (i) buttons, copyable examples, accepted findings, a strict content policy), `siftcode baseline` with `--baseline` and a `baseline` config key, `siftcode-ignore` comments that need a rule id and a reason, SARIF suppressions and notifications, and `explain` that lists the rules, accepts loose ids, suggests the nearest on a typo, and shows settings and how to accept a finding. Decisions and evidence: [ADR 0011](adr/0011-baseline-and-suppressions.md) and [ADR 0012](adr/0012-html-report.md).
 
-### M7: Testing-readiness, dogfood gate, and 0.1.0 release prep (M, planned)
+### M7: Testing-readiness, dogfood gate, and 0.1.0 release prep (M, done except the owner's publish)
 Goal: readiness hints (US-050 to US-052), CI dogfood gate (US-072), release pipeline with SBOM and provenance, GitHub Action wrapper (Could), npm publish dry run.
 Exit: `npm pack` contents reviewed; SBOM generated; dry-run publish succeeds; the owner publishes.
 Stories: US-050 to US-052, US-072.
+Result: the dogfood gate in `ci.yml`; six readiness rules (`SC-TST-001` to `003`, `SC-RES-001` to `003`) calibrated on 23 repositories; `npm pack` reviewed (350 to 246 files, no source maps, changelog shipped); `npm run release:check` (pack, review, install into an empty project, run); `npm run sbom` rebuilt because `npm sbom --omit dev` left out a production dependency; `release.yml` (build, verify, attest provenance and SBOM, publish after approval); `docs/RELEASING.md`; dry-run publish succeeded locally. Left to the owner: the npm account and `npm` environment, the version and changelog, removing `"private": true`, the first manual workflow run, and the tag. Decisions and evidence: [ADR 0014](adr/0014-release-pipeline-and-readiness-rules.md).
 
 ## Deferred tracks (not scheduled)
 
@@ -124,6 +125,9 @@ There are no TODO comments in the code. Every future TODO must have an entry her
 | TD-21 | The HTML report's browser script (`assets/report/report.js`) has no automated tests, and no accessibility engine (axe-core) was run: the contrast, structure, and keyboard audit was a script and a manual pass in a browser (ADR 0012). No screen reader was used. | Medium | Add a browser test (Playwright) with an axe run, when a test browser is acceptable as a dev dependency |
 | TD-22 | A baseline can hide a finding forever and has no review date; a `siftcode-ignore` comment has no expiry either. Renaming a file makes its baselined findings reappear. | Low | Add optional expiry dates if teams ask (ADR 0011) |
 | TD-23 | Two brand color pairs measured below 4.5:1 (the muted label on a dark card, and a ghost button on its hover wash in the light theme); the report overrides them with the ink color. Filed with the brand library as `2026-11-08-siftcode-carbon-contrast-pairs` (category C, priority nice). | Low | Re-sync when the brand ships a fix; delete the two overrides in `assets/report/report.css` |
+| TD-27 | `SC-TST-002` fires on most projects (17 of 23 reviewed) and `SC-RES-002` points at code that sets a timeout, so neither is a defect; both are one-line config switches. `SC-RES-002` reports once per file to limit the noise. | Low | Revisit severity or defaults if users find them noisy |
+| TD-28 | `SC-TST-003` and `SC-RES-003` read source files as text and so can match an API name in a comment or string; `SC-RES-001` sees only module-level calls (`requests.get`, `fetch`, `axios.get`), not a configured client such as a `requests.Session`. | Low | Move the checks onto the syntax facts if false positives appear |
+| TD-29 | The release workflow has not run on GitHub. Locally verified: the YAML, pinned actions, the tag-versus-version rule, the private-package guard, the package verification, the SBOM, and the dry-run publish. Not verified: the two attestation steps, the artifact upload and download, and the environment approval. The optional GitHub Action wrapper was not built. | Medium | The first run is a manual run with "publish" unticked (docs/RELEASING.md step 7) |
 | TD-26 | `SC-DOC-006` has found one stale document across nine repositories, so its precision is shown by tests and by silence on current documents, not by a count of true positives. It does not know that a missing name was kept deliberately for history, or that a file is generated at run time. It checks source files only, by name. | Low | Add identifiers (classes and functions a document names) if real misses are found |
 | TD-24 | C# 14 `extension(...)` blocks cannot be parsed: `tree-sitter-c-sharp` 0.23.5 is the latest published grammar. Files that use them are reported as "not checked" (CliWrap has one). | Low | Upgrade the grammar when a release supports them |
 | TD-25 | `SC-DES-001` still reports fluent chains whose value is used and that pass through property sub-configurators, for example Serilog's `new LoggerConfiguration().ReadFrom.Configuration().Enrich.FromLogContext().WriteTo.Console().CreateLogger()` (9 left across the C# repositories reviewed, all fluent APIs). Rule is `info` at low confidence. | Low | Recognize a `Create*` or `Build*` terminal after property hops if it comes up in more projects |

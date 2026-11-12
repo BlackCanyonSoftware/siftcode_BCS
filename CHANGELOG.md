@@ -22,6 +22,15 @@ All notable user-visible changes are recorded here. The format follows
 - Code metrics for JavaScript, TypeScript, Python, and C#, measured the same way in every
   language: cyclomatic complexity, Halstead measures, Maintainability Index, lines of code,
   nesting depth, and parameter count. The JSON report lists them for every file and function.
+- Testing-readiness and resilience hints, all at information or note level: `SC-TST-001` (no automated
+  tests found), `SC-TST-002` (tests, but no mutation, property-based, or fuzz testing tool), `SC-TST-003`
+  (code that reads binary data, with no fuzz target), `SC-RES-001` (a `requests`, `urlopen`, `fetch`, or
+  `axios` call with no timeout), `SC-RES-002` (a timeout written into the call, one note per file), and
+  `SC-RES-003` (several files call remote services and there is no retry or circuit-breaker library).
+  An `e2e` folder now counts as test code.
+- `siftcode` scans its own source in CI and fails on any finding at warning or above.
+- `npm run sbom` writes a complete SBOM (the previous command left out a production dependency), and
+  `npm run release:check` verifies the package as a user would receive it.
 - `SC-DOC-006`: a design document that names at least two source files that are not in the project (in
   inline code or relative links; code blocks, placeholders, and patterns are left out). It reads files only
   and found the one verifiably out-of-date architecture document in pip.

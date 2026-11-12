@@ -20,6 +20,11 @@ npm test
 packages are dev-only; `npm run build:grammars` copies their compiled `.wasm` files into
 `grammars/` (generated, git-ignored). See [ADR 0003](docs/adr/0003-toolchain-and-install-policy.md).
 
+## Releasing
+
+Only the owner publishes. The steps, the one-time setup, and what is automated are in
+[docs/RELEASING.md](docs/RELEASING.md); `npm run release:check` verifies the package locally.
+
 ## Workflow
 
 1. Pick an item from [docs/ROADMAP.md](docs/ROADMAP.md); read its story IDs in the PRD.

@@ -12,9 +12,9 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
-- 40 rules. Metrics `SC-MET-001` to `006`; design `SC-DES-001` to `005`; security
+- 46 rules. Metrics `SC-MET-001` to `006`; design `SC-DES-001` to `005`; security
   `SC-SEC-001` to `007` (each mapped to a CWE entry); supply chain `SC-SUP-001` to `007`;
-  design documentation `SC-DOC-001` to `004` (ADR 0008) and `SC-DOC-006` (files a document names that are gone; ADR 0013); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
+  design documentation `SC-DOC-001` to `004` (ADR 0008) and `SC-DOC-006` (files a document names that are gone; ADR 0013); testing `SC-TST-001` to `003` and resilience `SC-RES-001` to `003` (ADR 0014); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
   (stale design documents; ADR 0010).
   All limits are rule options. Design and
   security rules skip test code; a recognizable credential format is reported even in tests.
@@ -49,12 +49,12 @@ None.
 
 ## Next steps
 
-1. Owner pushes what is committed here and confirms CI.
-2. **Start M7: testing-readiness hints, dogfood gate, and 0.1.0 release prep** (US-050 to US-052,
-   US-072; scope in `docs/ROADMAP.md`). Release prep includes the SBOM and provenance, `npm pack`
-   review (the HTML report needs `assets/` in the package; `npm pack --dry-run` was checked in M6), a
-   dry-run publish, and the owner publishes. Consider TD-21 (a browser test with an accessibility
-   engine) before the first release.
+1. Owner pushes what is committed here and confirms CI (it now includes the dogfood scan).
+2. **Owner releases 0.1.0** by following `docs/RELEASING.md`: npm account and `npm` environment, version and
+   changelog, remove `"private": true`, a manual run of the Release workflow with publish unticked, then
+   the tag. The workflow has not run on GitHub yet (TD-29).
+3. Optional before the first release: TD-21 (a browser test with an accessibility engine; needs a test
+   browser as a dev dependency, so ask first), the GitHub Action wrapper, and the open TDs.
 
 ## Open questions for the owner
 
@@ -95,6 +95,7 @@ None.
 - **Open brand request:** `2026-11-08-siftcode-carbon-contrast-pairs` in `Brand Logos/requests/inbox/` (TD-23); the report's two color overrides come out when the brand ships the fix and the bundle is re-synced.
 - **Real-world corpus (ADR 0013):** clone these into a scratch folder to repeat the review: OWASP/WebGoat.NET, Tyrrrz/CliWrap, ardalis/CleanArchitecture, kgrzybek/modular-monolith-with-ddd, pallets/flask, pallets/click, pypa/pip (all full history). A scan of pip takes about 11 s. Read the findings against the code; every rule change in ADR 0013 came from doing that.
 - Calibration corpora also include FluentValidation (C#, cloned to a temp folder; `git clone` it again to reuse) and the owner's school assignment under `Desktop/GCC School Stuff` (35 C# files, no design docs). `docs/adr/0005` has the file-size distribution.
+- **The SBOM must come from `make-sbom.mjs`**, never `npm sbom --omit dev`: that command drops `ignore` (production at 7.0.14, development at 5.3.2 under ESLint) and looks complete. `npm publish` also refuses a `private` package even for a dry run; the release workflow clears the flag on the runner only.
 - **`assets/brand/` is generated.** Never edit it; run `brandkit bundle siftcode assets/brand` and `brandkit check siftcode assets/brand` after a brand rebuild, then regenerate a sample report and re-run the contrast audit (the report's two color overrides depend on the brand's token values, TD-23). Prettier and ESLint skip it.
 - **Checking the HTML report in a browser:** the built-in browser cannot open `file://`; serve the report over localhost (a tiny static `node:http` server) and open the URL. A hidden browser pane freezes CSS transitions, so a contrast script that flips the theme must disable transitions first or it measures half-animated colors (this produced two false findings in M6).
 - **The `siftcode-ignore` directive must start its comment line** (after one comment opener). Documentation comments that mention or quote it, including this repository's own, are ignored on purpose.
@@ -144,6 +145,7 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-12, session 1 (continued):** Milestone 7 (ADR 0014). Corrected the stale "unpushed, CI not run" statements (everything through M6 was pushed and green). Added the dogfood gate to CI, reviewed `npm pack` (350 to 246 files), wrote `verify-package.mjs`, found that `npm sbom --omit dev` omits a production dependency and replaced it with `make-sbom.mjs` plus a test, wrote `release.yml` and `docs/RELEASING.md`, ran a dry-run publish locally, and built six readiness rules calibrated on 23 repositories (the first pass found five false-positive classes). Found and fixed a missing timeout in this repository's own schema-download script. 1151 unit and 8 end-to-end tests.
 - **2026-11-08, session 1 (continued):** Built `SC-DOC-006` (design documents that name source files that are not in the project) from the pip finding in ADR 0013; checked it on nine repositories (one real stale document found, no other findings) and corrected an overcount in the ADR (2 missing files in pip's `anatomy.rst`, not 6).
 - **2026-11-08, session 1 (continued):** Owner supplied no repositories and asked me to find trustworthy ones. Cloned WebGoat.NET, CliWrap, CleanArchitecture, modular-monolith-with-ddd, Flask, Click, and pip, and read their findings against the code (ADR 0013). Fixed: fluent chains and composition roots in the design rules, vendored code in metric and design rules, `SC-DOC-005` coverage of nested docs and its counting of tests, decision-log folders, C# files with `#if`, `ProcessStartInfo` initializers, minified files. Filed the contrast request with the brand library. 1023 unit tests.
 - **2026-11-08, session 1 (continued):** Milestone 6 (HTML report, baseline and suppressions, `explain` polish; ADR 0011 and 0012): accepted findings (comments and baseline) in every report, the Carbon HTML report built on the brand's app set with a strict content policy, SARIF suppressions and notifications, `explain` list, loose ids, typo suggestions, settings and acceptance help. Checked in a browser at 375/768/1280 px (contrast in both themes, structure, keyboard, behavior). 961 unit and 8 end-to-end tests.

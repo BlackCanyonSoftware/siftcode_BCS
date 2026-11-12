@@ -20,6 +20,8 @@ npm run build           # copy grammars + compile to dist
 npm run build:licenses  # refresh data/licenses from the SPDX list (dev dependency; committed output)
 npm test                # unit tests (test/unit); downloads the SARIF schema on first run
 npm run benchmark       # build, then time a scan of a generated 50k-line project
+npm run release:check   # build, pack, review the tarball, install it into an empty project, run it
+npm run sbom            # CycloneDX SBOM of the shipped dependencies (checked for completeness)
 npm run test:e2e        # build, then run the built CLI (test/e2e)
 npm run lint            # ESLint strict type-checked
 npm run typecheck       # tsc --noEmit
@@ -44,7 +46,8 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 - `assets/brand/` the brand's application set (`brandkit bundle siftcode assets/brand`, then `brandkit check`; never edit); `assets/report/` the report's own CSS and browser script
 - `src/git/` read-only Git history (runs the `git` program; ADR 0010); rules get it through `RepoView.git()`
 - `data/licenses/` generated SPDX ids and license texts (committed, shipped; ADR 0009)
-- `scripts/` build helpers; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored
+- `.github/workflows/` `ci.yml` (checks, dogfood scan) and `release.yml` (build, verify, attest, publish after approval; docs/RELEASING.md)
+- `scripts/` build helpers, `verify-package.mjs`, `make-sbom.mjs`; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored
 - `test/unit`, `test/e2e`, `test/helpers`, `test/fixtures/rules/<rule-id>/{positive,negative}`
 
 Adding a rule: new file under `src/rules/<area>/`, register it in `src/rules/index.ts` (keep the

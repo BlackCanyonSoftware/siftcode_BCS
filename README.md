@@ -12,11 +12,12 @@ complexity metrics, design principles, security weaknesses, supply-chain hygiene
 missing design documentation. For each finding it names the standard behind it and suggests a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
-> **Status: early development (Milestone 6).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF, HTML) work, with 40 rules for JavaScript/TypeScript, Python, and C#:
+> **Status: early development (Milestone 7).** The engine, configuration, and report formats
+> (terminal, JSON, Markdown, SARIF, HTML) work, with 46 rules for JavaScript/TypeScript, Python, and C#:
 > six code metrics, five design heuristics, seven security checks, seven supply-chain checks,
-> six design-documentation checks, eight license checks, and a hotspot ranking. More rules arrive in the next milestones; see the
-> [roadmap](docs/ROADMAP.md).
+> six design-documentation checks, eight license checks, three testing-readiness checks, three
+> resilience checks, and a hotspot ranking. See the [roadmap](docs/ROADMAP.md); the first release is
+> prepared in [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Quick start
 
@@ -156,6 +157,9 @@ rationale, the standards behind it, and an example.
 | `SC-MET-004` | Control structures nested too deeply | `maxDepth` (4) | info |
 | `SC-MET-005` | Low Maintainability Index (0 to 100) | `minIndex` (20) | info |
 | `SC-MET-006` | File is too long (test, vendored, and generated files are left out) | `maxLines` (500) | info |
+| `SC-RES-001` | A remote call (requests, urlopen, fetch, axios) has no timeout (CWE-400) | none | info |
+| `SC-RES-002` | A timeout is a constant written into the call (one note per file) | none | note |
+| `SC-RES-003` | Several files call remote services, and there is no retry or circuit-breaker library | `minFiles` (3) | note |
 | `SC-SUP-001` | Dependencies with no lockfile | none | warning; info for `pyproject.toml` and NuGet |
 | `SC-SUP-002` | A dependency accepts any version (`*`, `latest`, no version) | none | warning |
 | `SC-SUP-003` | A dependency comes from a git repository or web address | none | warning; info if pinned to a commit |
@@ -163,6 +167,9 @@ rationale, the standards behind it, and an example.
 | `SC-SUP-005` | Dependencies but no Dependabot or Renovate configuration | none | info |
 | `SC-SUP-006` | Dependencies but no SBOM or SBOM generation step | none | note |
 | `SC-SUP-007` | No secret scanner configured | none | note |
+| `SC-TST-001` | No automated tests found | `minSourceFiles` (20) | warning; note for a small project |
+| `SC-TST-002` | Tests, but no mutation, property-based, or fuzz testing tool | `minSourceFiles` (20) | note |
+| `SC-TST-003` | Binary decoder in a project with no fuzz target | `minReads` (3), `maxFiles` (5) | info |
 
 The security rules (`SC-SEC-*`) look for well-known risky patterns in the syntax; they cannot tell
 whether a value comes from an untrusted source, so they report at `warning`, skip test code, and
@@ -180,6 +187,15 @@ and fenced diagram blocks (Mermaid, PlantUML, D2, draw.io, ADRs, C4, OpenAPI, an
 [ADR 0008](docs/adr/0008-repository-hygiene.md). `SC-SUP-006` and `SC-SUP-007` cannot see settings
 kept on the hosting platform (such as GitHub secret scanning); switch a rule off with
 `"SC-SUP-007": { "enabled": false }`.
+
+The testing and resilience hints (`SC-TST-*`, `SC-RES-*`) are suggestions, not defects, and are
+reported at information or note level (a project with no tests at all is a warning once it has 20 source
+files). They look at files and dependency manifests, and for calls at the syntax: `SC-RES-001`, the one
+with a known failure mode (`requests` has no default timeout, so a slow server hangs the caller), stays
+quiet when a timeout may be supplied where it cannot see (`**kwargs`, a configured client), and ignores
+same-origin and localhost requests. `SC-TST-002` fires on most projects (they have example tests and
+nothing else); switch it off with `"SC-TST-002": { "enabled": false }` if it is not useful. Decisions and
+evidence: [ADR 0014](docs/adr/0014-release-pipeline-and-readiness-rules.md).
 
 `SC-DOC-006` reads files only: it takes the source file paths a design document names in inline code and
 links (not in code blocks, and not placeholders or patterns) and reports the document when at least two of
@@ -237,7 +253,8 @@ Optional `siftcode.config.json` in the scanned folder. Unknown keys are rejected
 | ------------------------ | --------------------------------------------------------------------------- |
 | `npm run build`          | Copies the grammars into `grammars/` and compiles TypeScript to `dist`      |
 | `npm run build:licenses` | Refreshes `data/licenses` from the SPDX list (dev dependency, committed)    |
-| `npm run sbom`           | Writes a CycloneDX bill of materials (`sbom.cdx.json`)                      |
+| `npm run sbom`           | Writes a complete CycloneDX bill of materials of the shipped dependencies   |
+| `npm run release:check`  | Builds, packs the package, checks it, installs it into an empty project, runs it |
 | `npm run dev`            | Recompiles on change                                                        |
 | `npm test`               | Unit tests (downloads the SARIF schema on first run)                        |
 | `npm run test:e2e`       | Builds, then runs the built CLI end to end                                  |
