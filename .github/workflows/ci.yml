@@ -19,6 +19,10 @@ jobs:
         node: [24, 26]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history, so the Git rules (hotspots, design-document freshness) in the dogfood
+          # scan below see what a real project's scan would.
+          fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
@@ -29,5 +33,21 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run test:e2e
+      # Dogfood (US-072): SiftCode scans its own source and fails on any finding at warning or
+      # above. Information-level findings (such as the hotspot ranking) are reported, not failed.
+      # The build is already in dist/ from the end-to-end step.
+      - name: Scan this repository with SiftCode
+        run: node dist/cli/main.js scan . --fail-on warning
+      - name: Write the HTML report of that scan
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.node == 24
+        run: node dist/cli/main.js scan . --format html --output siftcode-report.html
+      - name: Keep the report
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.node == 24
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: siftcode-report
+          path: siftcode-report.html
+          if-no-files-found: warn
+          retention-days: 14
       # Production dependencies must be clean. Dev-only findings are tracked in docs/ROADMAP.md.
       - run: npm audit --omit=dev
