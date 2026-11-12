@@ -40,7 +40,7 @@ export function isVendored(path: string): boolean {
 }
 
 /** Test code is written differently (many small test methods, mocks, fixtures); most rules skip it. */
-const TEST_FOLDERS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', '__mocks__']);
+const TEST_FOLDERS = new Set(['test', 'tests', '__tests__', 'spec', 'specs', 'e2e', '__mocks__']);
 /** Dot-separated parts of a .NET project folder: `App.Tests`, `App.UnitTests`, `App.Tests.Benchmarks`. */
 const TEST_PROJECT_PART = /^(?:(?:unit|integration|functional|acceptance|e2e)?tests?|benchmarks?)$/;
 /** Names in any case style: `test_x.py`, `x_test.go`, `x.test.ts`, `test.py`. */

@@ -13,6 +13,7 @@ describe('isTestFile (US-020, US-030)', () => {
     'pkg/app_test.py',
     'pkg/test.py',
     'Tests/AppTests.cs',
+    'frontend/e2e/provider-stub.mjs',
     'src/App/BillingTest.cs',
     'src/App.Tests/Billing.cs',
     'src/App.UnitTests/Billing.cs',

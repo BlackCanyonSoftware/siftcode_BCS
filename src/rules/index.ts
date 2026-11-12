@@ -11,6 +11,8 @@ import { lawOfDemeter } from './design/law-of-demeter.js';
 import { moduleFanOut } from './design/module-fan-out.js';
 import { serviceLocator } from './design/service-locator.js';
 import { hotspots } from './git/hotspots.js';
+import { decoderWithoutFuzzTarget } from './testing/decoders.js';
+import { noAdvancedTesting, noAutomatedTests } from './testing/readiness.js';
 import {
   dependencyLicenseConflicts,
   unknownDependencyLicenses,
@@ -25,6 +27,8 @@ import {
 } from './licenses/project-license-rules.js';
 import { cyclomaticComplexity } from './metrics/cyclomatic-complexity.js';
 import { fileLength } from './metrics/file-length.js';
+import { remoteCallWithoutTimeout, timeoutWrittenIntoCall } from './resilience/remote-calls.js';
+import { remoteCallsWithoutRetry } from './resilience/retry.js';
 import { functionLength } from './metrics/function-length.js';
 import { unitMaintainabilityIndex } from './metrics/maintainability-index.js';
 import { nestingDepth } from './metrics/nesting-depth.js';
@@ -77,6 +81,9 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   nestingDepth,
   unitMaintainabilityIndex,
   fileLength,
+  remoteCallWithoutTimeout,
+  timeoutWrittenIntoCall,
+  remoteCallsWithoutRetry,
   hardcodedCredentials,
   sqlInjection,
   commandInjection,
@@ -91,6 +98,9 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   missingDependencyUpdates,
   missingSbom,
   missingSecretScanning,
+  noAutomatedTests,
+  noAdvancedTesting,
+  decoderWithoutFuzzTarget,
 ];
 
 export function findRule(id: string): RuleDefinition | undefined {

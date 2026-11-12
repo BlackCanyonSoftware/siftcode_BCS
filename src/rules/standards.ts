@@ -78,3 +78,46 @@ export const adr: StandardRef = {
   id: 'Documenting Architecture Decisions (Michael Nygard)',
   url: 'https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions',
 };
+
+/** Testing: what a project's tests are for, and the techniques that find what examples miss. */
+export const selfTestingCode: StandardRef = {
+  standard: 'Fowler, Self Testing Code',
+  url: 'https://martinfowler.com/bliki/SelfTestingCode.html',
+};
+export const testPyramid: StandardRef = {
+  standard: 'Fowler, The Test Pyramid',
+  url: 'https://martinfowler.com/bliki/TestPyramid.html',
+};
+export const mutationTesting: StandardRef = {
+  standard:
+    'DeMillo, Lipton, and Sayward, Hints on Test Data Selection: Help for the Practicing Programmer (IEEE Computer, 1978)',
+  id: 'Mutation testing',
+};
+export const propertyBasedTesting: StandardRef = {
+  standard:
+    'Claessen and Hughes, QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs (ICFP 2000)',
+  id: 'Property-based testing',
+};
+export const fuzzTesting: StandardRef = {
+  standard:
+    'Miller, Fredriksen, and So, An Empirical Study of the Reliability of UNIX Utilities (Communications of the ACM, 1990)',
+  id: 'Fuzz testing',
+};
+export const owaspFuzzing: StandardRef = {
+  standard: 'OWASP, Fuzzing',
+  url: 'https://owasp.org/www-community/Fuzzing',
+};
+
+/** Resilience: what a program does when something it calls is slow, down, or failing. */
+export const nygardReleaseIt: StandardRef = {
+  standard: 'Nygard, Release It! (2nd edition, 2018)',
+  id: 'Stability patterns: Timeouts, Circuit Breaker',
+};
+export const retryPattern: StandardRef = {
+  standard: 'Microsoft Azure Architecture Center, Retry pattern',
+  url: 'https://learn.microsoft.com/en-us/azure/architecture/patterns/retry',
+};
+export const circuitBreakerPattern: StandardRef = {
+  standard: 'Microsoft Azure Architecture Center, Circuit Breaker pattern',
+  url: 'https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker',
+};
