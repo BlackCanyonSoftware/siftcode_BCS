@@ -1,10 +1,10 @@
 // Checks the package exactly as a user would receive it: packs the tarball, reviews what is in it,
 // installs it into an empty project, and runs the installed command. Run `npm run build` first
 // (`npm run release:check` does both). Exits 1 and lists every problem if anything is wrong.
-import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
+import { run } from './npm.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
@@ -54,31 +54,6 @@ const FORBIDDEN = [
   [/(^|\/)\.git/, 'Git data'],
   [/sbom/i, 'an SBOM (it is attached to the release instead)'],
 ];
-
-/**
- * npm's own script, so it can be run with this Node without a shell: `npm run` sets
- * `npm_execpath`; otherwise look beside the Node install (Windows) or in its `lib` folder (Unix).
- */
-function npmScript() {
-  const fromNpm = process.env.npm_execpath;
-  if (fromNpm?.endsWith('npm-cli.js')) {
-    return fromNpm;
-  }
-  const bin = dirname(process.execPath);
-  return [
-    join(bin, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-    join(bin, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
-  ].find((candidate) => existsSync(candidate));
-}
-
-const NPM = npmScript();
-
-function run(command, args, options = {}) {
-  const [program, programArgs] =
-    command === 'npm' && NPM !== undefined ? [process.execPath, [NPM, ...args]] : [command, args];
-  const result = spawnSync(program, programArgs, { encoding: 'utf8', ...options });
-  return { code: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
-}
 
 const work = mkdtempSync(join(tmpdir(), 'siftcode-package-'));
 try {
