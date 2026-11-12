@@ -5,9 +5,10 @@ Pick-up-here file. Read this first, update it at the end of every session.
 ## Current state (2026-11-08)
 
 - **Milestones 0 and 1: done, pushed, CI green** (Node 24 and 26, Ubuntu and Windows).
-- **Milestones 2, 3, 4, 4a, 4b, 5, and 6: built and verified locally; awaiting owner review and push**
-  (M2's and M3's commits are not pushed yet; the rest sit on top of them). CI has not run on any
-  of them.
+- **Milestones 0 to 6: done, pushed, CI green** (Node 24 and 26, Ubuntu and Windows; last checked at
+  commit 6ca6bcf on 2026-11-12 with `gh run list`). An earlier version of this file said M2 to M6 were
+  unpushed; that was stale, because the owner pushes between sessions. Check `git status -sb` and
+  `gh run list` instead of trusting this line.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
@@ -48,8 +49,7 @@ None.
 
 ## Next steps
 
-1. Owner reviews M2, M3, M4, M4a, and M4b, pushes, and confirms CI is green. (No CI step was
-   added; attaching `npm run sbom` output to releases belongs to M7.)
+1. Owner pushes what is committed here and confirms CI.
 2. **Start M7: testing-readiness hints, dogfood gate, and 0.1.0 release prep** (US-050 to US-052,
    US-072; scope in `docs/ROADMAP.md`). Release prep includes the SBOM and provenance, `npm pack`
    review (the HTML report needs `assets/` in the package; `npm pack --dry-run` was checked in M6), a

@@ -103,7 +103,7 @@ locally as a focused Conventional Commit.
 ## Report format (end of each session or milestone)
 
 Summary · Done (IDs, key files) · Verification (each check with its actual result; "not
-verified" where true; CI is "not verified until pushed") · Try it · Decisions and assumptions
+verified" where true; CI is "not verified until pushed": once the owner has pushed, read the real result with `gh run list` and report that; never assume it, and never repeat "nothing is pushed" without `git status -sb`) · Try it · Decisions and assumptions
 (ADR links) · Deviations · Known issues and tech debt · Next (1 to 3 steps) · Needs you.
 
 More detail: [CONTRIBUTING.md](CONTRIBUTING.md), [docs/PRD.md](docs/PRD.md),

@@ -4,8 +4,8 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M6 is built; the owner reviews and pushes. (M0 and M1 are pushed and CI is green; M2 to M6 await push.)
-- **Next:** M7 testing-readiness hints, dogfood gate, release prep.
+- **Now:** M7 (testing-readiness hints, dogfood gate, release prep) is in progress. M0 to M6 are pushed and CI is green on all four jobs (Node 24 and 26 on Ubuntu and Windows), checked at commit 6ca6bcf on 2026-11-12.
+- **Next:** the owner publishes 0.1.0 (see docs/RELEASING.md).
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
 ## Milestones
@@ -28,32 +28,32 @@ Scope: discovery with ignores and limits; config schema; Code Model types; rule 
 Exit: SARIF validates against the 2.1.0 schema; deterministic output test; exit codes 0/1/2 covered; benchmark script recorded.
 Stories: US-001 to US-004, US-006, US-040, US-041, US-071.
 
-### M2: Metrics for all three languages (M, done: awaiting owner review and push)
+### M2: Metrics for all three languages (M, done)
 Goal: cyclomatic complexity, Halstead, Maintainability Index, size/nesting/parameter metrics, with identical meaning across JS/TS, Python, C#.
 Exit: shared cross-language fixtures produce expected numbers; thresholds configurable; each rule has rationale, references, suggestion.
 Stories: US-010 to US-012, US-060 to US-062.
 Result: rules `SC-MET-001` to `SC-MET-005` (function length, cyclomatic complexity, parameters, nesting, maintainability index of a function) and later `SC-MET-006` (file length, 500 lines); every measure of every file and function in the JSON report; definitions in [ADR 0005](adr/0005-metric-definitions.md). A file-level maintainability rule was built, tested on real code, and dropped as noise (see the ADR).
 
-### M3: Design heuristics (M, done: awaiting owner review and push)
+### M3: Design heuristics (M, done)
 Goal: Law of Demeter, Service Locator / IoC, SRP (oversized class/module) rules.
 Exit: positive and negative fixtures per language; false-positive review on at least one real open-source repo per language; heuristics default to `warning` or lower.
 Stories: US-020 to US-022.
 Result: rules `SC-DES-001` (Law of Demeter), `SC-DES-002` (Service Locator), `SC-DES-003` (class has too many methods), `SC-DES-004` (class cohesion, LCOM4), `SC-DES-005` (module fan-out); imports, member chains, and class facts in the Code Model; thresholds calibrated on the Python standard library and ESLint; definitions and evidence in [ADR 0006](adr/0006-design-heuristics.md). The false-positive review covered JavaScript and Python on real code; C# only on fixtures and 26 small files (TD-8).
 
-### M4: Security rules (M, done: awaiting owner review and push)
+### M4: Security rules (M, done)
 Goal: a starter set of CWE-mapped security checks.
 Exit: every security finding shows a CWE ID; credentials are never repeated in output; positive and negative fixtures for each rule in each language; calibrated on real code.
 Stories: US-030.
 Result: rules `SC-SEC-001` hardcoded credentials (CWE-798), `SC-SEC-002` SQL injection (CWE-89), `SC-SEC-003` command injection (CWE-78), `SC-SEC-004` dynamic code evaluation (CWE-95), `SC-SEC-005` weak hash or cipher (CWE-327, 328), `SC-SEC-006` insecure deserialization (CWE-502), `SC-SEC-007` disabled certificate verification (CWE-295). New facts: calls with argument shapes, named values, and long strings. CWE tags in SARIF; per-finding severity; TypeScript declaration files are skipped. Definitions and evidence in [ADR 0007](adr/0007-security-rules.md). The original M4 was split because security reads code facts while supply chain and design documentation read repository files.
 
-### M4a: Repository hygiene: supply chain and design documentation (M, done: awaiting owner review and push)
+### M4a: Repository hygiene: supply chain and design documentation (M, done)
 Goal: NIST SSDF-aligned repository checks and detection of design and architecture documentation (UML, C4, Mermaid, PlantUML, ADRs, ...).
 Scope: a repository-level rule type that sees the project's files (manifests, lockfiles, CI configuration, docs, diagrams), not only source files; lockfile, pinning, SBOM, CI, dependency-update and secret-scanning configuration checks for npm, pip, and NuGet; design-artifact detection for every format listed in US-033.
 Exit: manifest checks work for npm, pip, and NuGet; design-artifact detection recognizes every format listed in US-033 and reports "no design documentation" with a concrete suggestion; positive and negative fixtures for each rule; calibrated on real repositories.
 Stories: US-031 to US-033.
 Result: a repository-level rule type (`defineRepoRule`, `RepoView`); rules `SC-SUP-001` lockfile, `SC-SUP-002` floating versions, `SC-SUP-003` git or URL dependencies, `SC-SUP-004` CI, `SC-SUP-005` dependency updates, `SC-SUP-006` SBOM, `SC-SUP-007` secret scanning; `SC-DOC-001` to `SC-DOC-004` design documentation (none, no diagrams, no decision records, unreferenced diagrams). Manifests for npm, Python, and NuGet are read without new dependencies. Calibrated on 19 local repositories. Definitions and evidence in [ADR 0008](adr/0008-repository-hygiene.md). `npm run sbom` added; `SC-SUP-007` is switched off for this repository (GitHub push protection).
 
-### M4b: Licenses and compliance (M, done: awaiting owner review and push)
+### M4b: Licenses and compliance (M, done)
 Goal: detect whether a project has a license and which one, check it follows that license, and flag dependency licenses that conflict with it or are unknown.
 Scope:
 - Bundle the SPDX license list (license texts and metadata) as data; verify its license and the exact source before adding.
@@ -65,13 +65,13 @@ Exit: identifies the standard licenses in a fixture set (MIT, Apache-2.0, BSD-2/
 Stories: US-035 to US-037.
 Result: rules `SC-LIC-001` to `SC-LIC-008` (no license, modified or unrecognized license file, declaration vs file, placeholders and copyright holder, undocumented bundled licenses, SPDX headers, dependency conflicts, dependency licenses unknown or not granted). Bundled SPDX data (727 ids, 56 recognizable texts) from the dev-only `spdx-license-list`; SPDX expression parser; text matcher calibrated on 130 real license files; offline dependency licenses from npm lockfiles and installed packages, Python virtual environments, and NuGet `.nuspec` files; a cited, versioned compatibility table (version 1). `RepoView.read` and `list` reach ignored folders without leaving the scan root. Definitions and evidence in [ADR 0009](adr/0009-license-checks.md).
 
-### M5: Git hotspots and design-doc freshness (S, done: awaiting owner review and push)
+### M5: Git hotspots and design-doc freshness (S, done)
 Goal: churn × complexity ranking from read-only Git history, and a low-confidence "design docs may be stale" check using the same history reader.
 Exit: works on a repo with history; non-Git folders skip with a note; performance on a large history is bounded (configurable window, default last 12 months).
 Stories: US-013, US-034.
 Result: a read-only Git history reader (`src/git/`, runs the `git` program safely, bounded, reports why when there is no history); `RepoView` gains `git()`, `codeFiles`, and `note()`, and scan results gain `notes` (shown in the text, Markdown, and JSON reports); rules `SC-HOT-001` (hotspots: commits × complexity, top 10 over 12 months) and `SC-DOC-005` (a design document that predates a large rewrite of the code it covers). Definitions and evidence in [ADR 0010](adr/0010-git-history-rules.md).
 
-### M6: HTML report, explain, baseline (M, done: awaiting owner review and push)
+### M6: HTML report, explain, baseline (M, done)
 Goal: shareable self-contained HTML report per DESIGN.md; `explain` command polish; baseline and inline suppressions.
 Depends on: the SiftCode brand (available in `Brand Logos` as of 2026-10-31); bundle the application set into the report inputs at the start of this milestone (`brandkit bundle siftcode <dir>`, then `brandkit check`). Take the typeface from `template/fonts.css` and embed the font file; never write a `font-family` by hand (it changed when the brand was rebuilt on 2026-11-01).
 Exit: WCAG 2.2 AA checks pass (automated plus a keyboard pass); light/dark toggle and info buttons work; checked at 375/768/1280 px with no console errors.
