@@ -38,6 +38,7 @@ export default defineConfig(
         console: 'readonly',
         process: 'readonly',
         fetch: 'readonly',
+        AbortSignal: 'readonly',
         Buffer: 'readonly',
       },
     },

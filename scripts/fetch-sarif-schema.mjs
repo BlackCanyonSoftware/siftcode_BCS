@@ -17,6 +17,8 @@ const EXPECTED_SHA256 = 'c3b4bb2d6093897483348925aaa73af03b3e3f4bd4ca38cef26dcb4
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const target = join(root, 'test/.cache/sarif-schema-2.1.0.json');
 
+const DOWNLOAD_TIMEOUT_MS = 30_000;
+
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 const cached = await readFile(target).catch(() => undefined);
@@ -26,7 +28,8 @@ if (cached && sha256(cached) === EXPECTED_SHA256) {
 
 let bytes;
 try {
-  const response = await fetch(URL_OF_SCHEMA);
+  // A stuck download must fail the build, not hang it (SC-RES-001 found this on this repository).
+  const response = await fetch(URL_OF_SCHEMA, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
