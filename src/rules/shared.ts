@@ -1,4 +1,4 @@
-import type { AnalyzedFile, CodeUnit } from '../languages/model/types.js';
+import type { AnalyzedFile, CodeUnit, ValueFact } from '../languages/model/types.js';
 
 /** Lowercase, without underscores, so `get_service`, `GetService`, and `getService` compare equal. */
 export function normalizeName(name: string): string {
@@ -15,6 +15,26 @@ export function enclosingUnit(file: AnalyzedFile, line: number): CodeUnit | unde
     }
   }
   return best;
+}
+
+/**
+ * The value a name was last given before `line`, within the same function (or anywhere in the file
+ * when the line is not inside one). A rough stand-in for tracking a value through a variable.
+ */
+export function lastValueBefore(
+  file: AnalyzedFile,
+  name: string,
+  line: number,
+): ValueFact | undefined {
+  const unit = enclosingUnit(file, line);
+  let found: ValueFact | undefined;
+  for (const entry of file.facts.namedValues) {
+    const inScope = unit === undefined || entry.line >= unit.startLine;
+    if (entry.target === name && entry.line <= line && inScope) {
+      found = entry.value;
+    }
+  }
+  return found;
 }
 
 /** Folders that hold other people's code copied into the project. */

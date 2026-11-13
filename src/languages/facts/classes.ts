@@ -226,11 +226,40 @@ function csharpUses(method: Node, memberNames: ReadonlySet<string>): Set<string>
 }
 
 /**
+ * The methods a type has so that it can be compared, hashed, and printed. They read the same few
+ * fields whatever the type does (a value type's `Equals` and `ToString` use its identity, its
+ * behaviors use the rest), so they would split every value type into groups that are not a design
+ * problem. They stay out of the cohesion count.
+ */
+const VALUE_CONTRACT: ReadonlySet<string> = new Set([
+  'Equals',
+  'GetHashCode',
+  'ToString',
+  'CompareTo',
+  'Compare',
+  'Deconstruct',
+  'equals',
+  'hashCode',
+  'toString',
+  'toJSON',
+  'valueOf',
+  '__eq__',
+  '__ne__',
+  '__hash__',
+  '__repr__',
+  '__str__',
+  '__lt__',
+  '__le__',
+  '__gt__',
+  '__ge__',
+]);
+
+/**
  * LCOM4: join methods that use the same member, or where one calls another, and count the
  * groups. Only instance methods that use class state (or are used by one that does) take part.
  */
 function cohesionOf(methods: readonly MethodInfo[]): ClassCohesion {
-  const instance = methods.filter((method) => !method.isStatic);
+  const instance = methods.filter((method) => !method.isStatic && !VALUE_CONTRACT.has(method.name));
   const indexByName = new Map(instance.map((method, index) => [method.name, index]));
   const parent = instance.map((_, index) => index);
   const fieldNode = new Map<string, number>();

@@ -211,6 +211,56 @@ describe('SC-DES-002 Service Locator (US-021)', () => {
     },
   );
 
+  it.each(['MapWebhookEndpoints', 'MapApiRoutes', 'MapHubs'])(
+    'skips the endpoint-mapping method %s: it wires the application (found in eShop)',
+    async (name) => {
+      const folder = await projects.create({
+        'src/Web/Thing.cs': `class A { void ${name}() { var x = app.ServiceProvider.GetRequiredService<IConfiguration>(); } }\n`,
+      });
+
+      expect((await scan(folder, { config: only('SC-DES-002') })).findings).toEqual([]);
+    },
+  );
+
+  it('does not call it a locator when the method builds the container itself (found in GitVersion)', async () => {
+    const folder = await projects.create({
+      'src/Tasks/Runner.cs': [
+        'class Runner {',
+        '  bool Execute(Task task) {',
+        '    var serviceProvider = BuildServiceProvider(task);',
+        '    var executor = serviceProvider.GetRequiredService<IExecutor>();',
+        '    return executor.Run();',
+        '  }',
+        '}',
+      ].join('\n'),
+    });
+
+    expect((await scan(folder, { config: only('SC-DES-002') })).findings).toEqual([]);
+  });
+
+  it('still flags a container that was handed in, as a parameter or a field', async () => {
+    const folder = await projects.create({
+      'src/Tasks/Runner.cs': [
+        'class Runner {',
+        '  bool Execute(IServiceProvider serviceProvider) {',
+        '    var executor = serviceProvider.GetRequiredService<IExecutor>();',
+        '    return executor.Run();',
+        '  }',
+        '  bool Again() {',
+        '    var alias = _serviceProvider;',
+        '    return alias.GetRequiredService<IExecutor>().Run();',
+        '  }',
+        '}',
+      ].join('\n'),
+    });
+
+    const result = await scan(folder, { config: only('SC-DES-002') });
+
+    expect(messages(result)).toEqual([
+      '"Execute" fetches a dependency with serviceProvider.GetRequiredService() instead of receiving it.',
+    ]);
+  });
+
   it('still flags a locator in business code, even in a method that starts with Add', async () => {
     const folder = await projects.create({
       'src/Billing/Cart.cs':
@@ -321,6 +371,49 @@ describe('SC-DES-003 class with too many methods (US-022)', () => {
 
     expect(result.findings).toEqual([]);
   });
+});
+
+describe('SC-DES-004 equality and printing methods are not behaviors (found in GitVersion)', () => {
+  /** A value type with its own state per behavior, plus the boilerplate every value type has. */
+  const valueTypes: Record<string, string> = {
+    'V.cs': `public class V {
+  private int a; private int b; private int c; private string s; private string t;
+  public int A() => a;
+  public int B() => b;
+  public int C() => c;
+  public override bool Equals(object o) => o is V v && s == v.s;
+  public override int GetHashCode() => t.GetHashCode();
+  public override string ToString() => s;
+  public int CompareTo(V other) => string.Compare(t, other.t);
+}`,
+    'v.py': `class V:
+    def a(self): return self.fa
+    def b(self): return self.fb
+    def c(self): return self.fc
+    def __eq__(self, o): return self.s == o.s
+    def __hash__(self): return hash(self.t)
+    def __repr__(self): return self.s
+    def __lt__(self, o): return self.t < o.t
+`,
+    'v.js': `export class V {
+  a() { return this.fa; } b() { return this.fb; } c() { return this.fc; }
+  equals(o) { return this.s === o.s; }
+  toString() { return this.t; }
+  toJSON() { return this.s; }
+  valueOf() { return this.t; }
+}`,
+  };
+
+  it.each(Object.keys(valueTypes))(
+    'does not count the equality, hash, and string members of %s as groups',
+    async (file) => {
+      const folder = await projects.create({ [file]: valueTypes[file] ?? '' });
+
+      const result = await scan(folder, { config: only('SC-DES-004', { minGroups: 4 }) });
+
+      expect(result.findings).toEqual([]);
+    },
+  );
 });
 
 describe('SC-DES-004 class whose methods share no state (US-022)', () => {
@@ -452,6 +545,17 @@ describe('SC-DES-005 module with too many imports (US-022)', () => {
 
     expect((await scan(folder, { config: only('SC-DES-005') })).findings).toEqual([]);
   });
+
+  it.each(['GlobalUsings.cs', 'src/Web/GlobalUsings.cs', 'ImplicitUsings.cs'])(
+    'does not apply to %s: a file that exists to hold the usings (found in eShop)',
+    async (file) => {
+      const folder = await projects.create({
+        [file]: csharp(40).replaceAll('using', 'global using'),
+      });
+
+      expect((await scan(folder, { config: only('SC-DES-005') })).findings).toEqual([]);
+    },
+  );
 });
 
 describe('the design rules', () => {

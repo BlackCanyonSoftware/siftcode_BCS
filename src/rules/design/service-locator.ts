@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { AnalyzedFile, MemberChain } from '../../languages/model/types.js';
 import { defineRule } from '../define.js';
+import { lastValueBefore } from '../shared.js';
 import { enclosingUnit, isOutOfScope, normalizeName } from './context.js';
 
 /** Methods that hand out a dependency by type or name. Compared with {@link normalizeName}. */
@@ -75,7 +76,7 @@ const COMPOSITION_FOLDERS = new Set(['composition', 'di', 'ioc', 'container', 'b
  * a plain `AddItem` is business code and is not exempt.
  */
 const COMPOSITION_FUNCTION =
-  /^(main|configure\w*|register\w*|bootstrap\w*|compose\w*|setup\w*|seed\w*|migrate\w*|initialize\w*|buildservice\w*|createhostbuilder|add\w*(services|infrastructure|dependencies))$/i;
+  /^(main|configure\w*|map\w*(endpoints|routes|hubs)|register\w*|bootstrap\w*|compose\w*|setup\w*|seed\w*|migrate\w*|initialize\w*|buildservice\w*|createhostbuilder|add\w*(services|infrastructure|dependencies))$/i;
 
 export function isCompositionRoot(path: string): boolean {
   const segments = path.toLowerCase().split('/');
@@ -132,6 +133,18 @@ function isInCompositionFunction(file: AnalyzedFile, line: number): boolean {
   return unit !== undefined && COMPOSITION_FUNCTION.test(unit.name);
 }
 
+/**
+ * The method makes the container it asks (`var provider = BuildServiceProvider(task);` and then
+ * `provider.GetRequiredService<T>()`): it is the root of its own object graph, not a class that
+ * reaches for a container somebody else owns. A parameter, a field, or an alias of one is not.
+ */
+function buildsItsOwnContainer(file: AnalyzedFile, chain: MemberChain): boolean {
+  return (
+    chain.rootKind === 'name' &&
+    lastValueBefore(file, chain.root, chain.startLine)?.kind === 'other'
+  );
+}
+
 export const serviceLocator = defineRule({
   meta: {
     id: 'SC-DES-002',
@@ -182,7 +195,11 @@ export const serviceLocator = defineRule({
     }
     return file.facts.chains.flatMap((chain) => {
       const call = findLocatorCall(chain);
-      if (!call || isInCompositionFunction(file, chain.startLine)) {
+      if (
+        !call ||
+        isInCompositionFunction(file, chain.startLine) ||
+        buildsItsOwnContainer(file, chain)
+      ) {
         return [];
       }
       const unit = enclosingUnit(file, chain.startLine);

@@ -4,8 +4,8 @@ import type {
   CallFact,
   ValueFact,
 } from '../../languages/model/types.js';
-import { enclosingUnit } from '../shared.js';
 
+export { lastValueBefore } from '../shared.js';
 export { cheatSheet, cwe, owaspTop10 } from '../standards.js';
 
 /** Lowercase letters and digits only, so `$queryRawUnsafe`, `query_raw_unsafe`, and `QueryRawUnsafe` match. */
@@ -41,26 +41,6 @@ export function optionsEntry(call: CallFact, key: string): ValueFact | undefined
     }
   }
   return undefined;
-}
-
-/**
- * The value a name was last given before `line`, within the same function (or anywhere in the file
- * when the line is not inside one). A rough stand-in for tracking a value through a variable.
- */
-export function lastValueBefore(
-  file: AnalyzedFile,
-  name: string,
-  line: number,
-): ValueFact | undefined {
-  const unit = enclosingUnit(file, line);
-  let found: ValueFact | undefined;
-  for (const entry of file.facts.namedValues) {
-    const inScope = unit === undefined || entry.line >= unit.startLine;
-    if (entry.target === name && entry.line <= line && inScope) {
-      found = entry.value;
-    }
-  }
-  return found;
 }
 
 /** True when the file imports `module` (compared without a leading `node:`). */

@@ -10,6 +10,7 @@ import type { RepoView } from '../rules/types.js';
 import { acceptFindings } from './accept.js';
 import type { Baseline } from './baseline.js';
 import { compareStrings } from './compare.js';
+import { describeGenerated, isGeneratedSource } from './generated.js';
 import { compareFindings, createFinding, type Finding } from './finding.js';
 import { createRepoView } from './repo-view.js';
 import type { FileProblem, ScanResult } from './result.js';
@@ -91,12 +92,14 @@ async function analyzeAll(
   };
   const parser = await SyntaxParser.create();
   let firstBranchFiles = 0;
+  let generatedFiles = 0;
   try {
     for (const file of sourceFiles) {
       const counts = result.languageCounts;
       counts.set(file.displayName, (counts.get(file.displayName) ?? 0) + 1);
       const analysis = await analyzeFile(file, parser, rules);
       firstBranchFiles += analysis.conditionalCompilation ? 1 : 0;
+      generatedFiles += analysis.generated ? 1 : 0;
       result.findings.push(...analysis.findings);
       result.suppressions.push(...analysis.directives.suppressions);
       analysis.directives.notes.forEach((note) => result.notes.add(note));
@@ -113,6 +116,9 @@ async function analyzeAll(
   if (firstBranchFiles > 0) {
     result.notes.add(describeConditionalCompilation(firstBranchFiles));
   }
+  if (generatedFiles > 0) {
+    result.notes.add(describeGenerated(generatedFiles));
+  }
   return result;
 }
 
@@ -127,6 +133,8 @@ interface FileAnalysis {
   readonly problem?: FileProblem['reason'];
   /** The file was read as the first branch of its `#if` blocks (C#). */
   readonly conditionalCompilation?: boolean;
+  /** The header says a tool generated the file, so no rule was run on it. */
+  readonly generated?: boolean;
 }
 
 /** The note for C# files that only parse when read as the first branch of their `#if` blocks. */
@@ -148,6 +156,9 @@ async function analyzeFile(
     return { findings: [], directives: NO_DIRECTIVES, problem: 'unreadable' };
   }
 
+  if (isGeneratedSource(source)) {
+    return { findings: [], directives: NO_DIRECTIVES, generated: true };
+  }
   const parsed = await parser.parse(file.grammar, source);
   if (parsed.outcome !== 'ok') {
     return { findings: [], directives: NO_DIRECTIVES, problem: parsed.outcome };
