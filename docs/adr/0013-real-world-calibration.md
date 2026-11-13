@@ -87,3 +87,30 @@ Built as the follow-up to the finding above. It reads files only (no Git history
 - Three rules changed behavior (`SC-DES-001`, `SC-DES-002`, `SC-DOC-005`), and a default changed (minified files are ignored). All of this reduces findings; none adds a rule or changes an id or a contract. The one new fact (`MemberChain.discarded`) is internal.
 - Scans skip more code by default: vendored folders for metrics and design, minified files for everything. A project that wants them back can say so in the config.
 - The corpus is not in the repository (several hundred MB). To repeat the review, clone the repositories above and scan them; HANDOFF lists the commands.
+
+## Addendum (2026-11-12): a second C# pass, on the security rules (TD-8)
+
+Seven more repositories, scanned and every security finding read against its source: Dapper, MailKit, RestSharp, pwntester/ysoserial.net (a deserialization payload tool, so its findings are true by nature), nuke-build/nuke, GitTools/GitVersion, and jellyfin/jellyfin (about 4,800 C# files in all). The first scan gave 71 security findings; after the fixes below, 76. Net of the changes: 7 findings added that were true, 2 removed that were not.
+
+| Found by reading | Class | Fix | Effect |
+|---|---|---|---|
+| `IsApiKey = "Jellyfin-IsApiKey"` flagged as a credential (Jellyfin) | A claim-type label that contains its own name | A value that contains the name it is given is a label (`SC-SEC-001`) | 1 false positive removed |
+| `https://user:...@github.com/...` in a unit test (GitVersion) | A made-up URL password in test code | In test files a URL password is reported only if it looks generated | 1 false positive removed |
+| `SHA1.HashData(bytes)` not flagged next to `SHA1.Create()` that was (RestSharp) | The static one-call hash of .NET 5 and later, and `System.Security.Cryptography.MD5.Create()` written in full | `MD5.HashData`, `SHA1.HashData`, and qualified factory names (`SC-SEC-005`) | 1 true finding added |
+| `CommandText = string.Format(stub, table, cols)` not flagged (Massive and PetaPoco, ORMs copied into Dapper's benchmarks) | A format string kept in a variable | The variable is followed to the SQL text it was last given (`SC-SEC-002`) | 2 true findings added in those files (not among the 71 and 76: the two files were scanned on their own) |
+| `Arguments = args` not flagged where `args` was built with `$"..."` or `string.Format` two lines earlier (Jellyfin: 6 places, arguments for ffmpeg and ffprobe that include a file path) | A local variable between the string and the property | A local variable is followed to the string it was last given in the same method; a parameter or a field is still not (`SC-SEC-003`, TD-12) | 6 true findings added |
+| `string.Format(CultureInfo.InvariantCulture, "...", x)` not read as built | The overload with a format provider first | The format string is the first or the second argument (facts) | Counted in the 6 above |
+| `twitter.cs` (RestSharp) rejected as a syntax error | A file ends on `#pragma warning restore` with no line break after it | A final line break is added before parsing C# | 1 file now checked |
+| `check-docs-inputs.cs`, `Program.cs` (GitVersion) rejected | .NET 10 file-based programs start with `#:property` and `#:project` lines | Those lines are read as comments of the same length | 2 files now checked |
+
+Findings that are correct and cannot be avoided by the project, and are left as they are: MD5 and SHA-1 in MailKit's SASL mechanisms (CRAM-MD5, DIGEST-MD5, SCRAM-SHA-1, POP3 APOP are defined by their protocols), SHA-1 in RestSharp's OAuth 1.0 signature, and SHA-1 for Git object ids in GitVersion. The suggestion ("use SHA-256") does not apply there, so a team would accept these in the baseline with a reason (`siftcode baseline`). Also correct: Jellyfin's TMDb API key written into `TmdbUtils.cs`, and an interpolated SQL string in a Jellyfin migration that the authors had already marked with `#pragma warning disable CA2100`.
+
+**Files that still cannot be parsed (12 of about 4,800)**, all grammar limits in `tree-sitter-c-sharp` 0.23.5, which are reported as "not checked" and never guessed at:
+
+- C# 14 `extension(...)` blocks: 3 files (TD-24).
+- An identifier that is also an attribute-target word in brackets, `[type] = value`, `[property] = ...`, `= [type]`: 3 files, one of them Dapper's `SqlMapper.cs`, the core of its SQL handling, so that file's security rules were not applied.
+- `async` used as the name of a parameter (`if (async) { await ... }`): 1 file (MailKit's tests).
+- Unsafe pointer statements (`*outptr++ = *inptr++;`): 1 file.
+- Code-generation templates that are not C# (`{0}` placeholders, `// NUGET` line comments inside a chain): 4 files.
+
+Not checked at all: whether the rules miss code that is not in these seven repositories. The rules still read single files and single methods (no data flow), so a value that reaches `FileName` through a field or a parameter is not seen.
