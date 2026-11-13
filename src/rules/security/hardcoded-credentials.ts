@@ -184,6 +184,7 @@ export const hardcodedCredentials = defineRule({
 
 /** Strings in a recognizable credential format, and URLs with a password in them. */
 function formatHits(file: AnalyzedFile) {
+  const inTests = isTestFile(file.path);
   return file.facts.strings.flatMap((entry) => {
     const format = TOKEN_FORMATS.find((candidate) => candidate.pattern.test(entry.value));
     if (format) {
@@ -191,12 +192,21 @@ function formatHits(file: AnalyzedFile) {
       return [hit(entry.line, message, format.label, 'error')];
     }
     const urlPassword = URL_PASSWORD.exec(entry.value)?.[1];
-    if (urlPassword !== undefined && looksLikeSecret(urlPassword, 4)) {
+    // Test code is full of made-up URLs such as `https://user:Summer2024x@host/`; only one whose
+    // password looks generated could be a real one pasted in.
+    const reportable = inTests ? looksRandom : (value: string) => looksLikeSecret(value, 4);
+    if (urlPassword !== undefined && reportable(urlPassword)) {
       const message = 'A URL with a password in it is written into the code.';
       return [hit(entry.line, message, 'url-password', 'warning')];
     }
     return [];
   });
+}
+
+/** `IsApiKey = "Jellyfin-IsApiKey"`: a value that contains its own name is a label, not the secret. */
+function namesItself(name: string, value: string): boolean {
+  const squash = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return squash(value).includes(squash(name));
 }
 
 /** Constant strings given to a name that says it holds a secret. */
@@ -209,7 +219,9 @@ function nameHits(file: AnalyzedFile, minLength: number) {
         ? looksLikeSecret(value, minLength)
         : strength === 'weak' && looksRandom(value);
     const message = `"${entry.name}" is given a fixed value that looks like a credential.`;
-    return isSecret ? [hit(entry.line, message, `name:${entry.target}`, 'warning')] : [];
+    return isSecret && !namesItself(entry.name, value)
+      ? [hit(entry.line, message, `name:${entry.target}`, 'warning')]
+      : [];
   });
 }
 

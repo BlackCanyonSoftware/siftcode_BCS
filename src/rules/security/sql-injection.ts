@@ -53,8 +53,22 @@ export function looksLikeSql(text: string): boolean {
   );
 }
 
-const isBuiltSql = (value: ValueFact | undefined): boolean =>
-  value?.kind === 'dynamic-string' && looksLikeSql(value.text);
+/** `string.Format(stub, a, b)`: the format string is a variable, so the value is only its source text. */
+const FORMAT_OF_NAME = /^(?:string|String)\.Format\(\s*([A-Za-z_]\w*)\s*,/;
+
+/**
+ * Whether `value`, found at `line`, is a string built from something not constant that reads like
+ * SQL: `"SELECT ..." + x`, `string.Format("SELECT ... {0}", x)`, or `string.Format(stub, x)` where
+ * `stub` was last given an SQL text.
+ */
+function isBuiltSql(file: AnalyzedFile, value: ValueFact | undefined, line: number): boolean {
+  if (value?.kind === 'dynamic-string') {
+    return looksLikeSql(value.text);
+  }
+  const template = value?.kind === 'other' ? FORMAT_OF_NAME.exec(value.text)?.[1] : undefined;
+  const text = template === undefined ? undefined : lastValueBefore(file, template, line);
+  return text?.kind === 'string' && looksLikeSql(text.text);
+}
 
 /** Whether the SQL statement passed to `call` is built from something not constant. */
 function runsBuiltSql(file: AnalyzedFile, call: CallFact): boolean {
@@ -62,11 +76,14 @@ function runsBuiltSql(file: AnalyzedFile, call: CallFact): boolean {
   if (!statement) {
     return false;
   }
-  if (isBuiltSql(statement)) {
+  if (isBuiltSql(file, statement, call.line)) {
     return true;
   }
   // `sql = "SELECT ..." + x; cursor.execute(sql)`: look at what the variable was last given.
-  return statement.kind === 'name' && isBuiltSql(lastValueBefore(file, statement.text, call.line));
+  return (
+    statement.kind === 'name' &&
+    isBuiltSql(file, lastValueBefore(file, statement.text, call.line), call.line)
+  );
 }
 
 export const sqlInjection = defineRule({
@@ -112,7 +129,7 @@ export const sqlInjection = defineRule({
     }
     // C#: `command.CommandText = "SELECT ... " + id;`
     for (const entry of file.facts.namedValues) {
-      if (entry.name === 'CommandText' && isBuiltSql(entry.value)) {
+      if (entry.name === 'CommandText' && isBuiltSql(file, entry.value, entry.line)) {
         hits.push({
           startLine: entry.line,
           endLine: entry.line,

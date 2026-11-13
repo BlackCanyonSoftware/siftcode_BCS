@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import type { AnalyzedFile, CallFact, ValueFact } from '../../languages/model/types.js';
+import type {
+  AnalyzedFile,
+  CallFact,
+  NamedValueFact,
+  ValueFact,
+} from '../../languages/model/types.js';
 import { defineRule } from '../define.js';
 import { isTestFile } from '../shared.js';
 import {
@@ -8,6 +13,7 @@ import {
   firstArgument,
   importsModule,
   keywordArgument,
+  lastValueBefore,
   optionsEntry,
   owaspTop10,
   plain,
@@ -93,17 +99,20 @@ function csharpHit(file: AnalyzedFile, call: CallFact): boolean {
  * `new ProcessStartInfo { Arguments = "-c " + user }` and `info.FileName = $"{user}.exe"`: the
  * properties that name the program and its arguments, set to a string built from a variable. They
  * appear as named values, not as arguments of the creation, so they are looked for in files that use
- * `System.Diagnostics`. A plain variable is not flagged (that needs data-flow analysis, TD-12).
+ * `System.Diagnostics`. A local variable is followed to the string it was last given in the same
+ * method (`var args = $"-i {path}"; ... Arguments = args`); a parameter or a field is not flagged,
+ * because what reaches it needs data-flow analysis (TD-12).
  */
 function processStartInfoHits(file: AnalyzedFile) {
   if (file.grammar !== 'csharp' || !importsModule(file, 'System.Diagnostics')) {
     return [];
   }
+  const isBuilt = (entry: NamedValueFact): boolean =>
+    entry.value.kind === 'dynamic-string' ||
+    (entry.value.kind === 'name' &&
+      lastValueBefore(file, entry.value.text, entry.line)?.kind === 'dynamic-string');
   return file.facts.namedValues
-    .filter(
-      (entry) =>
-        entry.value.kind === 'dynamic-string' && /(?:^|\.)(?:FileName|Arguments)$/.test(entry.name),
-    )
+    .filter((entry) => isBuilt(entry) && /(?:^|\.)(?:FileName|Arguments)$/.test(entry.name))
     .map((entry) => {
       const property = entry.name.split('.').pop() ?? entry.name;
       return {

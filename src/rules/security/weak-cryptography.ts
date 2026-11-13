@@ -94,7 +94,9 @@ const CSHARP_CIPHER_TYPES = new Set(
 );
 const CSHARP_FACTORIES = new Map<string, Weakness>([
   ['MD5.Create', { what: 'MD5', kind: 'hash' }],
+  ['MD5.HashData', { what: 'MD5', kind: 'hash' }],
   ['SHA1.Create', { what: 'SHA1', kind: 'hash' }],
+  ['SHA1.HashData', { what: 'SHA1', kind: 'hash' }],
   ['DES.Create', { what: 'DES', kind: 'cipher' }],
   ['TripleDES.Create', { what: '3DES', kind: 'cipher' }],
   ['RC2.Create', { what: 'RC2', kind: 'cipher' }],
@@ -112,10 +114,12 @@ function csharpWeakness(call: CallFact): Weakness | undefined {
     return { what: call.name.replace('CryptoServiceProvider', '').toUpperCase(), kind: 'cipher' };
   }
   const algorithm = firstArgument(call);
-  if (call.callee === 'HashAlgorithm.Create' && algorithm?.kind === 'string') {
+  // `System.Security.Cryptography.MD5.Create()` is the same call as `MD5.Create()`.
+  const factory = call.callee.split('.').slice(-2).join('.');
+  if (factory === 'HashAlgorithm.Create' && algorithm?.kind === 'string') {
     return weakHash(algorithm.text);
   }
-  return CSHARP_FACTORIES.get(call.callee);
+  return CSHARP_FACTORIES.get(factory);
 }
 
 function weaknessOf(file: AnalyzedFile, call: CallFact): Weakness | undefined {

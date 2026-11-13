@@ -231,14 +231,22 @@ function describeFormatCall(syntax: ValueSyntax, node: Node): ValueFact | undefi
   ) {
     return { kind: 'dynamic-string', text: truncate(readString(syntax, receiver).text) };
   }
-  // C#: `string.Format("...", x)`, whose first argument is the format string.
-  if (/^(string|String)\.Format$/.test(callee?.text ?? '')) {
-    const first = node.childForFieldName('arguments')?.namedChildren[0]?.namedChildren.at(-1);
-    if (first && syntax.strings.has(first.type)) {
-      return { kind: 'dynamic-string', text: truncate(readString(syntax, first).text) };
-    }
-  }
-  return undefined;
+  const format = /^(string|String)\.Format$/.test(callee?.text ?? '')
+    ? csharpFormatString(syntax, node)
+    : undefined;
+  return format && { kind: 'dynamic-string', text: truncate(readString(syntax, format).text) };
+}
+
+/**
+ * C#: the format string of `string.Format("...", x)` or `string.Format(provider, "...", x)`: the
+ * first argument, or the second when the first is not a string.
+ */
+function csharpFormatString(syntax: ValueSyntax, call: Node): Node | undefined {
+  const [first, second] = (call.childForFieldName('arguments')?.namedChildren ?? []).map((arg) =>
+    arg.namedChildren.at(-1),
+  );
+  const format = first && syntax.strings.has(first.type) ? first : second;
+  return format && syntax.strings.has(format.type) ? format : undefined;
 }
 
 function describeEntries(syntax: ValueSyntax, object: Node, depth: number): PropFact[] {

@@ -124,6 +124,36 @@ describe('SC-SEC-001 hardcoded credentials (US-030, CWE-798)', () => {
     expect(await messagesFor('SC-SEC-001', { 'a.js': `${source}\n` })).toEqual([]);
   });
 
+  it('does not take a label that contains its own name for a credential (found in Jellyfin)', async () => {
+    const messages = await messagesFor('SC-SEC-001', {
+      'A.cs': 'class K { public const string IsApiKey = "Jellyfin-IsApiKey"; }',
+      'b.js': 'const clientSecret = "my-client-secret-header";',
+      'c.py': 'API_KEY = "x-api-key-v2-header"',
+    });
+
+    expect(messages).toEqual([]);
+  });
+
+  it('still reports a fixed value that does not name itself', async () => {
+    const messages = await messagesFor('SC-SEC-001', {
+      'A.cs': 'class K { public const string ApiKey = "kq83hf92lzp04mxn"; }',
+    });
+
+    expect(messages).toEqual(['"ApiKey" is given a fixed value that looks like a credential.']);
+  });
+
+  it('in test code, reports a URL password only when it looks generated, not a made-up one', async () => {
+    const made = await messagesFor('SC-SEC-001', {
+      'tests/a.test.js': "const u = 'https://user:Summer2024x@github.com/org/repo.git';",
+    });
+    const generated = await messagesFor('SC-SEC-001', {
+      'tests/b.test.js': `const u = 'https://user:${['k3v9Qz7Lp2', 'Xw8Rt5Yh1N'].join('')}@github.com/org/repo.git';`,
+    });
+
+    expect(made).toEqual([]);
+    expect(generated).toEqual(['A URL with a password in it is written into the code.']);
+  });
+
   it('does not guess from names in test code, and the limit is an option', async () => {
     const test = await messagesFor('SC-SEC-001', {
       'tests/a.test.js': 'const password = "hunter2hunter2";\n',
@@ -211,6 +241,33 @@ describe('SC-SEC-002 SQL injection (US-030, CWE-89)', () => {
     expect(messages).toEqual([
       'CommandText is set to an SQL statement that is built from a variable.',
     ]);
+  });
+
+  it('flags string.Format with a statement kept in a variable (found in a real ORM)', async () => {
+    const messages = await messagesFor('SC-SEC-002', {
+      'A.cs': [
+        'class K { void M(string table, string cols) {',
+        '  var stub = "INSERT INTO {0} ({1}) VALUES (@a)";',
+        '  cmd.CommandText = string.Format(stub, table, cols);',
+        '  var read = "SELECT * FROM {0} WHERE x = 1";',
+        '  db.Query(string.Format(read, table));',
+        '} }',
+      ].join('\n'),
+    });
+
+    expect(messages).toEqual([
+      'CommandText is set to an SQL statement that is built from a variable.',
+      'db.Query() runs an SQL statement that is built from a variable.',
+    ]);
+  });
+
+  it('does not flag string.Format when the variable is not an SQL statement', async () => {
+    const messages = await messagesFor('SC-SEC-002', {
+      'A.cs':
+        'class K { void M(string n) { var s = "Hello {0}"; cmd.CommandText = string.Format(s, n); } }',
+    });
+
+    expect(messages).toEqual([]);
   });
 
   it.each([
@@ -345,13 +402,53 @@ describe('SC-SEC-003 command injection (US-030, CWE-78)', () => {
     expect(await messagesFor('SC-SEC-003', { 'A.cs': source })).toEqual(expected);
   });
 
+  it('follows a local variable to the string it was built as (found in Jellyfin)', async () => {
+    const source = [
+      'using System.Diagnostics;',
+      'class K {',
+      '  void M(string path) {',
+      '    var args = string.Format("-i {0} -f null", path);',
+      '    var i = new ProcessStartInfo { FileName = "ffmpeg", Arguments = args };',
+      '  }',
+      '}',
+    ].join('\n');
+
+    expect(await messagesFor('SC-SEC-003', { 'A.cs': source })).toEqual([
+      'ProcessStartInfo.Arguments is built from a variable.',
+    ]);
+  });
+
+  it('reads string.Format with a format provider before the format string (found in Jellyfin)', async () => {
+    const source = [
+      'using System.Diagnostics;',
+      'class K {',
+      '  void M(string path) {',
+      '    var args = string.Format(CultureInfo.InvariantCulture, "-i {0} -f null", path);',
+      '    var i = new ProcessStartInfo { FileName = "ffmpeg", Arguments = args };',
+      '  }',
+      '}',
+    ].join('\n');
+
+    expect(await messagesFor('SC-SEC-003', { 'A.cs': source })).toEqual([
+      'ProcessStartInfo.Arguments is built from a variable.',
+    ]);
+  });
+
   it.each([
+    [
+      'a local variable that holds a constant',
+      'using System.Diagnostics;\nclass K { void M() { var args = "status"; var i = new ProcessStartInfo { FileName = "git", Arguments = args }; } }',
+    ],
+    [
+      'a variable built in another method',
+      'using System.Diagnostics;\nclass K { void A(string u) { var args = $"-c {u}"; }\n void B() { var i = new ProcessStartInfo { FileName = "sh", Arguments = args }; } }',
+    ],
     [
       'constant properties',
       'using System.Diagnostics;\nclass K { void M() { var i = new ProcessStartInfo { FileName = "git", Arguments = "status" }; } }',
     ],
     [
-      'a plain variable (that needs data-flow analysis, TD-12)',
+      'a parameter (what reaches it needs data-flow analysis, TD-12)',
       'using System.Diagnostics;\nclass K { void M(string cmd, string a) { var i = new ProcessStartInfo { FileName = cmd, Arguments = a }; } }',
     ],
     [
@@ -442,6 +539,24 @@ describe('SC-SEC-005 weak cryptography (US-030, CWE-327, CWE-328)', () => {
       'MD5.Create',
       'A.cs',
       'class K { void M() { var h = MD5.Create(); } }',
+      'MD5 is a weak hash: use SHA-256 or stronger instead.',
+    ],
+    [
+      'SHA1.HashData (.NET 5 and later)',
+      'A.cs',
+      'class K { void M(byte[] b) { var h = SHA1.HashData(b); } }',
+      'SHA1 is a weak hash: use SHA-256 or stronger instead.',
+    ],
+    [
+      'MD5.HashData',
+      'A.cs',
+      'class K { void M(byte[] b) { var h = MD5.HashData(b); } }',
+      'MD5 is a weak hash: use SHA-256 or stronger instead.',
+    ],
+    [
+      'a namespace-qualified factory',
+      'A.cs',
+      'class K { void M() { var h = System.Security.Cryptography.MD5.Create(); } }',
       'MD5 is a weak hash: use SHA-256 or stronger instead.',
     ],
     [
