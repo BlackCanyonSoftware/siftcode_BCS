@@ -20,5 +20,5 @@
     "noEmit": true
   },
   "include": ["src", "test", "vitest.config.ts"],
-  "exclude": ["test/fixtures"]
+  "exclude": ["test/fixtures", "test/browser"]
 }

@@ -43,3 +43,12 @@ Checked in the built-in browser on a real C# report (FluentValidation, 94 findin
 - The report is about 290 KB for a clean project and grows by about 4 KB per finding. Most of the fixed part is the two embedded fonts.
 - The brand's stylesheets are used as they are. When the brand is rebuilt, run `brandkit bundle` and `brandkit check`, regenerate a sample report, and re-run the contrast check: the report's overrides depend on the brand's token values.
 - `assets/` sits beside `dist/`, so the built CLI finds it only inside the package or the repository (the end-to-end test covers this).
+
+## Addendum (2026-11-12): the browser test (TD-21)
+
+`npm run test:browser` opens the report in a real Chrome or Edge (through `playwright-core`, which downloads no browser; `SIFTCODE_BROWSER=<path>` picks another) and runs `axe-core` with the WCAG 2.0 to 2.2 A and AA rules and best practices at 375, 768, and 1280 px in both themes, with every finding and explanation open and transitions off. It also checks that nothing overflows at 375 px, that every Tab stop has a visible focus mark, that Enter, Escape, and "/" work, that the theme button reports its state, and that the page loads under its own content policy with no console error or outside request. A missing browser fails the run; it never skips.
+
+- **It found a real defect on its first run:** at 375 px a code example scrolls sideways, and a scrollable box that the keyboard cannot reach fails WCAG 2.1.1. Each `<pre>` now has `tabindex="0"` (a role and label were tried and rejected: axe flags the repeated "Before" and "After" landmarks).
+- **Dependencies** (dev only, never shipped, install scripts off): `playwright-core` 1.64.1 (Microsoft, Apache-2.0) and `axe-core` 4.14.0 (Deque, MPL-2.0; used unmodified as a test tool, not redistributed). Both releases were over three weeks old when chosen.
+- **CI** runs it on the Node 24 legs (Ubuntu and Windows), where Chrome is installed on the runners. `test/browser` has its own `tsconfig.json` with DOM types so the rest of the project cannot use browser globals by accident.
+- **Still not covered:** a screen reader, and anything axe cannot decide (reading order that makes sense, whether a label is a good one).

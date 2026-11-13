@@ -52,8 +52,8 @@ None.
 1. **Owner releases 0.1.0** by following `docs/RELEASING.md`: npm account and `npm` environment, version and
    changelog, remove `"private": true`, a manual run of the Release workflow with publish unticked, then
    the tag. A manual run with publish unticked passed on GitHub on 2026-11-12 (TD-29): only the environment approval and the real publish are unproven.
-2. Optional before the first release: TD-21 (a browser test with an accessibility engine; needs a test
-   browser as a dev dependency, so ask first), the GitHub Action wrapper, and the open TDs.
+2. Optional before the first release: the GitHub Action wrapper and the open TDs. TD-21 is done:
+   `npm run test:browser` (axe-core and playwright-core, dev only; needs Chrome or Edge installed).
 
 ## Open questions for the owner
 

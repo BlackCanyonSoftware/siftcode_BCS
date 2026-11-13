@@ -258,6 +258,7 @@ Optional `siftcode.config.json` in the scanned folder. Unknown keys are rejected
 | `npm run dev`            | Recompiles on change                                                        |
 | `npm test`               | Unit tests (downloads the SARIF schema on first run)                        |
 | `npm run test:e2e`       | Builds, then runs the built CLI end to end                                  |
+| `npm run test:browser`   | Opens the HTML report in Chrome or Edge: axe, keyboard, content policy      |
 | `npm run lint`           | ESLint (strict, type-aware)                                                 |
 | `npm run typecheck`      | TypeScript in strict mode, no output                                        |
 | `npm run format`         | Prettier, write                                                             |

@@ -23,6 +23,7 @@ npm run benchmark       # build, then time a scan of a generated 50k-line projec
 npm run release:check   # build, pack, review the tarball, install it into an empty project, run it
 npm run sbom            # CycloneDX SBOM of the shipped dependencies (checked for completeness)
 npm run test:e2e        # build, then run the built CLI (test/e2e)
+npm run test:browser    # the HTML report in Chrome or Edge: axe at 3 widths, keyboard (test/browser; SIFTCODE_BROWSER=<path> to choose)
 npm run lint            # ESLint strict type-checked
 npm run typecheck       # tsc --noEmit
 npm run format          # Prettier write (format:check to verify)
@@ -48,7 +49,7 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 - `data/licenses/` generated SPDX ids and license texts (committed, shipped; ADR 0009)
 - `.github/workflows/` `ci.yml` (checks, dogfood scan) and `release.yml` (build, verify, attest, publish after approval; docs/RELEASING.md)
 - `scripts/` build helpers, `verify-package.mjs`, `make-sbom.mjs`; `grammars/`, `dist/`, `test/.cache/` are generated and git-ignored
-- `test/unit`, `test/e2e`, `test/helpers`, `test/fixtures/rules/<rule-id>/{positive,negative}`
+- `test/unit`, `test/e2e`, `test/browser` (own tsconfig with DOM types), `test/helpers`, `test/fixtures/rules/<rule-id>/{positive,negative}`
 
 Adding a rule: new file under `src/rules/<area>/`, register it in `src/rules/index.ts` (keep the
 list in id order), add positive and negative fixtures for every language it covers, and tests. See

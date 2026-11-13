@@ -1,0 +1,8 @@
+{
+  // The browser tests hand functions to the page, and those use the page's own globals (document,
+  // getComputedStyle). Only this folder sees the DOM types; the rest of the project must not.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "lib": ["ES2023", "DOM"] },
+  "include": ["."],
+  "exclude": []
+}
