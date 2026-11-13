@@ -274,7 +274,7 @@ describe('SC-RES-003 remote calls with no retry or circuit breaker (US-052)', ()
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({ path: 'README.md', severity: 'note', confidence: 'low' });
     expect(findings[0]?.message).toBe(
-      '4 files call remote services (src/client0.py, src/client1.py, src/client2.py and 1 more), and the project uses no retry or circuit-breaker library and none of those files mentions retries.',
+      '4 files call remote services (src/client0.py, src/client1.py, src/client2.py and 1 more), and the project uses no retry or circuit-breaker library and no source file mentions retries or backoff.',
     );
   });
 
@@ -306,6 +306,48 @@ describe('SC-RES-003 remote calls with no retry or circuit breaker (US-052)', ()
     });
 
     expect(findings).toEqual([]);
+  });
+
+  it('is quiet when a file that does not call out is where retries are handled', async () => {
+    const findings = await findingsFor('SC-RES-003', {
+      ...callers(4),
+      'src/runner.py': 'def run(job):\n    backoff = 2 ** attempt  # wait longer each time\n',
+    });
+
+    expect(findings).toEqual([]);
+  });
+
+  it('does not take a test runner setting called retries for retrying requests', async () => {
+    const findings = await findingsFor('SC-RES-003', {
+      ...callers(4),
+      'playwright.config.js': 'export default { retries: process.env.CI ? 1 : 0 };\n',
+    });
+
+    expect(findings).toHaveLength(1);
+  });
+
+  it('does not count a client named only in a comment or a string', async () => {
+    const mentions: Record<string, string> = {
+      'src/a.py': '# import requests\nNOTE = "we use requests.get here"\n',
+      'src/b.ts': "// fetch('/x')\nconst note = \"fetch('/y')\";\n",
+      'src/C.cs': '// uses HttpClient\nclass C { string s = "HttpClient"; }\n',
+      'src/d.py': 'def fetch():\n    pass\n',
+    };
+
+    expect(await findingsFor('SC-RES-003', mentions, { minFiles: 1 })).toEqual([]);
+  });
+
+  it('finds .NET files that create an HttpClient or import System.Net.Http', async () => {
+    const files = {
+      'src/A.cs': 'class A { void M() { var c = new HttpClient(); } }\n',
+      'src/B.cs': 'using System.Net.Http;\nclass B { }\n',
+      'src/C.cs': 'class C { void M() { var c = new System.Net.Http.HttpClient(); } }\n',
+    };
+
+    const findings = await findingsFor('SC-RES-003', files);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.message).toContain('3 files call remote services');
   });
 
   it('is quiet when few files call out, and minFiles changes that', async () => {

@@ -17,6 +17,31 @@ export interface CodeFile {
   readonly units: readonly CodeUnit[];
   /** Named classes, structs, and records, with the facts the design rules use. */
   readonly classes: readonly ClassFact[];
+  /** What the file imports and calls, for rules that look across the whole project. */
+  readonly usage: FileUsage;
+}
+
+/** What a file imports and calls. Comments and strings never appear here: it is read from the syntax. */
+export interface FileUsage {
+  /** The modules imported, as written (`requests`, `System.Net.Http`), each once, sorted. */
+  readonly imports: readonly string[];
+  /** Every distinct callee, sorted by callee. */
+  readonly calls: readonly CalledName[];
+}
+
+/** One callee and how often the file calls it. */
+export interface CalledName {
+  /** `struct.unpack`, `buf.readUInt32LE`, `fetch`. */
+  readonly callee: string;
+  /** The last part of `callee`. */
+  readonly name: string;
+  /** Everything before the last part, or '' for a bare call. */
+  readonly receiver: string;
+  /** True for `new Foo(...)`. */
+  readonly isNew: boolean;
+  /** The line of the first call. */
+  readonly line: number;
+  readonly count: number;
 }
 
 /**

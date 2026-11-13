@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { DEFAULT_CONFIG, type Config } from '../config/schema.js';
 import { discoverFiles, type SourceFile } from '../discovery/discover.js';
 import type { AnalyzedFile, CodeFile } from '../languages/model/types.js';
+import { summarizeUsage } from '../languages/facts/usage.js';
 import { SyntaxParser } from '../languages/parser.js';
 import { ALL_RULES } from '../rules/index.js';
 import { resolveRules, type ConfiguredRule } from '../rules/resolve.js';
@@ -159,6 +160,7 @@ async function analyzeFile(
     metrics: parsed.metrics,
     units: parsed.units,
     classes: parsed.classes,
+    usage: summarizeUsage(parsed.facts),
   };
   // The facts are only needed while rules run, so the summary kept in the result leaves them out.
   const directives =

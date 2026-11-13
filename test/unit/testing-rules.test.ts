@@ -130,6 +130,27 @@ describe('SC-TST-003 binary decoder without a fuzz target (US-051)', () => {
     expect(findings).toEqual([]);
   });
 
+  it('does not count a read named in a comment or a string, or a method that is not called on anything', async () => {
+    const text = [
+      '// buf.readUInt32LE(0) buf.readUInt32LE(1) buf.readUInt32LE(2) buf.readUInt32LE(3)',
+      "const doc = 'call buf.readUInt32LE(0), buf.readUInt32LE(1), buf.readUInt32LE(2)';",
+      'function readUInt32LE() {}',
+      'readUInt32LE(); readUInt32LE(); readUInt32LE();',
+      '',
+    ].join('\n');
+
+    expect(await findingsFor('SC-TST-003', { 'src/wire.ts': text })).toEqual([]);
+  });
+
+  it('reads the same call in JavaScript and counts repeated calls of one callee', async () => {
+    const text = 'const a = view.getUint16(0);\n'.repeat(3);
+
+    const findings = await findingsFor('SC-TST-003', { 'src/wire.js': text });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.message).toContain('reads binary data in 3 places, from line 1');
+  });
+
   it('reports the files with the most reads first, at most maxFiles of them', async () => {
     const many = (n: number) =>
       'import struct\n' + Array.from({ length: n }, () => 'struct.unpack("<I", d)\n').join('');

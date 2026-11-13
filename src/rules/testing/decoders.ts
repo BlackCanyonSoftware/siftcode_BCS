@@ -1,21 +1,31 @@
 import { z } from 'zod';
-import { lineAt, readProjectCode, type CodeText } from '../code-text.js';
+import type { CalledName, CodeFile } from '../../languages/model/types.js';
+import type { GrammarId } from '../../languages/registry.js';
+import { projectCode } from '../code-text.js';
 import { defineRepoRule } from '../define.js';
 import { fuzzTesting, owaspFuzzing } from '../standards.js';
 import { detectTesting } from './tooling.js';
 
-/** Calls that read numbers out of raw bytes: the core of a binary decoder, by language. */
-const BYTE_READS: readonly (readonly [extension: RegExp, reads: RegExp])[] = [
-  [/\.pyi?$/i, /\bstruct\.(?:unpack|unpack_from|iter_unpack)\s*\(|\bint\.from_bytes\s*\(/g],
-  [
-    /\.(?:[cm]?js|jsx|tsx?)$/i,
-    /\.(?:readU?Int(?:8|16|32)(?:LE|BE)?|readBigU?Int64(?:LE|BE)|readFloat(?:LE|BE)|readDouble(?:LE|BE)|getU?int(?:8|16|32)|getFloat(?:32|64)|getBigU?int64)\s*\(/gi,
-  ],
-  [
-    /\.cs$/i,
-    /\bBitConverter\.To\w+\s*\(|\bBinaryPrimitives\.Read\w+\s*\(|\.Read(?:U?Int(?:16|32|64)|Byte|Single|Double)\s*\(/g,
-  ],
-];
+/** Whether a call reads a fixed-size number out of raw bytes: the core of a binary decoder. */
+type ByteRead = (call: CalledName) => boolean;
+
+const JAVASCRIPT_READ =
+  /^(?:readU?Int(?:8|16|32)(?:LE|BE)?|readBigU?Int64(?:LE|BE)|readFloat(?:LE|BE)|readDouble(?:LE|BE)|getU?int(?:8|16|32)|getFloat(?:32|64)|getBigU?int64)$/i;
+
+/** A method such as `buf.readUInt32LE` is a read only when it is called on something. */
+const javascriptRead: ByteRead = (call) => call.receiver !== '' && JAVASCRIPT_READ.test(call.name);
+
+/** The byte-reading calls of each language, found in the syntax: a name in a comment or string is not a call. */
+const BYTE_READS: Readonly<Partial<Record<GrammarId, ByteRead>>> = {
+  python: (call) =>
+    /^(?:struct\.(?:unpack|unpack_from|iter_unpack)|int\.from_bytes)$/.test(call.callee),
+  javascript: javascriptRead,
+  typescript: javascriptRead,
+  tsx: javascriptRead,
+  csharp: (call) =>
+    /(?:^|\.)(?:BitConverter\.To\w+|BinaryPrimitives\.Read\w+)$/.test(call.callee) ||
+    (call.receiver !== '' && /^Read(?:U?Int(?:16|32|64)|Byte|Single|Double)$/.test(call.name)),
+};
 
 interface Decoder {
   readonly path: string;
@@ -23,13 +33,16 @@ interface Decoder {
   readonly firstLine: number;
 }
 
-function decoderIn(file: CodeText): Decoder | undefined {
-  const pattern = BYTE_READS.find(([extension]) => extension.test(file.path))?.[1];
-  const matches = pattern === undefined ? [] : [...file.text.matchAll(pattern)];
-  const [first] = matches;
-  return first === undefined
+function decoderIn(file: CodeFile): Decoder | undefined {
+  const isRead = BYTE_READS[file.grammar];
+  const reads = isRead === undefined ? [] : file.usage.calls.filter(isRead);
+  return reads.length === 0
     ? undefined
-    : { path: file.path, reads: matches.length, firstLine: lineAt(file.text, first.index) };
+    : {
+        path: file.path,
+        reads: reads.reduce((total, call) => total + call.count, 0),
+        firstLine: Math.min(...reads.map((call) => call.line)),
+      };
 }
 
 export const decoderWithoutFuzzTarget = defineRepoRule({
@@ -64,7 +77,7 @@ export const decoderWithoutFuzzTarget = defineRepoRule({
     if ((await detectTesting(repo)).fuzz) {
       return [];
     }
-    const decoders = (await readProjectCode(repo))
+    const decoders = projectCode(repo)
       .flatMap((file) => decoderIn(file) ?? [])
       .filter((decoder) => decoder.reads >= options.minReads)
       .sort((a, b) => b.reads - a.reads || a.path.localeCompare(b.path))

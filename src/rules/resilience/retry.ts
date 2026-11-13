@@ -1,15 +1,54 @@
 import { z } from 'zod';
 import { anchorPath } from '../anchor.js';
-import { readProjectCode } from '../code-text.js';
+import type { CodeFile } from '../../languages/model/types.js';
+import type { GrammarId } from '../../languages/registry.js';
+import { projectCode, readProjectCode } from '../code-text.js';
 import { defineRepoRule } from '../define.js';
 import { circuitBreakerPattern, nygardReleaseIt, retryPattern } from '../standards.js';
 import { readManifests } from '../supply-chain/manifests.js';
 
-/** The ways a file in each language reaches another service: an HTTP client imported or called. */
-const REMOTE_CALL =
-  /^[ \t]*(?:import|from)[ \t]+(?:requests|httpx|aiohttp|urllib3|urllib\.request)\b|(?:from[ \t]+|require\(\s*)['"](?:axios|node-fetch|cross-fetch|got|undici|ky|superagent)['"]|\bfetch\(|\bHttpClient\b/m;
+/** Modules that make HTTP requests, by what the file imports; a submodule counts as its package. */
+const HTTP_MODULES = new Set([
+  'requests',
+  'httpx',
+  'aiohttp',
+  'urllib3',
+  'urllib.request',
+  'axios',
+  'node-fetch',
+  'cross-fetch',
+  'got',
+  'undici',
+  'ky',
+  'superagent',
+  'System.Net.Http',
+]);
+
+const JAVASCRIPT_GRAMMARS: ReadonlySet<GrammarId> = new Set(['javascript', 'typescript', 'tsx']);
+
+/**
+ * Whether a file reaches another service: it imports an HTTP client, creates a .NET `HttpClient`,
+ * or (in JavaScript and TypeScript) calls `fetch`. Read from the syntax, so a mention in a comment
+ * or a string does not count.
+ */
+function callsRemoteServices(file: CodeFile): boolean {
+  const { imports, calls } = file.usage;
+  return (
+    imports.some(
+      (module) => HTTP_MODULES.has(module) || HTTP_MODULES.has(module.split(/[./]/)[0] ?? ''),
+    ) ||
+    calls.some(
+      (call) =>
+        (call.isNew && call.name === 'HttpClient') ||
+        (JAVASCRIPT_GRAMMARS.has(file.grammar) &&
+          /^(?:(?:window|globalThis|self)\.)?fetch$/.test(call.callee)),
+    )
+  );
+}
 
 /** Retries and circuit breakers written by hand: the files that do are not asking for a library. */
+const TOOL_CONFIG = /\.config\.[cm]?[jt]s$/;
+
 const HANDLED_BY_HAND = /\b(?:retry|retries|backoff|circuit[-_ ]?breaker|max_retries)\b/i;
 
 /** Libraries that retry, back off, or break a circuit, or that do so by default. Lowercase. */
@@ -72,11 +111,17 @@ export const remoteCallsWithoutRetry = defineRepoRule({
     if (dependencies.some((name) => RESILIENCE_LIBRARIES.has(name))) {
       return [];
     }
-    const callers = (await readProjectCode(repo)).filter((file) => REMOTE_CALL.test(file.text));
-    if (
-      callers.length < options.minFiles ||
-      callers.some((file) => HANDLED_BY_HAND.test(file.text))
-    ) {
+    const callers = projectCode(repo).filter(callsRemoteServices);
+    if (callers.length < options.minFiles) {
+      return [];
+    }
+    // A project that handles retries itself is not asking for a library, and that is written in
+    // words (a function called `retry`, a comment about backoff), so this one reads the text.
+    // Any source file counts, not only the callers: the retry loop usually lives in a runner or a
+    // base class that calls the clients through another layer (found in a real project). Tool
+    // configuration does not: `retries: 1` in playwright.config.js retries tests, not requests.
+    const handlers = (await readProjectCode(repo)).filter((file) => !TOOL_CONFIG.test(file.path));
+    if (handlers.some((file) => HANDLED_BY_HAND.test(file.text))) {
       return [];
     }
     const shown = callers.slice(0, 3).map((file) => file.path);
@@ -86,7 +131,7 @@ export const remoteCallsWithoutRetry = defineRepoRule({
         path: anchorPath(repo),
         startLine: 1,
         endLine: 1,
-        message: `${callers.length} files call remote services (${shown.join(', ')}${more}), and the project uses no retry or circuit-breaker library and none of those files mentions retries.`,
+        message: `${callers.length} files call remote services (${shown.join(', ')}${more}), and the project uses no retry or circuit-breaker library and no source file mentions retries or backoff.`,
         key: 'no-resilience',
       },
     ];
