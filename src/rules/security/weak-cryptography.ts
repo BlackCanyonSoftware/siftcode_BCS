@@ -144,7 +144,7 @@ export const weakCryptography = defineRule({
       cheatSheet('Cryptographic Storage', 'Cryptographic_Storage_Cheat_Sheet'),
     ],
     rationale:
-      'MD5 and SHA-1 can be forged (two inputs with the same hash), and DES, RC4, and ECB mode leak information about what they encrypt. Using them for passwords, signatures, or confidentiality gives a false sense of safety.',
+      'MD5 and SHA-1 can be forged (two inputs with the same hash), and DES, RC4, and ECB mode leak information about what they encrypt. Using them for passwords, signatures, or confidentiality gives a false sense of safety. Some protocols fix the algorithm (CRAM-MD5 and SCRAM-SHA-1 mail logins, OAuth 1.0 signatures, Git object ids): there the code cannot change, so accept the finding in the baseline or with a `siftcode-ignore` comment that says which protocol requires it.',
     suggestion: {
       summary:
         'Use SHA-256 or stronger for hashing, a password hash (Argon2id, bcrypt, scrypt) for passwords, and an authenticated cipher such as AES-GCM. A checksum that is not a security measure can stay, marked as such.',

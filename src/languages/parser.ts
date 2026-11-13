@@ -50,11 +50,23 @@ export type ParseResult =
  * is added; it moves no line number. A .NET 10 file-based program starts with `#:property` and
  * `#:project` lines, which the grammar does not know and the compiler treats as settings, so they
  * become comments of the same length.
+ *
+ * The grammar also takes `[type]`, `[property]`, and the other attribute-target words, when they are
+ * the whole content of a bracket, for the start of an attribute, so `{ [type] = value }` and
+ * `= [type];` (an index key, a collection element named like that) fail. An attribute needs a
+ * name after its target (`[return: Foo]`), so a bracket holding only the word is an expression;
+ * the word is replaced by one of the same length. Only the key's spelling in the facts changes.
  */
 function forCSharpGrammar(source: string): string {
   const text = source.endsWith('\n') ? source : `${source}\n`;
-  return text.replace(/^([ \t]*)#:/gm, '$1//');
+  return text
+    .replace(/^([ \t]*)#:/gm, '$1//')
+    .replace(ATTRIBUTE_TARGET_ALONE, (_match, word: string) => `[_${word.slice(1)}]`);
 }
+
+/** `[type]`, `[property]`, ...: an attribute-target word that is the whole content of a bracket. */
+const ATTRIBUTE_TARGET_ALONE =
+  /\[(assembly|module|field|event|method|param|property|return|type|typevar)\]/g;
 
 let initialization: Promise<void> | undefined;
 

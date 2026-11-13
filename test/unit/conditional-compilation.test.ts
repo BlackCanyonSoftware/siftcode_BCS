@@ -140,6 +140,33 @@ describe('C# files with conditional compilation (US-062, US-071)', () => {
     }
   });
 
+  it.each([
+    ['an index initializer', 'class A { void M() { F(new D(s) { [type] = value }); } }'],
+    ['a collection expression', 'class A { void M() { x[ext] = [type]; } }'],
+    ['a key named property', 'class A { void M() { var d = new D { [property] = 1 }; } }'],
+  ])(
+    'parses %s whose key is a word that can also start an attribute target (found in Dapper, Jellyfin, GitVersion)',
+    async (_name, source) => {
+      const parser = await SyntaxParser.create();
+      try {
+        expect((await parser.parse('csharp', source)).outcome).toBe('ok');
+      } finally {
+        parser.dispose();
+      }
+    },
+  );
+
+  it('still reads a real attribute target', async () => {
+    const parser = await SyntaxParser.create();
+    try {
+      const source = 'class A { [return: Foo] [field: Bar] int M() { return 1; } }';
+
+      expect((await parser.parse('csharp', source)).outcome).toBe('ok');
+    } finally {
+      parser.dispose();
+    }
+  });
+
   it('still reports a real syntax error as not checked', async () => {
     const parser = await SyntaxParser.create();
     try {
