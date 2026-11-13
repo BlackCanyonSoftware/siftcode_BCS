@@ -41,7 +41,7 @@ Six rules, all at information or note level (one `warning` for a large project w
 | `SC-TST-003` | A file that reads fixed-size values out of bytes in 3 or more places (`struct.unpack`, `Buffer.readUInt32LE`, `BitConverter.ToInt32`), when the project has no fuzz target; at most 5 files | info; low |
 | `SC-RES-001` | A call to `requests`, `urllib.request.urlopen`, `fetch`, or `axios` with no timeout (`None` and `0` count as none) | info; medium |
 | `SC-RES-002` | A timeout written as a number into the call; one note per file listing the values | note; low |
-| `SC-RES-003` | Three or more files call remote services, no retry or circuit-breaker library is a dependency, and none of those files mentions retries | note; low |
+| `SC-RES-003` | Three or more files call remote services, no retry or circuit-breaker library is a dependency, and no source file mentions retries or backoff | note; low |
 
 `SC-RES-001` is the one that points at a real defect class (CWE-400): Python `requests` has no default timeout. It stays quiet when the timeout may be given where the syntax does not show it (`**kwargs`, a spread, options held in a variable, `axios.defaults.timeout`, `axios.create({ timeout })`). Tools known for a language and their detection sets are in `src/rules/testing/tooling.ts` and `src/rules/resilience/retry.ts`.
 
@@ -61,6 +61,16 @@ Final, on 23 repositories (every finding read): `SC-RES-001` 13 (10 local, 3 on 
 
 - **`SC-TST-002` fires on most projects** (17 of 23), because most projects have example-based tests and nothing else. It is a one-line note that suggests tools, and it can be switched off with one line of config. It is the PRD's "recommend what is missing", not a defect.
 - **`SC-RES-002` is the noisiest of the six** even at one note per file, and it points at code that does the right thing. It can be switched off the same way (TD-27).
-- `SC-RES-001` does not see a client configured elsewhere (a `requests.Session` with an adapter, a shared agent), only the module-level calls; `SC-TST-003` and `SC-RES-003` read source text, so they see an API name in a comment (TD-28).
+- `SC-RES-001` does not see a client configured elsewhere (a `requests.Session` with an adapter, a shared agent), only the module-level calls; `SC-RES-003` counts a same-origin `fetch` as a remote call (TD-28).
 - A package.json `private` flag, a first-release credential choice, and the environment approval are the owner's, by design.
 - The GitHub Action wrapper (a "Could") was not built.
+
+## Addendum (2026-11-12): the two text-based rules now read the syntax (TD-28)
+
+`SC-TST-003` and `SC-RES-003` first searched the source text, which counts an API name in a comment or a string. They now use `CodeFile.usage`: the modules a file imports and each distinct callee with its first line and call count, taken from the syntax the scan already builds (`src/languages/facts/usage.ts`; it adds one entry per distinct callee to the in-memory result and nothing to any report). Rebuilt on it and checked on the 20 local repositories by reading every changed result:
+
+- **`SC-RES-003` had two false positives from the text search.** JavaScript embedded in a Python string (`fetch(...)`) and Python methods called `fetch` were counted as HTTP clients, so a project with two real callers was reported as having four. Both are gone. `SC-RES-003` went from 3 results to 1.
+- **The first version of the rewrite made it worse, and the check against real projects showed it.** It looked for retry words only in the calling files. The old check had found a project's retry runner by accident, because that runner also mentioned `fetch`. A project whose retry loop is in a runner that calls the clients through another layer was now reported. The rule now looks for retry and backoff words across the project's own source. A second project showed that `retries: 1` in `playwright.config.js` (retried tests, not requests) silenced the rule, so `*.config.*` files are left out of that search.
+- **`SC-TST-003` is unchanged on real code** (4 results before and after). It no longer counts a method named `readUInt32LE` that is not called on anything, or one in a comment.
+- Tests cover a comment, a string, a bare function, embedded JavaScript, and `System.Net.Http` and `new HttpClient()` for C#. The new tests fail against the old text search.
+- Not changed: the retry check is still a word search, and a same-origin `fetch` still counts as a remote call (TD-28).
