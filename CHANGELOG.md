@@ -45,8 +45,9 @@ All notable user-visible changes are recorded here. The format follows
   `Arguments = args`) and reads `string.Format(provider, "...", x)`; `SC-SEC-002` follows a format string kept
   in a variable; `SC-SEC-005` also flags `MD5.HashData` and `SHA1.HashData` and fully written names;
   `SC-SEC-001` no longer takes a label that contains its own name (`IsApiKey = "Jellyfin-IsApiKey"`) or a
-  made-up URL password in test code for a credential. C# files that end on a `#pragma` or `#region` line, and
-  .NET 10 file-based programs (`#:property`, `#:project`), are now read instead of reported as not checked.
+  made-up URL password in test code for a credential. C# files that end on a `#pragma` or `#region` line,
+  .NET 10 file-based programs (`#:property`, `#:project`), and keys written `[type]` or `[property]` are now read
+  instead of reported as not checked.
 - Minified JavaScript (`*.min.js`, `*.min.mjs`, `*.min.cjs`, `*-min.js`) is skipped by default; `!*.min.js` in the
   config's `ignore` brings it back.
 - Fewer false positives, found by reading the results on OWASP WebGoat.NET, CliWrap, CleanArchitecture,

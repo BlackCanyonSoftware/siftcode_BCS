@@ -105,12 +105,13 @@ Seven more repositories, scanned and every security finding read against its sou
 
 Findings that are correct and cannot be avoided by the project, and are left as they are: MD5 and SHA-1 in MailKit's SASL mechanisms (CRAM-MD5, DIGEST-MD5, SCRAM-SHA-1, POP3 APOP are defined by their protocols), SHA-1 in RestSharp's OAuth 1.0 signature, and SHA-1 for Git object ids in GitVersion. The suggestion ("use SHA-256") does not apply there, so a team would accept these in the baseline with a reason (`siftcode baseline`). Also correct: Jellyfin's TMDb API key written into `TmdbUtils.cs`, and an interpolated SQL string in a Jellyfin migration that the authors had already marked with `#pragma warning disable CA2100`.
 
-**Files that still cannot be parsed (12 of about 4,800)**, all grammar limits in `tree-sitter-c-sharp` 0.23.5, which are reported as "not checked" and never guessed at:
+**Files that still cannot be parsed (9 of about 4,800)**, all grammar limits in `tree-sitter-c-sharp` 0.23.5, which are reported as "not checked" and never guessed at (it was 12; see the last bullet):
 
 - C# 14 `extension(...)` blocks: 3 files (TD-24).
-- An identifier that is also an attribute-target word in brackets, `[type] = value`, `[property] = ...`, `= [type]`: 3 files, one of them Dapper's `SqlMapper.cs`, the core of its SQL handling, so that file's security rules were not applied.
 - `async` used as the name of a parameter (`if (async) { await ... }`): 1 file (MailKit's tests).
 - Unsafe pointer statements (`*outptr++ = *inptr++;`): 1 file.
 - Code-generation templates that are not C# (`{0}` placeholders, `// NUGET` line comments inside a chain): 4 files.
 
 Not checked at all: whether the rules miss code that is not in these seven repositories. The rules still read single files and single methods (no data flow), so a value that reaches `FileName` through a field or a parameter is not seen.
+- Fixed afterwards: a bracket that holds only an attribute-target word, `{ [type] = value }`, `= [type];`, `[property] = ...`, made the grammar read an attribute that never ends. Such a bracket cannot be an attribute (`[return: Foo]` has a name after the target), so before parsing the word is replaced by one of the same length with a leading underscore (`[_ype]`); only that key's spelling in the facts changes. This brought in 3 files, among them Dapper's `SqlMapper.cs`, the core of its SQL handling. Its security rules now run and add no finding.
+- `SC-SEC-005`'s explanation now says that a protocol which fixes the algorithm (CRAM-MD5, SCRAM-SHA-1, OAuth 1.0, Git object ids) is accepted in the baseline or with a `siftcode-ignore` comment that names the protocol.
