@@ -39,6 +39,14 @@ describe('HTML report (US-005)', () => {
     expect(page).toContain('SiftCode 1.2.3');
   });
 
+  it('makes every code example a keyboard stop, because a narrow screen scrolls it sideways', async () => {
+    const page = await html({ 'a.js': longJsFunction('work', 6) });
+
+    const blocks = page.match(/<pre[ >][^>]*>/g) ?? [];
+    expect(blocks.length).toBeGreaterThan(0);
+    expect(blocks.every((tag) => tag.includes('tabindex="0"'))).toBe(true);
+  });
+
   it('embeds the brand stylesheets and fonts, and fetches nothing', async () => {
     const page = await html({ 'a.js': longJsFunction('work', 6) });
 

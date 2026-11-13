@@ -47,7 +47,7 @@ export function severityBadge(severity: Severity): string {
 
 /** A code example with a button that copies it. */
 export function codeBlock(label: string, code: string): string {
-  return `<figure class="code"><figcaption>${esc(label)}</figcaption><pre><code>${esc(code)}</code></pre><button class="btn ghost sm copy" type="button" aria-label="Copy the ${esc(label.toLowerCase())} example">${icon('file', 'sm')}<span>Copy</span></button></figure>`;
+  return `<figure class="code"><figcaption>${esc(label)}</figcaption><pre tabindex="0"><code>${esc(code)}</code></pre><button class="btn ghost sm copy" type="button" aria-label="Copy the ${esc(label.toLowerCase())} example">${icon('file', 'sm')}<span>Copy</span></button></figure>`;
 }
 
 export const CONFIDENCE_TEXT: Readonly<Record<Confidence, string>> = {
