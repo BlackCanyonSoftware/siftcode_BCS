@@ -4,7 +4,7 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M7 is built and committed; the owner reviews, pushes, and publishes. M0 to M6 are pushed and CI is green on all four jobs (Node 24 and 26 on Ubuntu and Windows), checked at commit 6ca6bcf on 2026-11-12.
+- **Now:** M0 to M7 are done, pushed, and CI is green on all four jobs (Node 24 and 26 on Ubuntu and Windows, including the dogfood scan), checked at commit 3c42c4e on 2026-11-12. The release workflow has not run yet.
 - **Next:** the owner publishes 0.1.0 (see docs/RELEASING.md).
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 

@@ -49,11 +49,10 @@ None.
 
 ## Next steps
 
-1. Owner pushes what is committed here and confirms CI (it now includes the dogfood scan).
-2. **Owner releases 0.1.0** by following `docs/RELEASING.md`: npm account and `npm` environment, version and
+1. **Owner releases 0.1.0** by following `docs/RELEASING.md`: npm account and `npm` environment, version and
    changelog, remove `"private": true`, a manual run of the Release workflow with publish unticked, then
    the tag. The workflow has not run on GitHub yet (TD-29).
-3. Optional before the first release: TD-21 (a browser test with an accessibility engine; needs a test
+2. Optional before the first release: TD-21 (a browser test with an accessibility engine; needs a test
    browser as a dev dependency, so ask first), the GitHub Action wrapper, and the open TDs.
 
 ## Open questions for the owner
