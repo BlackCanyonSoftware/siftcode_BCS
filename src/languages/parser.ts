@@ -44,6 +44,18 @@ export type ParseResult =
     }
   | { readonly outcome: 'syntax-error' | 'timeout' };
 
+/**
+ * C# source in the form the grammar reads. A file may end on a directive with no line break after
+ * it (`#pragma warning restore` at the very end is common), which the grammar rejects, so a break
+ * is added; it moves no line number. A .NET 10 file-based program starts with `#:property` and
+ * `#:project` lines, which the grammar does not know and the compiler treats as settings, so they
+ * become comments of the same length.
+ */
+function forCSharpGrammar(source: string): string {
+  const text = source.endsWith('\n') ? source : `${source}\n`;
+  return text.replace(/^([ \t]*)#:/gm, '$1//');
+}
+
 let initialization: Promise<void> | undefined;
 
 function initializeTreeSitter(): Promise<void> {
@@ -81,7 +93,8 @@ export class SyntaxParser {
   private async parseOnce(grammar: GrammarId, source: string): Promise<ParseResult> {
     this.parser.setLanguage(await this.loadLanguage(grammar));
     const deadline = Date.now() + PARSE_TIMEOUT_MS;
-    const tree = this.parser.parse(source, null, {
+    const text = grammar === 'csharp' ? forCSharpGrammar(source) : source;
+    const tree = this.parser.parse(text, null, {
       progressCallback: () => Date.now() > deadline,
     });
     if (tree === null) {

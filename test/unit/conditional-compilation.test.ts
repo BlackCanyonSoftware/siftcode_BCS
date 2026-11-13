@@ -110,6 +110,36 @@ describe('C# files with conditional compilation (US-062, US-071)', () => {
     }
   });
 
+  it.each(['#pragma warning restore CS8981', '#region Helpers\n#endregion', '#nullable enable'])(
+    'parses a file that ends on a directive with no line break after it: %s',
+    async (directive) => {
+      const parser = await SyntaxParser.create();
+      try {
+        const result = await parser.parse('csharp', `class A { void M() { } }\n${directive}`);
+
+        expect(result.outcome).toBe('ok');
+        expect(result.outcome === 'ok' && result.units.map((unit) => unit.name)).toEqual(['M']);
+      } finally {
+        parser.dispose();
+      }
+    },
+  );
+
+  it('parses a .NET 10 file-based program, whose first lines are #: directives', async () => {
+    const parser = await SyntaxParser.create();
+    try {
+      const source =
+        '#:property OutputType=Exe\n#:project ../a/a.csproj\n\nvoid Run() { }\nRun();\n';
+
+      const result = await parser.parse('csharp', source);
+
+      expect(result.outcome).toBe('ok');
+      expect(result.outcome === 'ok' && result.units.map((unit) => unit.name)).toEqual(['Run']);
+    } finally {
+      parser.dispose();
+    }
+  });
+
   it('still reports a real syntax error as not checked', async () => {
     const parser = await SyntaxParser.create();
     try {
