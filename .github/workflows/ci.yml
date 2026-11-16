@@ -37,7 +37,11 @@ jobs:
       # content policy. The runners ship Chrome; the test fails, not skips, if no browser is found.
       - name: Test the HTML report in a browser
         if: matrix.node == 24
-        run: npm run test:browser
+        shell: bash
+        run: |
+          # Which browser the runner has, for the log: a launch failure then says what was there.
+          (google-chrome --version || chrome --version || true) 2>&1
+          npm run test:browser
       # Dogfood (US-072): SiftCode scans its own source and fails on any finding at warning or
       # above. Information-level findings (such as the hotspot ranking) are reported, not failed.
       # The build is already in dist/ from the end-to-end step.

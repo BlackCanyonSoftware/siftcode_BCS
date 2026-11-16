@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import axe from 'axe-core';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright-core';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createBaseline } from '../../src/core/baseline.js';
 import { scan } from '../../src/core/scan.js';
 import { renderReport } from '../../src/reporters/index.js';
@@ -19,19 +19,25 @@ const THEMES = ['light', 'dark'] as const;
 const RULES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 const projects = useProjects();
 
+// A browser's first start on a CI runner can take longer than the default ten seconds for a hook (the
+// Ubuntu runner timed out there with no message). Give the launch its own limit, below the hook's,
+// so a browser that cannot start fails with its own reason instead of "Hook timed out".
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 120_000 });
+const LAUNCH_TIMEOUT_MS = 60_000;
+
 async function launch(): Promise<Browser> {
   const path = process.env.SIFTCODE_BROWSER;
   if (path) {
-    return chromium.launch({ executablePath: path });
+    return chromium.launch({ executablePath: path, timeout: LAUNCH_TIMEOUT_MS });
   }
   const problems: string[] = [];
   for (const channel of ['chrome', 'msedge']) {
     try {
-      return await chromium.launch({ channel });
+      return await chromium.launch({ channel, timeout: LAUNCH_TIMEOUT_MS });
     } catch (error) {
-      problems.push(
-        `${channel}: ${error instanceof Error ? (error.message.split('\n')[0] ?? '') : ''}`,
-      );
+      const reason =
+        error instanceof Error ? error.message.split('\n').slice(0, 6).join(' | ') : '';
+      problems.push(`${channel}: ${reason}`);
     }
   }
   throw new Error(
@@ -81,7 +87,8 @@ describe('HTML report in a browser (US-005)', () => {
   });
 
   afterAll(async () => {
-    await browser.close();
+    // Not set when the launch failed: let that failure be the one that is reported.
+    await (browser as Browser | undefined)?.close();
     await rm(folder, { recursive: true, force: true });
   });
 
