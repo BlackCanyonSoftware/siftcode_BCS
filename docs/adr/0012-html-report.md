@@ -50,5 +50,5 @@ Checked in the built-in browser on a real C# report (FluentValidation, 94 findin
 
 - **It found a real defect on its first run:** at 375 px a code example scrolls sideways, and a scrollable box that the keyboard cannot reach fails WCAG 2.1.1. Each `<pre>` now has `tabindex="0"` (a role and label were tried and rejected: axe flags the repeated "Before" and "After" landmarks).
 - **Dependencies** (dev only, never shipped, install scripts off): `playwright-core` 1.64.1 (Microsoft, Apache-2.0) and `axe-core` 4.14.0 (Deque, MPL-2.0; used unmodified as a test tool, not redistributed). Both releases were over three weeks old when chosen.
-- **CI** runs it on the Node 24 legs (Ubuntu and Windows), where Chrome is installed on the runners. `test/browser` has its own `tsconfig.json` with DOM types so the rest of the project cannot use browser globals by accident.
+- **CI** runs it on the Node 26 legs (Ubuntu and Windows), where Chrome is installed on the runners. `test/browser` has its own `tsconfig.json` with DOM types so the rest of the project cannot use browser globals by accident.
 - **Still not covered:** a screen reader, and anything axe cannot decide (reading order that makes sense, whether a label is a good one).

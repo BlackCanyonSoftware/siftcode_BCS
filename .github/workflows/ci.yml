@@ -36,7 +36,7 @@ jobs:
       # The HTML report in a real browser: axe at three widths and both themes, the keyboard, the
       # content policy. The runners ship Chrome; the test fails, not skips, if no browser is found.
       - name: Test the HTML report in a browser
-        if: matrix.node == 24
+        if: matrix.node == 26
         shell: bash
         run: |
           # Which browser the runner has, for the log: a launch failure then says what was there.
