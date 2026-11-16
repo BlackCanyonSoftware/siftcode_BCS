@@ -89,7 +89,10 @@ describe('HTML report in a browser (US-005)', () => {
   afterAll(async () => {
     // Not set when the launch failed: let that failure be the one that is reported.
     await (browser as Browser | undefined)?.close();
-    await rm(folder, { recursive: true, force: true });
+    const made = folder as string | undefined;
+    if (made !== undefined) {
+      await rm(made, { recursive: true, force: true });
+    }
   });
 
   /** A page at `width` that ignores the content policy (so the audit can be injected) and holds still. */
