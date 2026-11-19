@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SEVERITIES } from '../shared/severity.js';
+import { aiSchema } from './ai.js';
 
 const severity = z.enum(SEVERITIES);
 
@@ -24,6 +25,11 @@ export const configSchema = z.strictObject({
    * are accepted, so a scan reports and fails on new ones only. The `--baseline` flag overrides it.
    */
   baseline: z.string().min(1).optional(),
+  /**
+   * An AI service that writes a suggestion for each finding when a scan is started with `--ai`.
+   * Without `--ai` this section does nothing.
+   */
+  ai: aiSchema.optional(),
 });
 
 export type Config = z.output<typeof configSchema>;

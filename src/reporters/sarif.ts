@@ -85,6 +85,9 @@ function describeResult(
       },
     ],
     partialFingerprints: { 'siftcodeFingerprint/v1': finding.fingerprint },
+    ...(finding.aiSuggestion === undefined
+      ? {}
+      : { properties: { aiSuggestion: finding.aiSuggestion } }),
     ...(suppressions.length > 0 ? { suppressions } : {}),
   };
 }

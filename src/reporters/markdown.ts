@@ -1,3 +1,4 @@
+import type { Finding } from '../core/finding.js';
 import type { ScanResult } from '../core/result.js';
 import {
   describeAccepted,
@@ -77,6 +78,7 @@ function findingSection({ finding, rule }: FindingDetail): string[] {
     '',
     `**Try:** ${escapeMarkdown(rule.suggestion.summary)}`,
     '',
+    ...aiSection(finding),
   ];
   if (rule.suggestion.before !== undefined && rule.suggestion.after !== undefined) {
     lines.push('Before:', '', '```', rule.suggestion.before, '```', '', 'After:', '', '```');
@@ -89,4 +91,18 @@ function findingSection({ finding, rule }: FindingDetail): string[] {
     );
   }
   return lines;
+}
+
+/** The AI service's suggestion as a quotation, escaped, and marked as written by a model. */
+function aiSection(finding: Finding): string[] {
+  if (finding.aiSuggestion === undefined) {
+    return [];
+  }
+  const { text, model } = finding.aiSuggestion;
+  return [
+    `**AI suggestion** (${escapeMarkdown(model)}, not reviewed by SiftCode):`,
+    '',
+    ...text.split('\n').map((line) => `> ${escapeMarkdown(line)}`),
+    '',
+  ];
 }

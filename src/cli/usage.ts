@@ -16,6 +16,9 @@ Scan options:
       --baseline <file>   Accept the findings listed in this baseline (see "siftcode baseline")
       --fail-on <level>   Exit with code 1 if a finding is at least this severe:
                           error, warning, info, or note
+      --ai                Ask the AI service named in the config's "ai" section for a suggestion
+                          fitted to each of the most severe findings. Sends code excerpts to that
+                          service (never credentials); the scan itself never uses the network
 
 Baseline options:
   -o, --output <file>     Where to write the baseline (default: the "baseline" setting of the

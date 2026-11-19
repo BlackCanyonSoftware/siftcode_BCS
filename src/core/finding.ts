@@ -19,6 +19,17 @@ export interface Finding {
    * line numbers, so it survives edits elsewhere in the file. Used by baselines and SARIF.
    */
   readonly fingerprint: string;
+  /**
+   * A suggestion written by an AI service for this finding when the scan was started with `--ai`.
+   * Not part of the finding's identity: it is never in the fingerprint or a baseline.
+   */
+  readonly aiSuggestion?: AiSuggestion;
+}
+
+/** What an AI service wrote for a finding, and which model wrote it. Never reviewed by SiftCode. */
+export interface AiSuggestion {
+  readonly text: string;
+  readonly model: string;
 }
 
 /** How a finding came to be accepted: a comment in the code (with its reason), or the baseline file. */

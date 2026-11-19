@@ -48,6 +48,11 @@ All notable user-visible changes are recorded here. The format follows
   made-up URL password in test code for a credential. C# files that end on a `#pragma` or `#region` line,
   .NET 10 file-based programs (`#:property`, `#:project`), and keys written `[type]` or `[property]` are now read
   instead of reported as not checked.
+- Optional AI suggestions: `siftcode scan --ai` asks the AI service named in the config's `ai` section (OpenAI-compatible
+  services, including a local model, or Anthropic) for a suggestion fitted to the code around each of the most severe
+  findings, and shows it marked as written by a model. Off unless `--ai` is given; the scan itself still never uses the
+  network. Code excerpts are redacted of credentials, findings about credentials are never sent, a remote service
+  must use https, and the key comes from an environment variable ([ADR 0018](docs/adr/0018-optional-ai-suggestions.md)).
 - Diagram drift rules: `SC-DOC-007` reports a box in a Mermaid or PlantUML diagram (in a diagram file or a design
   document) that is written as a module name but that nothing in the project is called, and `SC-DOC-008` reports
   folders of real size that no diagram mentions, when the diagrams draw their modules

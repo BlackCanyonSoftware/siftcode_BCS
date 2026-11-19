@@ -47,6 +47,7 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 - `src/rules/` one file per rule (metadata, suggestion, check) + `index.ts` registry
 - `src/reporters/` text, JSON, Markdown, SARIF, `explain`, and `html/` (the self-contained report, ADR 0012)
 - `assets/brand/` the brand's application set (`brandkit bundle siftcode assets/brand`, then `brandkit check`; never edit); `assets/report/` the report's own CSS and browser script
+- `src/ai/` the opt-in `--ai` step (excerpts, redaction, the request to the service the config names); the only code that uses the network
 - `src/git/` read-only Git history (runs the `git` program; ADR 0010); rules get it through `RepoView.git()`
 - `data/licenses/` generated SPDX ids and license texts (committed, shipped; ADR 0009)
 - `.github/workflows/` `ci.yml` (checks, dogfood scan) and `release.yml` (build, verify, attest, publish after approval; docs/RELEASING.md)
@@ -81,6 +82,8 @@ another module's internals.
 
 - **Never execute, import, or build the code being scanned.** Parse only. No network access in
   the scan path; no telemetry.
+  The one exception is `src/ai/`, run only by `scan --ai` after the scan is finished (ADR 0018): it sends
+  redacted excerpts to the service the user named, never credentials, and nothing in `src/core` may import it.
 - Never print a detected secret, not even partly: a finding names the variable or the kind of
   credential only. Tests build credential-shaped strings at run time (never commit one: push
   protection would block it).

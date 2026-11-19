@@ -48,7 +48,7 @@ Vision: someone runs `npx siftcode scan .` on any repo and gets a short, ranked 
 **Must:** US-001 to US-006, US-010 to US-013, US-020, US-021, US-030, US-033, US-040, US-041, US-060 to US-062, US-070
 **Should:** US-022, US-031, US-032, US-034, US-035, US-036, US-037, US-050, US-051, US-052, US-071
 **Could:** US-072, GitHub Action wrapper
-**Won't (this release):** LSP, taint analysis, GraphQL/gRPC/AsyncAPI/OpenAPI checks, WCAG/Web Vitals, auto-fix, AI suggestions
+**Won't (this release):** LSP, taint analysis, GraphQL/gRPC/AsyncAPI/OpenAPI checks, WCAG/Web Vitals, auto-fix, AI suggestions (the last was added after 0.1.0 as an opt-in, ADR 0018)
 
 ## 5. User stories
 

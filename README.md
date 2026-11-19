@@ -277,6 +277,44 @@ alone, and a layer may always import itself. Only imports that resolve to a file
 the standard library, a `tsconfig` path alias, and a C# namespace that several projects declare do not. Details and
 evidence: [ADR 0015](docs/adr/0015-architecture-rules.md).
 
+## AI suggestions (optional, off by default)
+
+A finding comes with the rule's general advice. If you have an AI service, `siftcode scan --ai` asks it for a
+suggestion fitted to the code around each of the most severe findings, and shows it under the finding in every
+format (text, Markdown, HTML, JSON as `aiSuggestion`, SARIF as a property), marked as written by a model and not
+reviewed. Without `--ai` nothing is sent anywhere, and a scan never uses the network.
+
+Add an `ai` section to `siftcode.config.json`:
+
+```json
+{
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "minSeverity": "warning",
+    "maxFindings": 10
+  }
+}
+```
+
+- `provider`: `openai` for any service that speaks the OpenAI chat completions API (OpenAI, Azure OpenAI, Ollama,
+  LM Studio, vLLM, OpenRouter), or `anthropic`. `model` is required: there is no default, because models change.
+- `endpoint`: the service's base URL; the default is the provider's own. A service on another machine must use
+  `https`; plain `http` is accepted for `localhost` only. For a local model (Ollama: `http://localhost:11434/v1`)
+  no code leaves your machine and no key is needed.
+- The API key comes from an environment variable only (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`, or the name in
+  `apiKeyEnv`), never from the config file, and it is never printed.
+- `minSeverity` (default `warning`), `maxFindings` (10, most severe first), `contextLines` (6 lines above and below
+  the finding), `timeoutSeconds` (60), and `skipRules` (rule ids never sent).
+
+What is sent, and what is not: before anything is sent, SiftCode prints how many excerpts, how many lines, from how
+many files, to which host. Each excerpt is the lines around one finding, with the rule's explanation. Findings about
+credentials (`SC-SEC-001`) are never sent, and every excerpt has anything that looks like a credential replaced by
+`[redacted]` (key formats, URL passwords, a value given to `password` or `apiKey`, a long generated string). Nothing
+else in the project is read or sent. The answer is shown as text, never as markup. A service that is down or refuses
+the key leaves the findings as they were, says so in the notes, and does not change the exit code. Details and what
+was and was not verified: [ADR 0018](docs/adr/0018-optional-ai-suggestions.md).
+
 ## Configuration
 
 Optional `siftcode.config.json` in the scanned folder. Unknown keys are rejected so typos are caught.
@@ -300,6 +338,7 @@ Optional `siftcode.config.json` in the scanned folder. Unknown keys are rejected
 - `rules`: per rule id, `enabled` (default `true`), `severity`, and rule-specific `options`.
 - `failOn`: same as `--fail-on`; the flag wins.
 - `baseline`: path of a baseline file, relative to the scanned folder; the `--baseline` flag wins.
+- `ai`: the AI service for `--ai` (below). Does nothing without the flag.
 
 ## Scripts
 

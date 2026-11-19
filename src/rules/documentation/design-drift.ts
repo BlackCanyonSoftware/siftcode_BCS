@@ -166,7 +166,7 @@ const tokensOf = (name: string): string[] =>
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .split(/[^A-Za-z0-9]+/)
     .map((token) => token.toLowerCase())
-    .filter((token) => token.length > 2);
+    .filter((token) => token.length > 1);
 
 export const componentMissingFromDiagrams = defineRepoRule({
   meta: {

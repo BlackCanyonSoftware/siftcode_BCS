@@ -257,6 +257,18 @@ describe('SC-DOC-008 a part of the code is not in the diagrams (US-044)', () => 
     expect(findings).toEqual([]);
   });
 
+  it('matches a folder with a short name, such as ai or ui, to the box that names it (found in SiftCode)', async () => {
+    const findings = await drift('SC-DOC-008', {
+      ...code(['cli', 'core', 'rules', 'ai']),
+      'docs/architecture.md': fence(
+        'mermaid',
+        'flowchart TD\n  A[cli: args] --> B[core: engine]\n  B --> C[rules: checks]\n  B -.-> D[ai: suggestions]',
+      ),
+    });
+
+    expect(findings).toEqual([]);
+  });
+
   it('leaves small folders alone, and follows minFiles', async () => {
     const files = {
       ...code(['cli', 'core', 'rules']),

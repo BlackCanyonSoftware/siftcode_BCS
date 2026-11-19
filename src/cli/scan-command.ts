@@ -7,6 +7,7 @@ import { UsageError } from '../shared/errors.js';
 import { scan } from '../core/scan.js';
 import { SEVERITIES, isAtLeast } from '../shared/severity.js';
 import { REPORT_FORMATS, renderReport } from '../reporters/index.js';
+import { withAiSuggestions } from './ai-suggestions.js';
 import { configuredBaselinePath, readBaselineFile } from './baseline-file.js';
 import { EXIT_FINDINGS, EXIT_OK, type Output } from './output.js';
 import { USAGE } from './usage.js';
@@ -22,6 +23,7 @@ export async function scanCommand(args: readonly string[], output: Output): Prom
       config: { type: 'string', short: 'c' },
       baseline: { type: 'string' },
       'fail-on': { type: 'string' },
+      ai: { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
     },
   });
@@ -39,19 +41,33 @@ export async function scanCommand(args: readonly string[], output: Output): Prom
 
   const config = await loadConfig({ scanPath: path, configPath: values.config });
   const baseline = await loadBaseline(path, config, values.baseline);
-  const result = await scan(path, { config, ...(baseline === undefined ? {} : { baseline }) });
-  const report = renderReport(format, result, { version: readVersion() });
-
-  if (values.output === undefined) {
-    output.stdout(report);
-  } else {
-    await writeReport(values.output, report);
-    output.stderr(`Wrote ${format} report to ${values.output}\n`);
-  }
+  const scanned = await scan(path, { config, ...(baseline === undefined ? {} : { baseline }) });
+  const result = values.ai ? await withAiSuggestions(scanned, config, output) : scanned;
+  await emit(
+    renderReport(format, result, { version: readVersion() }),
+    format,
+    values.output,
+    output,
+  );
 
   const failOn = flagFailOn ?? config.failOn;
   const failed = failOn !== undefined && result.findings.some((f) => isAtLeast(f.severity, failOn));
   return failed ? EXIT_FINDINGS : EXIT_OK;
+}
+
+/** Prints the report, or writes it to the file the `--output` flag named. */
+async function emit(
+  report: string,
+  format: string,
+  file: string | undefined,
+  output: Output,
+): Promise<void> {
+  if (file === undefined) {
+    output.stdout(report);
+    return;
+  }
+  await writeReport(file, report);
+  output.stderr(`Wrote ${format} report to ${file}\n`);
 }
 
 /** The baseline named by the flag or the config, or `undefined` when the scan has none. */

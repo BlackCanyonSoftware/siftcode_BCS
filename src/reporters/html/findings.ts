@@ -1,5 +1,6 @@
 import type { RuleMeta, StandardRef } from '../../rules/types.js';
 import { filesMostSevereFirst, withRules, type FindingDetail } from '../shared.js';
+import type { AiSuggestion } from '../../core/finding.js';
 import type { ScanResult } from '../../core/result.js';
 import {
   CONFIDENCE_TEXT,
@@ -50,11 +51,11 @@ function renderFinding({ finding, rule }: FindingDetail, language: string): stri
       : `Line ${finding.startLine}`;
   return `<details ${attributes}>
 <summary>${severityBadge(finding.severity)}<span class="rule">${esc(finding.ruleId)}</span><span class="msg">${esc(finding.message)}</span><span class="loc">${lines}</span>${icon('expand')}</summary>
-<div class="acc-b finding-body">${renderBody(id, rule)}</div>
+<div class="acc-b finding-body">${renderBody(id, rule, finding.aiSuggestion)}</div>
 </details>`;
 }
 
-function renderBody(id: string, rule: RuleMeta): string {
+function renderBody(id: string, rule: RuleMeta, ai: AiSuggestion | undefined): string {
   const { suggestion } = rule;
   const examples =
     suggestion.before !== undefined && suggestion.after !== undefined
@@ -64,6 +65,8 @@ function renderBody(id: string, rule: RuleMeta): string {
     `<p><strong>${esc(rule.title)}.</strong> ${esc(rule.rationale)}</p>`,
     `<p><strong>What to try.</strong> ${esc(suggestion.summary)}</p>`,
     examples,
+    // Written by a model and shown as text, never as markup: the answer is untrusted.
+    ai === undefined ? '' : codeBlock(`AI suggestion (${ai.model}, not reviewed)`, ai.text),
     renderMeta(id, rule),
     renderStandards(rule.standards),
   ].join('');

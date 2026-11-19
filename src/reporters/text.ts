@@ -1,3 +1,4 @@
+import type { Finding } from '../core/finding.js';
 import type { ScanResult } from '../core/result.js';
 import {
   describeAccepted,
@@ -56,9 +57,22 @@ function findingLines(result: ScanResult): string[] {
         `  ${path}:${finding.startLine}  ${finding.severity}  ${finding.ruleId}  ${finding.message}`,
         `      Why: ${rule.rationale}`,
         `      Try: ${rule.suggestion.summary}`,
+        ...aiLines(finding),
         ...rule.standards.map((standard) => `      Standard: ${formatStandard(standard)}`),
       );
     }
   }
   return lines;
+}
+
+/** The AI service's suggestion, marked as written by a model, indented under the finding. */
+function aiLines(finding: Finding): string[] {
+  if (finding.aiSuggestion === undefined) {
+    return [];
+  }
+  const { text, model } = finding.aiSuggestion;
+  return [
+    `      AI suggestion (${model}, not reviewed):`,
+    ...text.split('\n').map((line) => `        ${line}`),
+  ];
 }

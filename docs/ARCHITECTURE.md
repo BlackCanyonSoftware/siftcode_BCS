@@ -45,6 +45,7 @@ flowchart TD
     Repo[core/repo-view: lockfiles, CI, manifests, design docs and diagrams] --> Rules
     Rules -->|Findings, each with its suggestion| Fnd[core/finding: identity + ordering]
     Fnd --> Rank[core/accept: baseline + suppressions]
+    Rank -.->|only with --ai| Ai[ai: suggestion fitted to the code, from the service in the config]
     Shared[shared: errors, issues, severity, comparison] -.-> Cfg
     Shared -.-> Rules
     Shared -.-> Disc
