@@ -4,7 +4,7 @@ Rigor tier: MVP. Sizes: S (about a session), M (a few), L (many). Status: `plann
 
 ## Now / Next / Later
 
-- **Now:** M0 to M7 are done. Pushed through 4f156f1; CI on it was green on three of four jobs and red on Ubuntu with Node 24 at the new browser-test step (TD-21), not at any older check. Three later commits (a launch limit and a readable failure for that test, and the browser test moved to the Node 26 legs) are local and unseen by GitHub. A manual Release run (publish unticked) passed on 2026-11-12.
+- **Now:** M0 to M7 are done. GitHub has everything through 4f156f1 (three of four CI jobs green; Ubuntu with Node 24 red at the browser test, which is moved to the Node 26 legs in a later commit). Local and not yet seen by GitHub: the browser-test fixes, the architecture rules (ADR 0015), the accessibility rules (ADR 0016), the diagram drift rules (ADR 0017), the C# security fixes, and the optional AI suggestions (ADR 0018). A manual Release run (publish unticked) passed on 2026-11-12.
 - **Next:** the owner publishes 0.1.0 (see docs/RELEASING.md).
 - **Later:** M2 to M7 below; then the deferred tracks listed at the bottom.
 
