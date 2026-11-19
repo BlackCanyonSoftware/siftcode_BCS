@@ -48,6 +48,11 @@ All notable user-visible changes are recorded here. The format follows
   made-up URL password in test code for a credential. C# files that end on a `#pragma` or `#region` line,
   .NET 10 file-based programs (`#:property`, `#:project`), and keys written `[type]` or `[property]` are now read
   instead of reported as not checked.
+- Accessibility rules for JSX (`.jsx`, `.tsx`, `.js`), each mapped to a WCAG 2.2 success criterion: `SC-WEB-001` an
+  image with no `alt`, `SC-WEB-002` a click handler on a `div`, `span`, or similar that a keyboard cannot use,
+  `SC-WEB-003` `tabIndex` above zero, `SC-WEB-004` a form field with no label, `SC-WEB-005` a button or link with no
+  text, and `SC-WEB-006` an `<html>` with no `lang`. An element that spreads props is skipped. New category:
+  `accessibility` ([ADR 0016](docs/adr/0016-accessibility-rules.md)).
 - Architecture rules, from the imports between a project's own files (JavaScript/TypeScript relative imports,
   Python absolute and relative imports, C# `using` directives matched to the files that declare the namespace):
   `SC-ARC-001` reports folders that import each other in a cycle, with the shortest cycle, and

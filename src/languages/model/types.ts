@@ -67,6 +67,36 @@ export interface FileFacts {
   readonly directives: readonly DirectiveComment[];
   /** C# namespaces the file declares; empty for other languages. */
   readonly namespaces: readonly string[];
+  /** JSX elements (JavaScript, TypeScript, TSX); empty for other languages. */
+  readonly elements: readonly ElementFact[];
+}
+
+/** One JSX attribute: `alt="x"`, `tabIndex={3}`, `onClick={go}`, or a bare `hidden`. */
+export interface AttributeFact {
+  readonly name: string;
+  /** How it is given: no value, a string, a number, or an expression (`{cond}`, a template). */
+  readonly value: 'none' | 'string' | 'number' | 'expression';
+  /** The string without quotes, the number, or the source of the expression. Truncated. */
+  readonly text: string;
+}
+
+/** One JSX element, as seen from its opening tag. */
+export interface ElementFact {
+  /** `div`, `img`, `Button`, `Foo.Bar`. */
+  readonly tag: string;
+  readonly line: number;
+  readonly attributes: readonly AttributeFact[];
+  /** True when `{...props}` is spread into the element: any attribute may be among them. */
+  readonly hasSpread: boolean;
+  readonly selfClosing: boolean;
+  /** What is inside: whether there is text, how many `{...}` expressions, and the child tags. */
+  readonly children: {
+    readonly text: boolean;
+    readonly expressions: number;
+    readonly elements: readonly string[];
+  };
+  /** The tags of the elements this one is inside, nearest first. */
+  readonly ancestors: readonly string[];
 }
 
 export interface DirectiveComment {

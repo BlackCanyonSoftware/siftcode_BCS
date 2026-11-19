@@ -152,7 +152,7 @@ Detection kinds: **S** syntax/AST, **R** repository / Git history, **C** config 
 | 5.2 Law of Demeter | S | Yes | M3 |
 | 5.3 IoC / Service Locator | S | Yes | M3 |
 | 6 Mutation, property-based, fuzzing, chaos | X | Readiness only | Detect tooling/config presence and risky patterns; do not run tools. (The blueprint names Pitest, a Java tool; the analogue differs per language: Stryker for JS/TS and .NET, mutmut for Python.) |
-| 7 WCAG, Web Vitals, state management | S/C | Later | Frontend track after the core is solid. |
+| 7 WCAG, Web Vitals, state management | S/C | Partial | WCAG checks for JSX are in (`SC-WEB-001` to `006`, ADR 0016); Web Vitals and state management are not. |
 | 8 SARIF | out | Yes | M1 |
 | 8 LSP | out | No | Later; engine is designed so a language server can reuse it. |
 

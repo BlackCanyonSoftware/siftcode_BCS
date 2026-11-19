@@ -13,8 +13,8 @@ missing design documentation. For each finding it names the standard behind it a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
 > **Status: early development (Milestone 7).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF, HTML) work, with 48 rules for JavaScript/TypeScript, Python, and C#:
-> six code metrics, two architecture checks, five design heuristics, seven security checks, seven supply-chain checks,
+> (terminal, JSON, Markdown, SARIF, HTML) work, with 54 rules for JavaScript/TypeScript, Python, and C#:
+> six code metrics, two architecture checks, six accessibility checks for JSX, five design heuristics, seven security checks, seven supply-chain checks,
 > six design-documentation checks, eight license checks, three testing-readiness checks, three
 > resilience checks, and a hotspot ranking. See the [roadmap](docs/ROADMAP.md); the first release is
 > prepared in [docs/RELEASING.md](docs/RELEASING.md).
@@ -169,6 +169,12 @@ rationale, the standards behind it, and an example.
 | `SC-SUP-005` | Dependencies but no Dependabot or Renovate configuration | none | info |
 | `SC-SUP-006` | Dependencies but no SBOM or SBOM generation step | none | note |
 | `SC-SUP-007` | No secret scanner configured | none | note |
+| `SC-WEB-001` | An image has no `alt` attribute (WCAG 1.1.1) | none | warning |
+| `SC-WEB-002` | A click handler on a `div`, `span`, or `li` that a keyboard cannot use (WCAG 2.1.1) | none | warning |
+| `SC-WEB-003` | `tabIndex` above zero changes the tab order (WCAG 2.4.3) | none | warning |
+| `SC-WEB-004` | A form field has no label (WCAG 3.3.2) | none | warning |
+| `SC-WEB-005` | A button or link has no text (WCAG 4.1.2) | none | warning |
+| `SC-WEB-006` | A page has no language, `<html>` without `lang` (WCAG 3.1.1) | none | warning |
 | `SC-TST-001` | No automated tests found | `minSourceFiles` (20) | warning; note for a small project |
 | `SC-TST-002` | Tests, but no mutation, property-based, or fuzz testing tool | `minSourceFiles` (20) | note |
 | `SC-TST-003` | Binary decoder in a project with no fuzz target | `minReads` (3), `maxFiles` (5) | info |
@@ -227,6 +233,13 @@ The design rules (`SC-DES-*`) are heuristics: they read the shape of the code, n
 they skip test code and a few idioms (see [ADR 0006](docs/adr/0006-design-heuristics.md)) and report
 at `info` with low confidence. `SC-DES-001` also needs a method call in the chain by default, so the
 example `user.getAccount().getSubscription().cancel()` (3 members) is caught with `maxChain: 2`.
+
+The accessibility rules (`SC-WEB-*`) read JSX in `.jsx`, `.tsx`, and `.js` files, from the markup alone: they find
+what is certain without running the page (an image with no `alt`, an empty button, a click handler on a `div`), and
+they skip an element that spreads props (`{...props}`), because the missing attribute may be in them. They cannot see
+a label written in another component, a design-system component, or anything about contrast or layout, so they
+complement a browser check such as axe; they do not replace it. HTML files, Vue, and Svelte are not read. Evidence:
+[ADR 0016](docs/adr/0016-accessibility-rules.md).
 
 The architecture rules (`SC-ARC-*`) work from the imports between your own files. `SC-ARC-001` needs no
 setup: it groups files into components (the folders under the folder that holds most of the code, or a C#

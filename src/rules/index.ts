@@ -1,3 +1,9 @@
+import { clickOnStaticElement } from './accessibility/click-handlers.js';
+import { documentWithoutLanguage } from './accessibility/document-language.js';
+import { emptyControl } from './accessibility/empty-controls.js';
+import { unlabeledFormField } from './accessibility/form-labels.js';
+import { imageWithoutAlt } from './accessibility/image-alt.js';
+import { positiveTabIndex } from './accessibility/tab-index.js';
 import { importCycles } from './architecture/import-cycles.js';
 import { layerDirection } from './architecture/layer-direction.js';
 import { staleDesignDocuments } from './documentation/design-doc-freshness.js';
@@ -105,6 +111,12 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   noAutomatedTests,
   noAdvancedTesting,
   decoderWithoutFuzzTarget,
+  imageWithoutAlt,
+  clickOnStaticElement,
+  positiveTabIndex,
+  unlabeledFormField,
+  emptyControl,
+  documentWithoutLanguage,
 ];
 
 export function findRule(id: string): RuleDefinition | undefined {

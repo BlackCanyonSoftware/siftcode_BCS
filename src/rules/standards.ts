@@ -20,6 +20,18 @@ export const cheatSheet = (title: string, slug: string): StandardRef => ({
   url: `https://cheatsheetseries.owasp.org/cheatsheets/${slug}.html`,
 });
 
+/** A WCAG 2.2 success criterion, e.g. `wcag('1.1.1', 'Non-text Content', 'A', 'non-text-content')`. */
+export const wcag = (
+  criterion: string,
+  name: string,
+  level: 'A' | 'AA',
+  slug: string,
+): StandardRef => ({
+  standard: 'W3C Web Content Accessibility Guidelines (WCAG) 2.2',
+  id: `${criterion} ${name} (Level ${level})`,
+  url: `https://www.w3.org/WAI/WCAG22/Understanding/${slug}.html`,
+});
+
 /** OpenSSF Scorecard check, e.g. `scorecardCheck('Pinned-Dependencies', 'pinned-dependencies')`. */
 export const scorecardCheck = (name: string, anchor: string): StandardRef => ({
   standard: 'OpenSSF Scorecard',

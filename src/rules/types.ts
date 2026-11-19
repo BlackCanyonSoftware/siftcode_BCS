@@ -9,6 +9,7 @@ export type Category =
   | 'security'
   | 'performance'
   | 'documentation'
+  | 'accessibility'
   | 'testing'
   | 'supply-chain'
   | 'licensing';
