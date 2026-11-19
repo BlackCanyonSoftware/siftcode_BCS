@@ -23,8 +23,10 @@ export interface CodeFile {
 
 /** What a file imports and calls. Comments and strings never appear here: it is read from the syntax. */
 export interface FileUsage {
-  /** The modules imported, as written (`requests`, `System.Net.Http`), each once, sorted. */
-  readonly imports: readonly string[];
+  /** Every import, as written (`requests`, `./util`, `System.Net.Http`), in file order. */
+  readonly imports: readonly ImportFact[];
+  /** The namespaces the file declares (C#), each once, sorted; empty for other languages. */
+  readonly namespaces: readonly string[];
   /** Every distinct callee, sorted by callee. */
   readonly calls: readonly CalledName[];
 }
@@ -63,6 +65,8 @@ export interface FileFacts {
   readonly strings: readonly StringFact[];
   /** Comments that contain `siftcode-ignore`: the only comments any rule or the scan itself reads. */
   readonly directives: readonly DirectiveComment[];
+  /** C# namespaces the file declares; empty for other languages. */
+  readonly namespaces: readonly string[];
 }
 
 export interface DirectiveComment {

@@ -13,8 +13,8 @@ missing design documentation. For each finding it names the standard behind it a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
 > **Status: early development (Milestone 7).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF, HTML) work, with 46 rules for JavaScript/TypeScript, Python, and C#:
-> six code metrics, five design heuristics, seven security checks, seven supply-chain checks,
+> (terminal, JSON, Markdown, SARIF, HTML) work, with 48 rules for JavaScript/TypeScript, Python, and C#:
+> six code metrics, two architecture checks, five design heuristics, seven security checks, seven supply-chain checks,
 > six design-documentation checks, eight license checks, three testing-readiness checks, three
 > resilience checks, and a hotspot ranking. See the [roadmap](docs/ROADMAP.md); the first release is
 > prepared in [docs/RELEASING.md](docs/RELEASING.md).
@@ -124,6 +124,8 @@ rationale, the standards behind it, and an example.
 
 | Rule | Finds | Option (default) | Severity |
 | --- | --- | --- | --- |
+| `SC-ARC-001` | Folders import each other in a cycle | none | info |
+| `SC-ARC-002` | A layer imports a layer it may not depend on (layers are declared in the config) | `layers` (none) | warning |
 | `SC-DES-001` | A chain reaches through several objects (Law of Demeter) | `maxChain` (3), `includeDataChains` (false) | info |
 | `SC-DES-002` | A dependency is fetched from a container (Service Locator) | none | warning |
 | `SC-DES-003` | A class has too many methods | `maxMethods` (25) | info |
@@ -225,6 +227,32 @@ The design rules (`SC-DES-*`) are heuristics: they read the shape of the code, n
 they skip test code and a few idioms (see [ADR 0006](docs/adr/0006-design-heuristics.md)) and report
 at `info` with low confidence. `SC-DES-001` also needs a method call in the chain by default, so the
 example `user.getAccount().getSubscription().cancel()` (3 members) is caught with `maxChain: 2`.
+
+The architecture rules (`SC-ARC-*`) work from the imports between your own files. `SC-ARC-001` needs no
+setup: it groups files into components (the folders under the folder that holds most of the code, or a C#
+project's folders), and reports groups of components that import each other in a cycle, with the shortest
+cycle and the imports that make it. `SC-ARC-002` checks a layering you declare, and reports nothing without it:
+
+```json
+{
+  "rules": {
+    "SC-ARC-002": {
+      "options": {
+        "layers": [
+          { "name": "domain", "paths": ["src/domain/"], "mayImport": [] },
+          { "name": "application", "paths": ["src/application/"], "mayImport": ["domain"] },
+          { "name": "infrastructure", "paths": ["src/infrastructure/"], "mayImport": ["domain", "application"] }
+        ]
+      }
+    }
+  }
+}
+```
+
+`paths` are gitignore-style patterns; a file belongs to the first layer that matches, a file in no layer is left
+alone, and a layer may always import itself. Only imports that resolve to a file in the project count: a package,
+the standard library, a `tsconfig` path alias, and a C# namespace that several projects declare do not. Details and
+evidence: [ADR 0015](docs/adr/0015-architecture-rules.md).
 
 ## Configuration
 

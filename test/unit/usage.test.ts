@@ -38,13 +38,31 @@ describe('file usage summary (US-051, US-052)', () => {
     ]);
   });
 
-  it('lists each imported module once, sorted, including imports inside functions', async () => {
+  it('lists every import with its line, in file order, including imports inside functions', async () => {
     const usage = await usageOf(
       'python',
       'import os\nimport json\nimport os\n\ndef f():\n    import urllib.request\n',
     );
 
-    expect(usage.imports).toEqual(['json', 'os', 'urllib.request']);
+    expect(usage.imports.map(({ module, line }) => [module, line])).toEqual([
+      ['os', 1],
+      ['json', 2],
+      ['os', 3],
+      ['urllib.request', 6],
+    ]);
+  });
+
+  it('lists the namespaces a C# file declares, once each, sorted, and none for other languages', async () => {
+    const block = await usageOf(
+      'csharp',
+      'namespace B.Two { class X { } }\nnamespace A.One { }\nnamespace A.One { }\n',
+    );
+    const scoped = await usageOf('csharp', 'namespace Shop.Orders;\nclass Y { }\n');
+    const other = await usageOf('typescript', 'export const a = 1;\n');
+
+    expect(block.namespaces).toEqual(['A.One', 'B.Two']);
+    expect(scoped.namespaces).toEqual(['Shop.Orders']);
+    expect(other.namespaces).toEqual([]);
   });
 
   it('keeps the receiver, the name, and whether the call creates an object', async () => {

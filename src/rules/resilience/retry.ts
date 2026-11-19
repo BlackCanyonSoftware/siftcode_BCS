@@ -35,7 +35,7 @@ function callsRemoteServices(file: CodeFile): boolean {
   const { imports, calls } = file.usage;
   return (
     imports.some(
-      (module) => HTTP_MODULES.has(module) || HTTP_MODULES.has(module.split(/[./]/)[0] ?? ''),
+      ({ module }) => HTTP_MODULES.has(module) || HTTP_MODULES.has(module.split(/[./]/)[0] ?? ''),
     ) ||
     calls.some(
       (call) =>

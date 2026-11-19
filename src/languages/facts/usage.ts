@@ -5,7 +5,9 @@ import type { CalledName, CallFact, FileFacts, FileUsage } from '../model/types.
  * need. Each distinct callee appears once, with the line of its first call and a count, so a file
  * that calls one function a hundred times stays small. Sorted, so a result is the same every run.
  */
-export function summarizeUsage(facts: Pick<FileFacts, 'imports' | 'calls'>): FileUsage {
+export function summarizeUsage(
+  facts: Pick<FileFacts, 'imports' | 'calls' | 'namespaces'>,
+): FileUsage {
   const byCallee = new Map<string, { call: CallFact; line: number; count: number }>();
   for (const call of facts.calls) {
     const seen = byCallee.get(call.callee);
@@ -26,5 +28,6 @@ export function summarizeUsage(facts: Pick<FileFacts, 'imports' | 'calls'>): Fil
       line,
       count,
     }));
-  return { imports: [...new Set(facts.imports.map((item) => item.module))].sort(), calls };
+  const namespaces = [...new Set(facts.namespaces)].sort();
+  return { imports: [...facts.imports].sort((a, b) => a.line - b.line), namespaces, calls };
 }

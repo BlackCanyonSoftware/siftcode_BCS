@@ -6,6 +6,7 @@ import { extractChains } from './chains.js';
 import { extractClasses } from './classes.js';
 import { extractDirectives } from './directives.js';
 import { extractImports } from './imports.js';
+import { extractNamespaces } from './namespaces.js';
 import { extractNamedValues, extractStrings } from './named.js';
 
 export interface ExtractedFacts {
@@ -27,6 +28,7 @@ export function extractFacts(grammar: GrammarId, root: Node): ExtractedFacts {
       namedValues: extractNamedValues(grammar, root),
       strings: extractStrings(grammar, root),
       directives: extractDirectives(root),
+      namespaces: extractNamespaces(grammar, root),
     },
   };
 }

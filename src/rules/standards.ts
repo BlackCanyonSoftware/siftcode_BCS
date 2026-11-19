@@ -121,3 +121,18 @@ export const circuitBreakerPattern: StandardRef = {
   standard: 'Microsoft Azure Architecture Center, Circuit Breaker pattern',
   url: 'https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker',
 };
+
+/** Architecture: how the parts of a program depend on each other. */
+export const acyclicDependencies: StandardRef = {
+  standard: 'Martin, Agile Software Development: Principles, Patterns, and Practices (2002)',
+  id: 'Acyclic Dependencies Principle',
+};
+export const dependencyRule: StandardRef = {
+  standard: 'Martin, Clean Architecture (2017)',
+  id: 'The Dependency Rule: source code dependencies point only inward',
+  url: 'https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html',
+};
+export const stableDependencies: StandardRef = {
+  standard: 'Lakos, Large-Scale C++ Software Design (1996)',
+  id: 'Levelization: components form an acyclic hierarchy',
+};

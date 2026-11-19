@@ -12,7 +12,7 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
-- 46 rules. Metrics `SC-MET-001` to `006`; design `SC-DES-001` to `005`; security
+- 48 rules. Metrics `SC-MET-001` to `006`; architecture `SC-ARC-001` and `002` (ADR 0015); design `SC-DES-001` to `005`; security
   `SC-SEC-001` to `007` (each mapped to a CWE entry); supply chain `SC-SUP-001` to `007`;
   design documentation `SC-DOC-001` to `004` (ADR 0008) and `SC-DOC-006` (files a document names that are gone; ADR 0013); testing `SC-TST-001` to `003` and resilience `SC-RES-001` to `003` (ADR 0014); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
   (stale design documents; ADR 0010).
@@ -144,6 +144,7 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-18, session 1 (architecture rules):** `SC-ARC-001` (folder import cycles) and `SC-ARC-002` (declared layers), ADR 0015. Added import resolution for the three languages (`src/rules/architecture/`), `FileUsage.imports` as full import facts and `namespaces` for C#. The cycle rule found a real tangle in this repository (`config`, `core`, `discovery`, `rules` all reached into `core` for errors and severity); the four leaf modules moved to `src/shared/`, and the rule is now silent on this repository.
 - **2026-11-13, session 1 (TD-10):** Ran the design rules on eShop, GitVersion, Jellyfin, a NestJS sample set, and the FastAPI template (ADR 0013, second addendum). Added generated-file skipping (`src/core/generated.ts`, a note in the report) and four design-rule fixes. 1206 unit, 8 end-to-end, and 13 browser tests.
 - **2026-11-12, session 1 (TD-8):** A second C# pass on the security rules: read every finding in Dapper, MailKit, RestSharp, ysoserial.net, nuke, GitVersion, and Jellyfin (ADR 0013 addendum). Fixed two false positives and five misses, plus three parse gaps (a file ending on a directive, `#:` lines). 9 of about 4,800 files still do not parse, all grammar limits (a bracket that holds only an attribute-target word, such as `[type]`, is handled before parsing). 1182 unit, 8 end-to-end, and 13 browser tests.
 - **2026-11-12, session 1 (after M7):** Ran the Release workflow by hand with publish unticked: green, including both attestations (TD-29). Built the browser test (TD-21, ADR 0012 addendum): `npm run test:browser`, `playwright-core` and `axe-core` as dev dependencies, CI on the Node 26 legs; its first run found that scrollable code examples were not keyboard-reachable, now fixed. Rebuilt `SC-TST-003` and `SC-RES-003` on `CodeFile.usage` (TD-28, ADR 0014 addendum): the local repositories gave 3 results for `SC-RES-003` before and 1 after, two of the old three being false positives, and the first version of the rewrite had to be corrected after a real project showed it. 1162 unit, 8 end-to-end, and 13 browser tests.

@@ -1,3 +1,5 @@
+import { importCycles } from './architecture/import-cycles.js';
+import { layerDirection } from './architecture/layer-direction.js';
 import { staleDesignDocuments } from './documentation/design-doc-freshness.js';
 import { designDocumentsNamingMissingFiles } from './documentation/stale-references.js';
 import {
@@ -55,6 +57,8 @@ import type { RuleDefinition } from './types.js';
 
 /** Every rule SiftCode ships, in id order. Adding a rule means adding it here. */
 export const ALL_RULES: readonly RuleDefinition[] = [
+  importCycles,
+  layerDirection,
   lawOfDemeter,
   serviceLocator,
   classSize,
