@@ -2,7 +2,7 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadConfig } from '../config/load.js';
 import { BASELINE_FILE_NAME, createBaseline } from '../core/baseline.js';
-import { UsageError } from '../core/errors.js';
+import { UsageError } from '../shared/errors.js';
 import { scan } from '../core/scan.js';
 import { plural } from '../reporters/shared.js';
 import { configuredBaselinePath, scannedFolder, writeBaselineFile } from './baseline-file.js';

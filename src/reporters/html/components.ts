@@ -1,4 +1,4 @@
-import type { Severity } from '../../core/severity.js';
+import type { Severity } from '../../shared/severity.js';
 import type { Confidence } from '../../rules/types.js';
 import { esc } from './escape.js';
 

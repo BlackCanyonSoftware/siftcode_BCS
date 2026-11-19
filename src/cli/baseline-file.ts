@@ -2,7 +2,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import type { Config } from '../config/schema.js';
 import { parseBaseline, serializeBaseline, type Baseline } from '../core/baseline.js';
-import { UsageError } from '../core/errors.js';
+import { UsageError } from '../shared/errors.js';
 
 /** The folder being scanned, or the folder of the file being scanned. */
 export async function scannedFolder(scanPath: string): Promise<string> {

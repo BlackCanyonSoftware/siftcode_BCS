@@ -1,6 +1,6 @@
 import type { Config } from '../config/schema.js';
-import { UsageError } from '../core/errors.js';
-import type { Severity } from '../core/severity.js';
+import { UsageError } from '../shared/errors.js';
+import type { Severity } from '../shared/severity.js';
 import type { FileCheck, RepoCheck, RuleDefinition, RuleMeta } from './types.js';
 
 /** A rule that is switched on, with the severity the config gave it (if any) and validated options bound in. */

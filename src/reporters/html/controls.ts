@@ -1,6 +1,6 @@
-import { compareStrings } from '../../core/compare.js';
+import { compareStrings } from '../../shared/compare.js';
 import type { ScanResult } from '../../core/result.js';
-import { SEVERITIES } from '../../core/severity.js';
+import { SEVERITIES } from '../../shared/severity.js';
 import { countBySeverity, plural, withRules } from '../shared.js';
 import { SEVERITY_STYLE, icon } from './components.js';
 import { esc } from './escape.js';

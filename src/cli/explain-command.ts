@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import { UsageError } from '../core/errors.js';
+import { UsageError } from '../shared/errors.js';
 import { renderExplanation, renderRuleList } from '../reporters/index.js';
 import { ALL_RULES } from '../rules/index.js';
 import { EXIT_OK, type Output } from './output.js';

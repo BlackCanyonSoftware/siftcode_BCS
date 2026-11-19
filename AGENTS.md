@@ -36,7 +36,9 @@ Runtime: Node `>=24`. Commands must work on Windows, macOS, and Linux.
 
 - `src/cli/` commands (`scan`, `explain`), exit codes (0 ok, 1 findings at/above `--fail-on`,
   2 usage or config error)
-- `src/config/` config schema (Zod) and loading; `src/core/` scan pipeline, findings, severity
+- `src/config/` config schema (Zod) and loading; `src/core/` scan pipeline and findings; `src/shared/` the
+  leaf modules everything may import (errors, issues, string comparison, severity), so no folder has to
+  import `core` just for those (the cycle rule `SC-ARC-001` found that tangle)
 - `src/discovery/` file walking, `.gitignore` and config ignores, size limits
 - `src/languages/` registry, `grammars.json` (single source for grammar file names), parser,
   `model/` (the Code Model rules see, and the metric formulas), `extract.ts` (syntax tree to

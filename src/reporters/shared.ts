@@ -1,7 +1,7 @@
-import { compareStrings } from '../core/compare.js';
+import { compareStrings } from '../shared/compare.js';
 import type { AcceptedFinding, Finding } from '../core/finding.js';
 import type { FileProblem, ScanResult } from '../core/result.js';
-import { SEVERITIES, compareSeverity, type Severity } from '../core/severity.js';
+import { SEVERITIES, compareSeverity, type Severity } from '../shared/severity.js';
 import type { RuleMeta, StandardRef } from '../rules/types.js';
 
 export const TOOL_NAME = 'SiftCode';

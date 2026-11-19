@@ -1,4 +1,4 @@
-import type { Severity } from '../core/severity.js';
+import type { Severity } from '../shared/severity.js';
 import type { GitAccess } from '../git/types.js';
 import type { AnalyzedFile, CodeFile } from '../languages/model/types.js';
 

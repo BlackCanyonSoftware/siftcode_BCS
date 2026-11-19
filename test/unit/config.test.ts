@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadConfig, parseConfig } from '../../src/config/load.js';
 import { DEFAULT_CONFIG } from '../../src/config/schema.js';
-import { UsageError } from '../../src/core/errors.js';
+import { UsageError } from '../../src/shared/errors.js';
 import { scan } from '../../src/core/scan.js';
 import { useProjects } from '../helpers/project.js';
 

@@ -1,7 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { UsageError } from '../core/errors.js';
-import { describeIssues } from '../core/issues.js';
+import { UsageError } from '../shared/errors.js';
+import { describeIssues } from '../shared/issues.js';
 import { DEFAULT_CONFIG, configSchema, type Config } from './schema.js';
 
 export const CONFIG_FILE_NAME = 'siftcode.config.json';

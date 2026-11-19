@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseConfig } from '../../src/config/load.js';
 import { compareFindings, type Finding } from '../../src/core/finding.js';
 import { scan } from '../../src/core/scan.js';
-import { compareSeverity, isAtLeast } from '../../src/core/severity.js';
+import { compareSeverity, isAtLeast } from '../../src/shared/severity.js';
 import { longJsFunction, useProjects } from '../helpers/project.js';
 
 const projects = useProjects();

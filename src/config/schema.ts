@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SEVERITIES } from '../core/severity.js';
+import { SEVERITIES } from '../shared/severity.js';
 
 const severity = z.enum(SEVERITIES);
 

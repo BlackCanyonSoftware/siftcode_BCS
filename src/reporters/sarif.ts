@@ -1,6 +1,6 @@
 import type { AcceptedVia, Finding } from '../core/finding.js';
 import type { ScanResult } from '../core/result.js';
-import type { Severity } from '../core/severity.js';
+import type { Severity } from '../shared/severity.js';
 import type { RuleMeta } from '../rules/types.js';
 import {
   TOOL_NAME,

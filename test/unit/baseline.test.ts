@@ -5,7 +5,7 @@ import {
   parseBaseline,
   serializeBaseline,
 } from '../../src/core/baseline.js';
-import { UsageError } from '../../src/core/errors.js';
+import { UsageError } from '../../src/shared/errors.js';
 import { scan } from '../../src/core/scan.js';
 import { onlyRule, useProjects } from '../helpers/project.js';
 

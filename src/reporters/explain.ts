@@ -1,4 +1,4 @@
-import { compareStrings } from '../core/compare.js';
+import { compareStrings } from '../shared/compare.js';
 import type { RuleDefinition } from '../rules/types.js';
 import { formatStandard } from './shared.js';
 

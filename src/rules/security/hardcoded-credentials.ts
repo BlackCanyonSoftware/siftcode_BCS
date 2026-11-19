@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { AnalyzedFile } from '../../languages/model/types.js';
-import type { Severity } from '../../core/severity.js';
+import type { Severity } from '../../shared/severity.js';
 import { defineRule } from '../define.js';
 import { isTestFile } from '../shared.js';
 import { cheatSheet, cwe, owaspTop10 } from './shared.js';

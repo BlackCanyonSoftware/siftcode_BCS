@@ -1,6 +1,6 @@
 import type { z } from 'zod';
-import { UsageError } from '../core/errors.js';
-import { describeIssues } from '../core/issues.js';
+import { UsageError } from '../shared/errors.js';
+import { describeIssues } from '../shared/issues.js';
 import type { AnalyzedFile } from '../languages/model/types.js';
 import type { RepoHit, RepoView, RuleDefinition, RuleHit, RuleMeta } from './types.js';
 

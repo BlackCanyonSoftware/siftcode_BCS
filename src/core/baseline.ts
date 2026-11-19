@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { compareStrings } from './compare.js';
-import { UsageError } from './errors.js';
+import { compareStrings } from '../shared/compare.js';
+import { UsageError } from '../shared/errors.js';
 import type { AcceptedFinding, Finding } from './finding.js';
-import { describeIssues } from './issues.js';
+import { describeIssues } from '../shared/issues.js';
 
 /** Current version of the baseline file layout. */
 export const BASELINE_VERSION = 1;

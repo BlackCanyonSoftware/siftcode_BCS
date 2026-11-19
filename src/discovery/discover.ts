@@ -1,7 +1,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
-import { compareStrings } from '../core/compare.js';
-import { UsageError } from '../core/errors.js';
+import { compareStrings } from '../shared/compare.js';
+import { UsageError } from '../shared/errors.js';
 import { languageForFile, type GrammarId } from '../languages/registry.js';
 import { IgnoreStack } from './ignore-stack.js';
 

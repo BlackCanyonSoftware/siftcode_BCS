@@ -1,4 +1,4 @@
-import { UsageError } from '../core/errors.js';
+import { UsageError } from '../shared/errors.js';
 import { baselineCommand } from './baseline-command.js';
 import { explainCommand } from './explain-command.js';
 import { EXIT_OK, EXIT_USAGE, type Output } from './output.js';

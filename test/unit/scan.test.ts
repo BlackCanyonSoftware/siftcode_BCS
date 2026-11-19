@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseConfig } from '../../src/config/load.js';
-import { UsageError } from '../../src/core/errors.js';
+import { UsageError } from '../../src/shared/errors.js';
 import { scan } from '../../src/core/scan.js';
 import { allRuleIds, fixture, longJsFunction, useProjects } from '../helpers/project.js';
 

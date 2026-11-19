@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { defineRepoRule } from '../define.js';
 import { cheatSheet, cwe, nistSsdf, owaspTop10, scorecardCheck } from '../standards.js';
-import type { Severity } from '../../core/severity.js';
+import type { Severity } from '../../shared/severity.js';
 import type { RepoHit, RepoView } from '../types.js';
 import { anchorPath, isProject } from '../anchor.js';
 import { readManifests } from './manifests.js';

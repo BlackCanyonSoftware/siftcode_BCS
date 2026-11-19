@@ -9,7 +9,7 @@ import { resolveRules, type ConfiguredRule } from '../rules/resolve.js';
 import type { RepoView } from '../rules/types.js';
 import { acceptFindings } from './accept.js';
 import type { Baseline } from './baseline.js';
-import { compareStrings } from './compare.js';
+import { compareStrings } from '../shared/compare.js';
 import { describeGenerated, isGeneratedSource } from './generated.js';
 import { compareFindings, createFinding, type Finding } from './finding.js';
 import { createRepoView } from './repo-view.js';

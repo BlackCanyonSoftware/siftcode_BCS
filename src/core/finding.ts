@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { ConfiguredRule } from '../rules/resolve.js';
 import type { Confidence, RuleHit } from '../rules/types.js';
-import { compareStrings } from './compare.js';
-import type { Severity } from './severity.js';
+import { compareStrings } from '../shared/compare.js';
+import type { Severity } from '../shared/severity.js';
 
 /** One detected issue at one place in one file. */
 export interface Finding {
