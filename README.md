@@ -13,9 +13,9 @@ missing design documentation. For each finding it names the standard behind it a
 concrete improvement. It runs offline, and it parses your code without ever running it.
 
 > **Status: early development (Milestone 7).** The engine, configuration, and report formats
-> (terminal, JSON, Markdown, SARIF, HTML) work, with 54 rules for JavaScript/TypeScript, Python, and C#:
+> (terminal, JSON, Markdown, SARIF, HTML) work, with 56 rules for JavaScript/TypeScript, Python, and C#:
 > six code metrics, two architecture checks, six accessibility checks for JSX, five design heuristics, seven security checks, seven supply-chain checks,
-> six design-documentation checks, eight license checks, three testing-readiness checks, three
+> eight design-documentation checks (two of them compare diagrams with the code), eight license checks, three testing-readiness checks, three
 > resilience checks, and a hotspot ranking. See the [roadmap](docs/ROADMAP.md); the first release is
 > prepared in [docs/RELEASING.md](docs/RELEASING.md).
 
@@ -136,6 +136,8 @@ rationale, the standards behind it, and an example.
 | `SC-DOC-003` | Diagrams but no architecture decision records | `minSourceFiles` (20) | note |
 | `SC-DOC-004` | A diagram file that no document mentions | none | note |
 | `SC-DOC-005` | A design document may be out of date (Git history) | `minAgeDays` (90), `minChangedLines` (500), `minChangedShare` (0.5) | info |
+| `SC-DOC-007` | A Mermaid or PlantUML diagram names a module (`cli: args`, `core/scan`, `Catalog.API`) that the code has no folder, file, package, namespace, or class called | none | info |
+| `SC-DOC-008` | Folders of real size that no diagram mentions, in a project whose diagrams draw its modules | `minFiles` (3) | note |
 | `SC-DOC-006` | A design document names source files that are not in the project | `minMissing` (2), `maxDocuments` (20), `listed` (5) | info |
 | `SC-HOT-001` | A complex file that changes often (hotspot, Git history) | `windowMonths` (12), `top` (10), `minChanges` (5), `minComplexity` (30) | info |
 | `SC-LIC-001` | The project has no license | none | warning |
@@ -233,6 +235,14 @@ The design rules (`SC-DES-*`) are heuristics: they read the shape of the code, n
 they skip test code and a few idioms (see [ADR 0006](docs/adr/0006-design-heuristics.md)) and report
 at `info` with low confidence. `SC-DES-001` also needs a method call in the chain by default, so the
 example `user.getAccount().getSubscription().cancel()` (3 members) is caught with `maxChain: 2`.
+
+`SC-DOC-007` and `SC-DOC-008` compare the diagrams in your design documents with the code. They read Mermaid
+flowcharts and C4, and PlantUML components, in diagram files and in the diagrams of an architecture or design
+document (not in tutorials or tests). A box is read as a claim about the code only when it is written like a module
+name (`cli: args, exit codes`, `core/scan`, `Catalog.API`, `OrderService`); free text such as `Developer / CI` is a
+description and is left alone. A claim is found when the project has a folder, file, project, package, namespace,
+class, imported module, or dependency of that name, or writes a qualified name such as `chrome.storage.local` in its
+code. Evidence and limits: [ADR 0017](docs/adr/0017-diagram-drift-rules.md).
 
 The accessibility rules (`SC-WEB-*`) read JSX in `.jsx`, `.tsx`, and `.js` files, from the markup alone: they find
 what is certain without running the page (an image with no `alt`, an empty button, a click handler on a `div`), and

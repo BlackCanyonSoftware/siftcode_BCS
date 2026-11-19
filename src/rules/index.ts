@@ -6,6 +6,10 @@ import { imageWithoutAlt } from './accessibility/image-alt.js';
 import { positiveTabIndex } from './accessibility/tab-index.js';
 import { importCycles } from './architecture/import-cycles.js';
 import { layerDirection } from './architecture/layer-direction.js';
+import {
+  componentMissingFromDiagrams,
+  diagramNamesMissingModule,
+} from './documentation/design-drift.js';
 import { staleDesignDocuments } from './documentation/design-doc-freshness.js';
 import { designDocumentsNamingMissingFiles } from './documentation/stale-references.js';
 import {
@@ -76,6 +80,8 @@ export const ALL_RULES: readonly RuleDefinition[] = [
   unreferencedDiagrams,
   staleDesignDocuments,
   designDocumentsNamingMissingFiles,
+  diagramNamesMissingModule,
+  componentMissingFromDiagrams,
   hotspots,
   noLicense,
   unrecognizedLicenseFile,

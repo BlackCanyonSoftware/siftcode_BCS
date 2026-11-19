@@ -12,7 +12,7 @@ Pick-up-here file. Read this first, update it at the end of every session.
 - `siftcode scan` measures every cleanly parsed JS/TS, Python, and C# file (ADR 0005) and extracts
   facts: imports, member-access chains, classes with cohesion (ADR 0006), calls with the shape of
   their arguments, named values, and long strings (ADR 0007).
-- 54 rules. Metrics `SC-MET-001` to `006`; accessibility for JSX `SC-WEB-001` to `006` (ADR 0016); architecture `SC-ARC-001` and `002` (ADR 0015); design `SC-DES-001` to `005`; security
+- 56 rules. Documentation drift `SC-DOC-007` and `008` (ADR 0017). Metrics `SC-MET-001` to `006`; accessibility for JSX `SC-WEB-001` to `006` (ADR 0016); architecture `SC-ARC-001` and `002` (ADR 0015); design `SC-DES-001` to `005`; security
   `SC-SEC-001` to `007` (each mapped to a CWE entry); supply chain `SC-SUP-001` to `007`;
   design documentation `SC-DOC-001` to `004` (ADR 0008) and `SC-DOC-006` (files a document names that are gone; ADR 0013); testing `SC-TST-001` to `003` and resilience `SC-RES-001` to `003` (ADR 0014); licenses `SC-LIC-001` to `008` (ADR 0009); Git history `SC-HOT-001` (hotspots) and `SC-DOC-005`
   (stale design documents; ADR 0010).
@@ -144,6 +144,7 @@ library (1,823 files, 59,000 functions) scans in about 45 s; 1,488 third-party J
 
 ## Session log (newest first)
 
+- **2026-11-18, session 1 (diagram drift):** `SC-DOC-007` and `SC-DOC-008` (ADR 0017): Mermaid and PlantUML boxes compared with the code's folders, files, classes, imports, and dependencies. Run on this repository they found three real stale spots in `docs/ARCHITECTURE.md` (a `repo-files` and a `suggestions` module that do not exist, and the new `shared` folder missing); the diagram was corrected and the rules are silent.
 - **2026-11-18, session 1 (accessibility rules):** `SC-WEB-001` to `006` for JSX (ADR 0016) on a new `ElementFact` (tag, attributes, children, ancestors) in the syntax facts, category `accessibility`. Calibrated on Vercel Commerce, Excalidraw, and Mastodon's front end; read every finding and fixed four false-positive classes (empty overlays, click-to-focus wrappers, hidden file inputs, and the wording).
 - **2026-11-18, session 1 (architecture rules):** `SC-ARC-001` (folder import cycles) and `SC-ARC-002` (declared layers), ADR 0015. Added import resolution for the three languages (`src/rules/architecture/`), `FileUsage.imports` as full import facts and `namespaces` for C#. The cycle rule found a real tangle in this repository (`config`, `core`, `discovery`, `rules` all reached into `core` for errors and severity); the four leaf modules moved to `src/shared/`, and the rule is now silent on this repository.
 - **2026-11-13, session 1 (TD-10):** Ran the design rules on eShop, GitVersion, Jellyfin, a NestJS sample set, and the FastAPI template (ADR 0013, second addendum). Added generated-file skipping (`src/core/generated.ts`, a note in the report) and four design-rule fixes. 1206 unit, 8 end-to-end, and 13 browser tests.

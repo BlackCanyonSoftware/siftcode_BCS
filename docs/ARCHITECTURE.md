@@ -40,11 +40,14 @@ flowchart TD
     Cfg --> Scan
     Scan --> Disc[discovery: walk, ignore, size limits]
     Disc --> Lang[languages: adapters per language]
-    Lang -->|Code Model| Rules[rules: metrics, design, security, supply-chain]
+    Lang -->|Code Model| Rules[rules: metrics, architecture, design, security, supply-chain, accessibility]
     Git[git: churn reader] --> Rules
-    Repo[repo-files: lockfiles, CI, manifests, design docs and diagrams] --> Rules
-    Rules -->|Findings| Sugg[suggestions: catalog lookup + enrichment]
-    Sugg --> Rank[ranking + baseline filter]
+    Repo[core/repo-view: lockfiles, CI, manifests, design docs and diagrams] --> Rules
+    Rules -->|Findings, each with its suggestion| Fnd[core/finding: identity + ordering]
+    Fnd --> Rank[core/accept: baseline + suppressions]
+    Shared[shared: errors, issues, severity, comparison] -.-> Cfg
+    Shared -.-> Rules
+    Shared -.-> Disc
     Rank --> Rep[reporters: terminal, md, json, sarif, html]
 ```
 

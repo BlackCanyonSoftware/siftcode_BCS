@@ -48,6 +48,10 @@ All notable user-visible changes are recorded here. The format follows
   made-up URL password in test code for a credential. C# files that end on a `#pragma` or `#region` line,
   .NET 10 file-based programs (`#:property`, `#:project`), and keys written `[type]` or `[property]` are now read
   instead of reported as not checked.
+- Diagram drift rules: `SC-DOC-007` reports a box in a Mermaid or PlantUML diagram (in a diagram file or a design
+  document) that is written as a module name but that nothing in the project is called, and `SC-DOC-008` reports
+  folders of real size that no diagram mentions, when the diagrams draw their modules
+  ([ADR 0017](docs/adr/0017-diagram-drift-rules.md)).
 - Accessibility rules for JSX (`.jsx`, `.tsx`, `.js`), each mapped to a WCAG 2.2 success criterion: `SC-WEB-001` an
   image with no `alt`, `SC-WEB-002` a click handler on a `div`, `span`, or similar that a keyboard cannot use,
   `SC-WEB-003` `tabIndex` above zero, `SC-WEB-004` a form field with no label, `SC-WEB-005` a button or link with no
